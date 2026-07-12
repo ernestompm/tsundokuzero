@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
@@ -92,6 +92,24 @@ export default function ChapterView({
             />
           ))}
         </div>
+      )}
+
+      {!data.canWrite && (
+        <Card tone="outlined" className="chapter__gate-note">
+          <span className="material-symbols-rounded">lock</span>
+          <div>
+            <p className="body-medium">
+              Este capítulo está por delante de tu progreso
+              {data.myChapter != null && data.myChapter > 0
+                ? ` (vas por el ${data.myChapter})`
+                : ''}
+              . Actualiza tu punto de lectura para leer y participar.
+            </p>
+            <md-text-button onClick={() => navigate(`/book/${data.bookId}`)}>
+              Ir al libro
+            </md-text-button>
+          </div>
+        </Card>
       )}
 
       {data.canWrite && onPublish && (
@@ -191,11 +209,26 @@ function DiscussionCard({
   return (
     <Card tone="default" className="disc">
       <div className="disc__head">
-        <Avatar name={d.authorName} size={38} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="who title-small">{d.authorName}</div>
-          <div className="meta body-small on-surface-variant">{d.createdAt}</div>
-        </div>
+        {d.authorUsername ? (
+          <Link to={`/u/${d.authorUsername}`} className="disc__author">
+            <Avatar name={d.authorName} size={38} />
+            <span>
+              <span className="who title-small">{d.authorName}</span>
+              <span className="meta body-small on-surface-variant" style={{ display: 'block' }}>
+                {d.createdAt}
+              </span>
+            </span>
+          </Link>
+        ) : (
+          <>
+            <Avatar name={d.authorName} size={38} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="who title-small">{d.authorName}</div>
+              <div className="meta body-small on-surface-variant">{d.createdAt}</div>
+            </div>
+          </>
+        )}
+        <span style={{ flex: 1 }} />
         {mine && !editing && (
           <span className="disc__tools">
             <md-icon-button

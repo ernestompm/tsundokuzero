@@ -70,17 +70,21 @@ export default function ChapterPage() {
     const { data: profiles } = authorIds.size
       ? await supabase
           .from('profiles')
-          .select('id, display_name')
+          .select('id, display_name, username')
           .in('id', [...authorIds])
       : { data: [] }
     const nameById = new Map(
       (profiles ?? []).map((p) => [p.id, p.display_name]),
+    )
+    const usernameById = new Map(
+      (profiles ?? []).map((p) => [p.id, p.username]),
     )
 
     const threads: ThreadDiscussion[] = list.map((d) => ({
       id: d.id,
       authorId: d.author_id,
       authorName: nameById.get(d.author_id) ?? '·',
+      authorUsername: usernameById.get(d.author_id),
       kind: d.kind,
       body: d.body,
       isClub: d.club_id != null,
@@ -102,6 +106,7 @@ export default function ChapterPage() {
       chapterNumber,
       chapterLabel: chapter?.label ?? null,
       canWrite,
+      myChapter: progress?.current_chapter ?? 0,
       discussions: threads,
     })
   }, [session, bookId, chapterNumber])

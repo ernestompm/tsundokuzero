@@ -1,81 +1,192 @@
-import { useEffect, useState } from 'react'
-import '@material/web/textfield/outlined-text-field.js'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import '@material/web/button/filled-button.js'
+import '@material/web/button/outlined-button.js'
+import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
-import { BookCover, SectionHeader } from '../../components/ui'
+import { useAuth } from '../../auth/AuthContext'
+import { Avatar, BookCover, SectionHeader } from '../../components/ui'
+import './explore.css'
 
-interface DiscoverBook {
+interface PersonRow {
+  id: string
+  username: string
+  display_name: string
+  bio: string | null
+  avatar_url: string | null
+}
+
+interface BookRow {
   id: string
   title: string
   author: string
+  cover_url: string | null
 }
 
-const CATEGORIES = ['Ficción', 'No ficción', 'Ensayo', 'Poesía', 'Misterio']
-
 export default function ExplorePage() {
-  const [books, setBooks] = useState<DiscoverBook[]>([])
+  const { session } = useAuth()
+  const navigate = useNavigate()
+  const [q, setQ] = useState('')
+  const [people, setPeople] = useState<PersonRow[] | null>(null)
+  const [books, setBooks] = useState<BookRow[] | null>(null)
+  const [following, setFollowing] = useState<Set<string>>(new Set())
+
+  // Mis seguidos (para pintar Seguir / Siguiendo)
+  useEffect(() => {
+    if (!session) return
+    supabase
+      .from('follows')
+      .select('followed_id')
+      .eq('follower_id', session.user.id)
+      .then(({ data }) =>
+        setFollowing(new Set((data ?? []).map((f) => f.followed_id))),
+      )
+  }, [session])
+
+  // Búsqueda (con debounce); sin consulta → sugerencias
+  const search = useCallback(
+    async (term: string) => {
+      if (!session) return
+      const like = `%${term}%`
+      const [{ data: profiles }, { data: bookRows }] = await Promise.all([
+        term
+          ? supabase
+              .from('profiles')
+              .select('id, username, display_name, bio, avatar_url')
+              .or(`username.ilike.${like},display_name.ilike.${like}`)
+              .neq('id', session.user.id)
+              .limit(12)
+          : supabase
+              .from('profiles')
+              .select('id, username, display_name, bio, avatar_url')
+              .neq('id', session.user.id)
+              .order('created_at')
+              .limit(12),
+        term
+          ? supabase
+              .from('books')
+              .select('id, title, author, cover_url')
+              .or(`title.ilike.${like},author.ilike.${like}`)
+              .limit(12)
+          : supabase
+              .from('books')
+              .select('id, title, author, cover_url')
+              .limit(12),
+      ])
+      setPeople(profiles ?? [])
+      setBooks(bookRows ?? [])
+    },
+    [session],
+  )
 
   useEffect(() => {
-    supabase
-      .from('poll_options')
-      .select('id, book_title, book_author')
-      .limit(12)
-      .then(({ data }) =>
-        setBooks(
-          (data ?? []).map((o) => ({
-            id: o.id,
-            title: o.book_title,
-            author: o.book_author,
-          })),
-        ),
-      )
-  }, [])
+    const t = setTimeout(() => void search(q.trim()), q ? 250 : 0)
+    return () => clearTimeout(t)
+  }, [q, search])
+
+  const toggleFollow = async (personId: string) => {
+    if (!session) return
+    const am = following.has(personId)
+    // Actualización optimista
+    setFollowing((s) => {
+      const next = new Set(s)
+      if (am) next.delete(personId)
+      else next.add(personId)
+      return next
+    })
+    if (am) {
+      await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', session.user.id)
+        .eq('followed_id', personId)
+    } else {
+      await supabase
+        .from('follows')
+        .insert({ follower_id: session.user.id, followed_id: personId })
+    }
+  }
 
   return (
-    <section>
-      <h1 className="headline-medium serif" style={{ marginBottom: 16 }}>
+    <section className="explore">
+      <h1 className="headline-medium serif" style={{ marginBottom: 14 }}>
         Explorar
       </h1>
-      <md-outlined-text-field
-        label="Busca libros, autores, personas…"
-        style={{ width: '100%' }}
-      >
-        <span slot="leading-icon" className="material-symbols-rounded">
-          search
-        </span>
-      </md-outlined-text-field>
+      <input
+        className="explore-search body-large"
+        placeholder="Busca libros, autores o personas…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        autoFocus
+      />
 
-      <SectionHeader title="Próximas lecturas del club" />
-      <div
-        style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}
-      >
-        {books.map((b) => (
-          <BookCover key={b.id} title={b.title} author={b.author} size="lg" />
-        ))}
-        {books.length === 0 && (
-          <p className="body-medium on-surface-variant">
-            Aún no hay propuestas. Aparecerán cuando el capitán abra una
-            votación.
-          </p>
-        )}
-      </div>
+      {people === null || books === null ? (
+        <div style={{ display: 'grid', placeItems: 'center', padding: 40 }}>
+          <md-circular-progress indeterminate />
+        </div>
+      ) : (
+        <>
+          <SectionHeader title={q ? 'Libros' : 'En la estantería'} />
+          {books.length === 0 ? (
+            <p className="body-medium on-surface-variant">
+              Ningún libro coincide con «{q}».
+            </p>
+          ) : (
+            <div className="explore-books">
+              {books.map((b) => (
+                <button
+                  key={b.id}
+                  className="explore-book"
+                  onClick={() => navigate(`/book/${b.id}`)}
+                >
+                  <BookCover
+                    title={b.title}
+                    author={b.author}
+                    coverUrl={b.cover_url}
+                    size="lg"
+                  />
+                  <span className="label-medium explore-book__title">
+                    {b.title}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
-      <SectionHeader title="Categorías" />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {CATEGORIES.map((c) => (
-          <span
-            key={c}
-            className="label-large"
-            style={{
-              padding: '8px 16px',
-              borderRadius: 'var(--md-sys-shape-corner-full)',
-              border: '1px solid var(--md-sys-color-outline-variant)',
-              color: 'var(--md-sys-color-on-surface-variant)',
-            }}
-          >
-            {c}
-          </span>
-        ))}
-      </div>
+          <SectionHeader title={q ? 'Personas' : 'Lectores del club'} />
+          {people.length === 0 ? (
+            <p className="body-medium on-surface-variant">
+              Nadie coincide con «{q}».
+            </p>
+          ) : (
+            <div className="explore-people">
+              {people.map((p) => (
+                <div key={p.id} className="person-row">
+                  <Link to={`/u/${p.username}`} className="person-row__id">
+                    <Avatar name={p.display_name} url={p.avatar_url} size={42} />
+                    <span className="person-row__names">
+                      <span className="title-small">{p.display_name}</span>
+                      <span className="body-small on-surface-variant">
+                        @{p.username}
+                        {p.bio ? ` · ${p.bio}` : ''}
+                      </span>
+                    </span>
+                  </Link>
+                  {following.has(p.id) ? (
+                    <md-outlined-button onClick={() => void toggleFollow(p.id)}>
+                      Siguiendo
+                    </md-outlined-button>
+                  ) : (
+                    <md-filled-button onClick={() => void toggleFollow(p.id)}>
+                      Seguir
+                    </md-filled-button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </section>
   )
 }

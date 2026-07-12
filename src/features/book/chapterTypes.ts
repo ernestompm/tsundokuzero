@@ -11,6 +11,7 @@ export interface ThreadComment {
 export interface ThreadDiscussion {
   id: string
   authorName: string
+  authorUsername?: string
   authorId: string
   kind: DiscussionKind
   body: string
@@ -26,6 +27,8 @@ export interface ChapterViewData {
   chapterLabel: string | null
   /** true si el capítulo está dentro del progreso del lector (puede escribir) */
   canWrite: boolean
+  /** capítulo por el que va el lector (para el aviso cuando canWrite=false) */
+  myChapter?: number
   discussions: ThreadDiscussion[]
 }
 

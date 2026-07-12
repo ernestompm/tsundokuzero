@@ -3,6 +3,7 @@ import type { DiscussionKind } from '../../lib/database.types'
 export interface FeedItem {
   id: string
   authorName: string
+  authorUsername?: string
   authorId: string
   bookId: string
   bookTitle: string
@@ -60,4 +61,6 @@ export interface HomeData {
   conversations: BookConvo[]
   discover: HomeDiscover[]
   feed: FeedItem[]
+  /** votación abierta del club, si la hay (banner) */
+  openPoll?: { id: string; title: string } | null
 }

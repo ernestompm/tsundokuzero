@@ -80,6 +80,14 @@ a {
 .on-surface-variant { color: var(--md-sys-color-on-surface-variant); }
 .serif { font-family: var(--tz-typeface-serif); }
 
+/* Slider de progreso (Libro y onboarding) */
+.progress-slider {
+  width: 100%;
+  margin: 10px 0 2px;
+  accent-color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+
 /* ===== Material Symbols (subconjunto desde Google Fonts, ver index.html) ===== */
 .material-symbols-rounded {
   font-family: 'Material Symbols Rounded';

@@ -15,6 +15,13 @@ const DESTINATIONS = [
   { to: '/me', icon: 'account_circle', label: 'Perfil' },
 ]
 
+/** En escritorio hay sitio: el Club también va en la barra lateral. */
+const SIDEBAR_DESTINATIONS = [
+  ...DESTINATIONS.slice(0, 3),
+  { to: '/club', icon: 'group', label: 'Club' },
+  DESTINATIONS[3],
+]
+
 function Logo() {
   return (
     <span className="logo">
@@ -54,7 +61,7 @@ export default function AppShell() {
           <Logo />
         </div>
         <nav className="sidebar__nav" aria-label="Navegación principal">
-          {DESTINATIONS.map(({ to, icon, label }) => (
+          {SIDEBAR_DESTINATIONS.map(({ to, icon, label }) => (
             <NavLink
               key={to}
               to={to}

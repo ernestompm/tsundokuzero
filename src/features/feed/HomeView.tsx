@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import {
   Avatar,
@@ -121,6 +121,17 @@ export default function HomeView({ data, onDeleteItem }: Props) {
           chevron_right
         </span>
       </button>
+
+      {/* ===== Votación abierta ===== */}
+      {data.openPoll && (
+        <button className="poll-banner" onClick={() => navigate('/club')}>
+          <span className="material-symbols-rounded">how_to_vote</span>
+          <span className="label-large">
+            Votación abierta: {data.openPoll.title}
+          </span>
+          <span className="material-symbols-rounded">chevron_right</span>
+        </button>
+      )}
 
       {/* ===== Composer ===== */}
       <button className="composer-entry" onClick={() => void openCompose()}>
@@ -245,13 +256,27 @@ function FeedCard({
   return (
     <article className="feed-card">
       <header className="feed-card__head">
-        <Avatar name={item.authorName} size={40} />
-        <div className="feed-card__meta">
-          <span className="title-small">{item.authorName}</span>
-          <span className="body-small on-surface-variant">
-            {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
-          </span>
-        </div>
+        {item.authorUsername ? (
+          <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
+            <Avatar name={item.authorName} size={40} />
+            <span className="feed-card__meta">
+              <span className="title-small">{item.authorName}</span>
+              <span className="body-small on-surface-variant">
+                {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
+              </span>
+            </span>
+          </Link>
+        ) : (
+          <div className="feed-card__author">
+            <Avatar name={item.authorName} size={40} />
+            <span className="feed-card__meta">
+              <span className="title-small">{item.authorName}</span>
+              <span className="body-small on-surface-variant">
+                {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
+              </span>
+            </span>
+          </div>
+        )}
         <span className="feed-card__chips">
           <span className="chip chip--kind label-small">
             {KIND_LABEL[item.kind]}

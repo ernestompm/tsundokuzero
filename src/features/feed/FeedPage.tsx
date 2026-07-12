@@ -29,6 +29,7 @@ export default function FeedPage() {
       { count: finished },
       { data: pollOptions },
       { data: discussions },
+      { data: openPoll },
     ] = await Promise.all([
       supabase
         .from('reading_progress')
@@ -58,6 +59,12 @@ export default function FeedPage() {
         .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at')
         .order('created_at', { ascending: false })
         .limit(40),
+      supabase
+        .from('polls')
+        .select('id, title')
+        .eq('status', 'open')
+        .limit(1)
+        .maybeSingle(),
     ])
 
     // ---- Lectura actual ----
@@ -101,7 +108,10 @@ export default function FeedPage() {
 
       const [{ data: authors }, { data: books }, { data: chapters }, { data: comments }] =
         await Promise.all([
-          supabase.from('profiles').select('id, display_name').in('id', authorIds),
+          supabase
+            .from('profiles')
+            .select('id, display_name, username')
+            .in('id', authorIds),
           supabase
             .from('books')
             .select('id, title, author, cover_url')
@@ -117,6 +127,7 @@ export default function FeedPage() {
         ])
 
       const nameById = new Map((authors ?? []).map((a) => [a.id, a.display_name]))
+      const usernameById = new Map((authors ?? []).map((a) => [a.id, a.username]))
       const bookById = new Map((books ?? []).map((b) => [b.id, b]))
       const labelByKey = new Map(
         (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
@@ -129,6 +140,7 @@ export default function FeedPage() {
         id: d.id,
         authorId: d.author_id,
         authorName: nameById.get(d.author_id) ?? '·',
+        authorUsername: usernameById.get(d.author_id),
         bookId: d.book_id,
         bookTitle: bookById.get(d.book_id)?.title ?? '',
         chapterNumber: d.chapter_number,
@@ -183,6 +195,7 @@ export default function FeedPage() {
         author: o.book_author,
       })),
       feed,
+      openPoll: openPoll ?? null,
     })
   }, [session, profile])
 

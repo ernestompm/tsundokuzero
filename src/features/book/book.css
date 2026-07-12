@@ -38,6 +38,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.book-progress__save {
+  width: 100%;
+  margin-top: 10px;
+}
 
 /* ---- Botón de entrada a la conversación ---- */
 .book-enter {

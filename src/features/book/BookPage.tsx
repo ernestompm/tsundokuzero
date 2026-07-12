@@ -91,6 +91,8 @@ export default function BookPage() {
       user_id: session.user.id,
       book_id: data.bookId,
       current_chapter: n,
+      // Al llegar al último capítulo el libro pasa a «Leídos» solo.
+      status: n >= data.totalChapters ? 'finished' : 'reading',
     })
     if (!error) await load()
     setBusy(false)

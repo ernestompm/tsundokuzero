@@ -225,10 +225,37 @@
   align-items: center;
   gap: 11px;
 }
+.feed-card__author {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+}
 .feed-card__meta {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+}
+
+/* ---- Banner de votación ---- */
+.poll-banner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: none;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.poll-banner .label-large {
   flex: 1;
 }
 .feed-card__chips {

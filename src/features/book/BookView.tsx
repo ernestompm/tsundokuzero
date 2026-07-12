@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/button/filled-button.js'
 import { BookCover, Card } from '../../components/ui'
@@ -20,6 +20,15 @@ export default function BookView({
 }: Props) {
   const [showAll, setShowAll] = useState(false)
   const { currentChapter, totalChapters } = data
+  // Borrador del slider: se confirma con «Guardar», nada de 40 toques.
+  const [draft, setDraft] = useState(currentChapter)
+  useEffect(() => setDraft(currentChapter), [currentChapter])
+
+  const draftLabel =
+    draft === 0
+      ? 'Sin empezar'
+      : (data.chapters.find((c) => c.number === draft)?.label ??
+        `Capítulo ${draft}`)
 
   const unlocked = data.chapters.filter((c) => c.unlocked)
   const withActivity = unlocked.filter((c) => c.commentCount > 0)
@@ -46,33 +55,45 @@ export default function BookView({
             <div className="book-progress__stepper">
               <md-icon-button
                 aria-label="Capítulo anterior"
-                disabled={currentChapter <= 0 || busy || undefined}
-                onClick={() => onSetChapter(currentChapter - 1)}
+                disabled={draft <= 0 || busy || undefined}
+                onClick={() => setDraft((d) => Math.max(0, d - 1))}
               >
                 <span className="material-symbols-rounded">remove</span>
               </md-icon-button>
               <div className="book-progress__label">
-                {currentChapter === 0 ? (
-                  <span className="title-medium">Sin empezar</span>
-                ) : (
-                  <>
-                    <span className="title-medium serif">
-                      {data.currentLabel ?? `Capítulo ${currentChapter}`}
-                    </span>
-                    <span className="label-small on-surface-variant">
-                      {currentChapter} de {totalChapters}
-                    </span>
-                  </>
-                )}
+                <span className="title-medium serif">{draftLabel}</span>
+                <span className="label-small on-surface-variant">
+                  {draft > 0 ? `${draft} de ${totalChapters}` : `${totalChapters} capítulos`}
+                </span>
               </div>
               <md-icon-button
                 aria-label="Capítulo siguiente"
-                disabled={currentChapter >= totalChapters || busy || undefined}
-                onClick={() => onSetChapter(currentChapter + 1)}
+                disabled={draft >= totalChapters || busy || undefined}
+                onClick={() => setDraft((d) => Math.min(totalChapters, d + 1))}
               >
                 <span className="material-symbols-rounded">add</span>
               </md-icon-button>
             </div>
+            <input
+              type="range"
+              className="progress-slider"
+              min={0}
+              max={totalChapters}
+              value={draft}
+              aria-label="Capítulo por el que vas"
+              onChange={(e) => setDraft(Number(e.target.value))}
+            />
+            {draft !== currentChapter && (
+              <md-filled-button
+                className="book-progress__save"
+                disabled={busy || undefined}
+                onClick={() => onSetChapter(draft)}
+              >
+                {draft === 0
+                  ? 'Marcar como sin empezar'
+                  : `Guardar · capítulo ${draft}`}
+              </md-filled-button>
+            )}
           </div>
         </div>
       </Card>

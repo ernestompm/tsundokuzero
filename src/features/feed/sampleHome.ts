@@ -14,6 +14,7 @@ export const SAMPLE_HOME: HomeData = {
     percent: 25,
   },
   stats: { ideas: 12, replies: 34, finished: 3 },
+  openPoll: { id: 'poll', title: 'Libro de agosto' },
   conversations: [
     {
       bookId: 'sample',

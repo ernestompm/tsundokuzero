@@ -1,0 +1,104 @@
+.profile {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 20px 16px;
+  border-radius: 20px;
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow: 0 1px 2px rgba(35, 35, 30, 0.03);
+}
+.profile-bio {
+  max-width: 380px;
+}
+.profile-counts {
+  display: flex;
+  gap: 22px;
+  margin: 10px 0 12px;
+}
+
+.profile-edit {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.profile-input {
+  width: 100%;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 12px 14px;
+  background: var(--md-sys-color-surface-container-lowest);
+  color: inherit;
+  font: inherit;
+  outline: none;
+  resize: vertical;
+}
+.profile-input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+.profile-edit__actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.profile-error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+
+.profile-sec {
+  margin: 14px 2px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.profile-ideas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.idea-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.idea-row:hover {
+  border-color: var(--md-sys-color-primary);
+}
+.idea-row__body {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}

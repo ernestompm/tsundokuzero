@@ -18,6 +18,7 @@ import ChapterView from './features/book/ChapterView'
 import { SAMPLE_CHAPTER } from './features/book/sampleChapter'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
+import UserProfilePage from './features/profile/UserProfilePage'
 import ExplorePage from './features/explore/ExplorePage'
 import LibraryPage from './features/library/LibraryPage'
 import AdminPage from './features/admin/AdminPage'
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
+            <Route path="u/:username" element={<UserProfilePage />} />
             <Route path="admin" element={<AdminPage />} />
           </Route>
         </Route>

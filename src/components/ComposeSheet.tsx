@@ -14,6 +14,7 @@ interface Props {
   canWrite: boolean
   clubAvailable?: boolean
   submitting?: boolean
+  error?: string | null
   onPublish: (kind: DiscussionKind, body: string, toClub: boolean) => void
   onClose: () => void
   onGoToBook?: () => void
@@ -29,6 +30,7 @@ export default function ComposeSheet({
   canWrite,
   clubAvailable = true,
   submitting,
+  error,
   onPublish,
   onClose,
   onGoToBook,
@@ -108,13 +110,15 @@ export default function ComposeSheet({
               </button>
             )}
 
+            {error && <p className="sheet__error body-medium">{error}</p>}
+
             <div className="sheet__actions">
               <md-text-button onClick={onClose}>Cancelar</md-text-button>
               <md-filled-button
                 disabled={!body.trim() || submitting || undefined}
                 onClick={() => onPublish(kind, body.trim(), clubAvailable && toClub)}
               >
-                Publicar
+                {submitting ? 'Publicando…' : 'Publicar'}
               </md-filled-button>
             </div>
           </>

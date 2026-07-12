@@ -9,6 +9,25 @@
   margin-bottom: 16px;
 }
 
+.chapter__gate-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.chapter__gate-note .material-symbols-rounded {
+  color: var(--md-sys-color-primary);
+  font-size: 22px;
+}
+
+.disc__author {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+  min-width: 0;
+}
+
 /* ---- Hilo ---- */
 .thread {
   display: flex;

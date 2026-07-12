@@ -214,6 +214,15 @@ export default function OnboardingPage() {
                     <span className="material-symbols-rounded">add</span>
                   </md-icon-button>
                 </div>
+                <input
+                  type="range"
+                  className="progress-slider"
+                  min={0}
+                  max={book.total_chapters}
+                  value={chapter}
+                  aria-label="Capítulo por el que vas"
+                  onChange={(e) => setChapter(Number(e.target.value))}
+                />
                 <md-filled-button
                   type="button"
                   disabled={busy || undefined}

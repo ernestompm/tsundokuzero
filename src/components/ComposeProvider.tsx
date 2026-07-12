@@ -33,12 +33,14 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [anchor, setAnchor] = useState<Anchor | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
 
   const openCompose = useCallback(async () => {
     if (!session) return
     setOpen(true)
     setAnchor(null)
+    setError(null)
 
     // Ancla = tu lectura más reciente (multi-libro).
     const { data: prog } = await supabase
@@ -89,6 +91,7 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
   ) => {
     if (!session || !anchor) return
     setSubmitting(true)
+    setError(null)
     const { error } = await supabase.from('discussions').insert({
       book_id: anchor.bookId,
       chapter_number: anchor.chapterNumber,
@@ -98,7 +101,12 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
       club_id: toClub ? anchor.clubId : null,
     })
     setSubmitting(false)
-    if (!error) {
+    if (error) {
+      setError(
+        'No se pudo publicar. Revisa tu conexión e inténtalo de nuevo. ' +
+          `(${error.message})`,
+      )
+    } else {
       setOpen(false)
       setVersion((v) => v + 1)
     }
@@ -115,6 +123,7 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
         canWrite={(anchor?.chapterNumber ?? 0) > 0}
         clubAvailable={anchor?.clubId != null}
         submitting={submitting}
+        error={error}
         onPublish={publish}
         onClose={() => setOpen(false)}
         onGoToBook={() => {
