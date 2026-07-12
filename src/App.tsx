@@ -5,10 +5,13 @@ import AppShell from './components/AppShell'
 import LoginPage from './auth/LoginPage'
 import OnboardingPage from './auth/OnboardingPage'
 import FeedPage from './features/feed/FeedPage'
+import HomeView from './features/feed/HomeView'
+import { SAMPLE_HOME } from './features/feed/sampleHome'
 import BookPage from './features/book/BookPage'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
-import PeoplePage from './features/people/PeoplePage'
+import ExplorePage from './features/explore/ExplorePage'
+import LibraryPage from './features/library/LibraryPage'
 import AdminPage from './features/admin/AdminPage'
 
 export default function App() {
@@ -16,14 +19,21 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Vista de diseño sin login (revisión de apariencia) */}
+        <Route path="/preview" element={<AppShell />}>
+          <Route index element={<HomeView data={SAMPLE_HOME} />} />
+        </Route>
+
         <Route element={<RequireAuth />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<AppShell />}>
             <Route index element={<FeedPage />} />
+            <Route path="explore" element={<ExplorePage />} />
+            <Route path="library" element={<LibraryPage />} />
             <Route path="book" element={<BookPage />} />
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
-            <Route path="people" element={<PeoplePage />} />
             <Route path="admin" element={<AdminPage />} />
           </Route>
         </Route>
