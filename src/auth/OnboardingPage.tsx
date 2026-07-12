@@ -6,7 +6,7 @@ import '@material/web/iconbutton/icon-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
-import type { Book, Club } from '../lib/database.types'
+import type { Book, Chapter, Club } from '../lib/database.types'
 import './auth.css'
 
 /**
@@ -24,6 +24,7 @@ export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState('')
   const [club, setClub] = useState<Club | null>(null)
   const [book, setBook] = useState<Book | null>(null)
+  const [chapters, setChapters] = useState<Chapter[]>([])
   const [chapter, setChapter] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,12 +39,20 @@ export default function OnboardingPage() {
       .then(async ({ data: clubData }) => {
         setClub(clubData)
         if (clubData?.current_book_id) {
-          const { data: bookData } = await supabase
-            .from('books')
-            .select('*')
-            .eq('id', clubData.current_book_id)
-            .maybeSingle()
+          const [{ data: bookData }, { data: chapterData }] = await Promise.all([
+            supabase
+              .from('books')
+              .select('*')
+              .eq('id', clubData.current_book_id)
+              .maybeSingle(),
+            supabase
+              .from('chapters')
+              .select('*')
+              .eq('book_id', clubData.current_book_id)
+              .order('number'),
+          ])
           setBook(bookData)
+          setChapters(chapterData ?? [])
         }
       })
   }, [])
@@ -177,8 +186,23 @@ export default function OnboardingPage() {
                   >
                     <span className="material-symbols-rounded">remove</span>
                   </md-icon-button>
-                  <span className="onboarding-chapter headline-small">
-                    {chapter === 0 ? 'Sin empezar' : `Capítulo ${chapter}`}
+                  <span className="onboarding-chapter">
+                    {chapter === 0 ? (
+                      <span className="title-medium">Sin empezar</span>
+                    ) : (
+                      <>
+                        <span className="title-medium serif">
+                          {chapters.find((c) => c.number === chapter)?.label ??
+                            `Capítulo ${chapter}`}
+                        </span>
+                        <span
+                          className="label-small on-surface-variant"
+                          style={{ display: 'block', marginTop: 2 }}
+                        >
+                          {chapter} de {book.total_chapters}
+                        </span>
+                      </>
+                    )}
                   </span>
                   <md-icon-button
                     aria-label="Capítulo siguiente"

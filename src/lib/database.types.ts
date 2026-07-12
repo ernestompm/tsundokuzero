@@ -169,6 +169,10 @@ export type Database = {
         Args: { target: string; value: boolean }
         Returns: undefined
       }
+      add_book_chapter: {
+        Args: { book: string; title: string }
+        Returns: number
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
