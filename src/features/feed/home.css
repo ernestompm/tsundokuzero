@@ -4,9 +4,6 @@
 .home {
   display: block;
 }
-.home__rail {
-  display: none;
-}
 
 .home__greeting {
   margin: 8px 0 20px;
@@ -137,41 +134,6 @@
   flex: none;
 }
 
-/* ---- Raíl derecho ---- */
-.rail-intro .headline-small {
-  color: var(--md-sys-color-primary);
-}
-.rail-features {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin: 22px 0;
-}
-.rail-feature {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.rail-feature__icon {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-}
-.rail-quote {
-  margin-top: 8px;
-}
-.rail-quote__text {
-  font-size: 18px;
-  line-height: 1.4;
-  margin-bottom: 10px;
-}
-
 /* ===================== ESCRITORIO (>=1040px) ===================== */
 @media (min-width: 1040px) {
   .home__greeting {
@@ -199,20 +161,5 @@
   }
   .conv-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-}
-
-/* ===== Pantallas anchas (>=1300px): aparece el raíl derecho ===== */
-@media (min-width: 1300px) {
-  .home {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 40px;
-    align-items: start;
-  }
-  .home__rail {
-    display: block;
-    position: sticky;
-    top: 24px;
   }
 }

@@ -10,29 +10,6 @@ import {
 import type { HomeData } from './homeTypes'
 import './home.css'
 
-const FEATURES = [
-  {
-    icon: 'visibility',
-    title: 'Lee a tu ritmo',
-    desc: 'Dinos en qué punto vas y solo verás lo que ya has leído.',
-  },
-  {
-    icon: 'chat_bubble',
-    title: 'Conversaciones seguras',
-    desc: 'Nada de spoilers. Todo filtrado por tu progreso.',
-  },
-  {
-    icon: 'edit',
-    title: 'Escribe y comparte',
-    desc: 'Crea posts, reseñas y ensayos en tu muro.',
-  },
-  {
-    icon: 'group',
-    title: 'Comunidad real',
-    desc: 'Lee acompañado de quienes van a tu mismo ritmo.',
-  },
-]
-
 export default function HomeView({ data }: { data: HomeData }) {
   const navigate = useNavigate()
   const { reading, stats, conversations, discover } = data
@@ -183,35 +160,6 @@ export default function HomeView({ data }: { data: HomeData }) {
           </>
         )}
       </div>
-
-      {/* ---- Raíl derecho (solo escritorio) ---- */}
-      <aside className="home__rail">
-        <div className="rail-intro">
-          <h2 className="headline-small serif">Sin spoilers.</h2>
-          <p className="body-medium on-surface-variant">
-            Solo conversaciones que van a tu ritmo.
-          </p>
-        </div>
-        <div className="rail-features">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="rail-feature">
-              <span className="rail-feature__icon material-symbols-rounded">
-                {f.icon}
-              </span>
-              <div>
-                <div className="title-small">{f.title}</div>
-                <div className="body-small on-surface-variant">{f.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Card tone="soft" className="rail-quote">
-          <p className="rail-quote__text serif">
-            «Acumular libros sin leer es el primer paso para leerlos todos.»
-          </p>
-          <p className="label-medium on-surface-variant">— Tsundoku Zero</p>
-        </Card>
-      </aside>
     </div>
   )
 }
