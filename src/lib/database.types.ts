@@ -10,7 +10,7 @@ export type PostVisibility = 'followers' | 'club' | 'private'
 export type ClubRole = 'member' | 'captain'
 export type PollStatus = 'open' | 'closed'
 
-export interface Profile {
+export type Profile = {
   id: string
   username: string
   display_name: string
@@ -19,13 +19,13 @@ export interface Profile {
   created_at: string
 }
 
-export interface Follow {
+export type Follow = {
   follower_id: string
   followed_id: string
   created_at: string
 }
 
-export interface Book {
+export type Book = {
   id: string
   title: string
   author: string
@@ -33,14 +33,14 @@ export interface Book {
   total_chapters: number
 }
 
-export interface Chapter {
+export type Chapter = {
   id: string
   book_id: string
   number: number
   label: string | null
 }
 
-export interface ReadingProgress {
+export type ReadingProgress = {
   user_id: string
   book_id: string
   current_chapter: number
@@ -48,7 +48,7 @@ export interface ReadingProgress {
   updated_at: string
 }
 
-export interface Discussion {
+export type Discussion = {
   id: string
   book_id: string
   chapter_number: number
@@ -59,7 +59,7 @@ export interface Discussion {
   created_at: string
 }
 
-export interface DiscussionComment {
+export type DiscussionComment = {
   id: string
   discussion_id: string
   author_id: string
@@ -67,7 +67,7 @@ export interface DiscussionComment {
   created_at: string
 }
 
-export interface Post {
+export type Post = {
   id: string
   author_id: string
   title: string | null
@@ -78,7 +78,7 @@ export interface Post {
   created_at: string
 }
 
-export interface Club {
+export type Club = {
   id: string
   name: string
   slug: string
@@ -87,14 +87,14 @@ export interface Club {
   created_at: string
 }
 
-export interface ClubMember {
+export type ClubMember = {
   club_id: string
   user_id: string
   role: ClubRole
   joined_at: string
 }
 
-export interface Poll {
+export type Poll = {
   id: string
   club_id: string
   title: string
@@ -104,7 +104,7 @@ export interface Poll {
   winner_option_id: string | null
 }
 
-export interface PollOption {
+export type PollOption = {
   id: string
   poll_id: string
   book_title: string
@@ -112,7 +112,7 @@ export interface PollOption {
   note: string | null
 }
 
-export interface PollVote {
+export type PollVote = {
   poll_id: string
   option_id: string
   user_id: string
@@ -126,7 +126,7 @@ type TableDef<Row, Required extends keyof Row, Generated extends keyof Row> = {
   Relationships: []
 }
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: TableDef<Profile, 'id' | 'username' | 'display_name', 'created_at'>
