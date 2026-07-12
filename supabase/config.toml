@@ -1,0 +1,36 @@
+# Config de Supabase CLI / integración GitHub.
+# project_id debe coincidir con la ref del proyecto (la de la URL:
+# https://rigiljswurolsockpkfv.supabase.co).
+project_id = "rigiljswurolsockpkfv"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.migrations]
+# Las migraciones viven en supabase/migrations (orden por prefijo temporal).
+schema_paths = []
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# En producción, Supabase usa la Site URL configurada en el dashboard.
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true

@@ -1,8 +1,10 @@
+import { Link } from 'react-router-dom'
 import '@material/web/button/outlined-button.js'
+import '@material/web/button/filled-tonal-button.js'
 import { useAuth } from '../../auth/AuthContext'
 
 export default function ProfilePage() {
-  const { profile, signOut } = useAuth()
+  const { profile, isSuperAdmin, signOut } = useAuth()
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -31,6 +33,17 @@ export default function ProfilePage() {
       <p className="body-medium on-surface-variant">
         Aquí irá tu muro: entradas de blog y notas compartidas (Fase 3).
       </p>
+
+      {isSuperAdmin && (
+        <Link to="/admin" style={{ display: 'block' }}>
+          <md-filled-tonal-button type="button" style={{ width: '100%' }}>
+            <span slot="icon" className="material-symbols-rounded">
+              admin_panel_settings
+            </span>
+            Gestión de usuarios
+          </md-filled-tonal-button>
+        </Link>
+      )}
 
       <md-outlined-button type="button" onClick={() => void signOut()}>
         Cerrar sesión

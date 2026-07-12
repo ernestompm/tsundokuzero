@@ -16,6 +16,8 @@ interface AuthState {
   profile: Profile | null
   /** true hasta conocer la sesión inicial (y su perfil, si la hay) */
   loading: boolean
+  /** claim is_super_admin del JWT (app_metadata, no editable por el usuario) */
+  isSuperAdmin: boolean
   refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -74,9 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }, [])
 
+  const isSuperAdmin =
+    session?.user.app_metadata?.is_super_admin === true
+
   return (
     <AuthContext.Provider
-      value={{ session, profile, loading, refreshProfile, signOut }}
+      value={{
+        session,
+        profile,
+        loading,
+        isSuperAdmin,
+        refreshProfile,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

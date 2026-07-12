@@ -152,7 +152,24 @@ export type Database = {
       poll_votes: TableDef<PollVote, 'poll_id' | 'option_id' | 'user_id', 'created_at'>
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      admin_list_users: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          username: string
+          display_name: string
+          email: string
+          is_super_admin: boolean
+          club_role: ClubRole | null
+          created_at: string
+        }[]
+      }
+      admin_set_super_admin: {
+        Args: { target: string; value: boolean }
+        Returns: undefined
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

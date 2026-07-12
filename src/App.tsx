@@ -9,6 +9,7 @@ import BookPage from './features/book/BookPage'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
 import PeoplePage from './features/people/PeoplePage'
+import AdminPage from './features/admin/AdminPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
             <Route path="people" element={<PeoplePage />} />
+            <Route path="admin" element={<AdminPage />} />
           </Route>
         </Route>
       </Routes>
