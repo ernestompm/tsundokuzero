@@ -14,7 +14,7 @@ import './home.css'
 
 interface Props {
   data: HomeData
-  onDeleteItem?: (id: string) => void
+  onDeleteItem?: (id: string, type: 'idea' | 'post') => void
 }
 
 export default function HomeView({ data, onDeleteItem }: Props) {
@@ -248,10 +248,18 @@ function FeedCard({
 }: {
   item: FeedItem
   mine: boolean
-  onDelete?: (id: string) => void
+  onDelete?: (id: string, type: 'idea' | 'post') => void
 }) {
   const navigate = useNavigate()
-  const go = () => navigate(`/book/${item.bookId}/chapter/${item.chapterNumber}`)
+  const isIdea = item.type === 'idea'
+  const go = () => {
+    if (isIdea) navigate(`/book/${item.bookId}/chapter/${item.chapterNumber}`)
+    else if (item.authorUsername) navigate(`/u/${item.authorUsername}`)
+  }
+
+  const metaLine = isIdea
+    ? `${item.createdAt} · ${item.bookTitle} · Cap. ${item.chapterNumber}`
+    : `${item.createdAt} · En su muro`
 
   return (
     <article className="feed-card">
@@ -261,9 +269,7 @@ function FeedCard({
             <Avatar name={item.authorName} size={40} />
             <span className="feed-card__meta">
               <span className="title-small">{item.authorName}</span>
-              <span className="body-small on-surface-variant">
-                {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
-              </span>
+              <span className="body-small on-surface-variant">{metaLine}</span>
             </span>
           </Link>
         ) : (
@@ -271,45 +277,52 @@ function FeedCard({
             <Avatar name={item.authorName} size={40} />
             <span className="feed-card__meta">
               <span className="title-small">{item.authorName}</span>
-              <span className="body-small on-surface-variant">
-                {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
-              </span>
+              <span className="body-small on-surface-variant">{metaLine}</span>
             </span>
           </div>
         )}
         <span className="feed-card__chips">
           <span className="chip chip--kind label-small">
-            {KIND_LABEL[item.kind]}
+            {isIdea && item.kind ? KIND_LABEL[item.kind] : 'Entrada'}
           </span>
           {item.isClub && <span className="chip chip--club label-small">Club</span>}
         </span>
       </header>
 
-      <p className="feed-card__body body-large" onClick={go}>
+      <div className="feed-card__body body-large" onClick={go}>
+        {item.postTitle && (
+          <div className="title-medium serif" style={{ marginBottom: 4 }}>
+            {item.postTitle}
+          </div>
+        )}
         {item.body}
-      </p>
+      </div>
 
       <footer className="feed-card__foot">
-        <button className="feed-action" onClick={go}>
-          <span className="material-symbols-rounded">chat_bubble</span>
-          {item.commentCount > 0 ? item.commentCount : 'Responder'}
-        </button>
+        {isIdea && (
+          <button className="feed-action" onClick={go}>
+            <span className="material-symbols-rounded">chat_bubble</span>
+            {item.commentCount > 0 ? item.commentCount : 'Responder'}
+          </button>
+        )}
         {mine && (
           <>
-            <button className="feed-action" onClick={go}>
-              <span className="material-symbols-rounded">edit</span>
-              Editar
-            </button>
+            {isIdea && (
+              <button className="feed-action" onClick={go}>
+                <span className="material-symbols-rounded">edit</span>
+                Editar
+              </button>
+            )}
             {onDelete && (
               <button
                 className="feed-action feed-action--danger"
                 onClick={() => {
                   if (
                     window.confirm(
-                      '¿Eliminar esta publicación y sus respuestas?',
+                      '¿Eliminar esta publicación definitivamente?',
                     )
                   )
-                    onDelete(item.id)
+                    onDelete(item.id, item.type)
                 }}
               >
                 <span className="material-symbols-rounded">delete</span>

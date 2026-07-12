@@ -11,6 +11,7 @@ export default function BookPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState<BookViewData | null>(null)
+  const [missing, setMissing] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -34,9 +35,11 @@ export default function BookPage() {
           .order('number'),
       ])
     if (!book) {
+      setMissing(true)
       setData(null)
       return
     }
+    setMissing(false)
 
     const current = progress?.current_chapter ?? 0
     const labelByNumber = new Map(
@@ -96,6 +99,17 @@ export default function BookPage() {
     })
     if (!error) await load()
     setBusy(false)
+  }
+
+  if (missing) {
+    return (
+      <section style={{ textAlign: 'center', padding: 48 }}>
+        <p className="body-large">Este libro ya no está en la estantería.</p>
+        <p className="body-medium on-surface-variant">
+          Puede que lo hayan retirado. Vuelve al inicio y sigue leyendo.
+        </p>
+      </section>
+    )
   }
 
   if (!data) {

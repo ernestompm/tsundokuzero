@@ -54,6 +54,7 @@ export const SAMPLE_HOME: HomeData = {
   feed: [
     {
       id: '1',
+      type: 'idea',
       authorName: 'Alba Ferrer',
       authorId: 'a',
       bookId: 'sample',
@@ -68,6 +69,7 @@ export const SAMPLE_HOME: HomeData = {
     },
     {
       id: '2',
+      type: 'idea',
       authorName: 'Chas Molina',
       authorId: 'c',
       bookId: 'sample',
@@ -82,17 +84,15 @@ export const SAMPLE_HOME: HomeData = {
     },
     {
       id: '3',
+      type: 'post',
+      postTitle: 'Por qué releo en verano',
       authorName: 'Carmen Ruiz',
       authorId: 'b',
-      bookId: 'sample',
-      bookTitle: 'La Biblioteca de la Medianoche',
-      chapterNumber: 5,
-      chapterLabel: 'Vivir es sufrir',
-      kind: 'comment',
-      body: 'Este capítulo me ha dejado tocada. La forma en la que describe el peso de los arrepentimientos es demasiado real.',
+      kind: null,
+      body: 'Hay libros que solo funcionan con calor y horas largas. Este año repito tres, y uno es el del club.',
       isClub: true,
       createdAt: 'ayer',
-      commentCount: 5,
+      commentCount: 0,
     },
   ],
 }

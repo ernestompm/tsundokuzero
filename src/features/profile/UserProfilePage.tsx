@@ -19,6 +19,13 @@ interface IdeaRow {
   createdAt: string
 }
 
+interface PostRow {
+  id: string
+  title: string | null
+  body: string
+  createdAt: string
+}
+
 export default function UserProfilePage() {
   const { username } = useParams()
   const { session, profile: me } = useAuth()
@@ -28,6 +35,7 @@ export default function UserProfilePage() {
   const [following, setFollowing] = useState(0)
   const [amFollowing, setAmFollowing] = useState(false)
   const [ideas, setIdeas] = useState<IdeaRow[]>([])
+  const [posts, setPosts] = useState<PostRow[]>([])
 
   const load = useCallback(async () => {
     if (!username || !session) return
@@ -47,6 +55,7 @@ export default function UserProfilePage() {
       { count: followingCount },
       { data: myFollow },
       { data: discussions },
+      { data: theirPosts },
     ] = await Promise.all([
       supabase
         .from('follows')
@@ -69,11 +78,26 @@ export default function UserProfilePage() {
         .eq('author_id', p.id)
         .order('created_at', { ascending: false })
         .limit(20),
+      // Su muro: RLS lo muestra si le sigues o si es del club
+      supabase
+        .from('posts')
+        .select('id, title, body, created_at')
+        .eq('author_id', p.id)
+        .order('created_at', { ascending: false })
+        .limit(10),
     ])
 
     setFollowers(followersCount ?? 0)
     setFollowing(followingCount ?? 0)
     setAmFollowing(myFollow != null)
+    setPosts(
+      (theirPosts ?? []).map((post) => ({
+        id: post.id,
+        title: post.title,
+        body: post.body,
+        createdAt: timeAgo(post.created_at),
+      })),
+    )
 
     const list = discussions ?? []
     const bookIds = [...new Set(list.map((d) => d.book_id))]
@@ -160,6 +184,21 @@ export default function UserProfilePage() {
           </md-filled-button>
         )}
       </div>
+
+      {posts.length > 0 && (
+        <>
+          <h2 className="title-small profile-sec">Su muro</h2>
+          <div className="profile-ideas">
+            {posts.map((p) => (
+              <div key={p.id} className="idea-row" style={{ cursor: 'default' }}>
+                {p.title && <span className="title-small serif">{p.title}</span>}
+                <span className="body-medium idea-row__body">{p.body}</span>
+                <span className="body-small on-surface-variant">{p.createdAt}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="title-small profile-sec">Sus ideas (hasta tu progreso)</h2>
       {ideas.length === 0 ? (

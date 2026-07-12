@@ -19,15 +19,30 @@ interface IdeaRow {
   createdAt: string
 }
 
+interface PostRow {
+  id: string
+  title: string | null
+  body: string
+  isClub: boolean
+  createdAt: string
+}
+
 export default function ProfilePage() {
   const { session, profile, isSuperAdmin, refreshProfile, signOut } = useAuth()
   const navigate = useNavigate()
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
+  const [ideasCount, setIdeasCount] = useState(0)
   const [ideas, setIdeas] = useState<IdeaRow[]>([])
+  const [posts, setPosts] = useState<PostRow[]>([])
+  const [clubId, setClubId] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
+  const [writing, setWriting] = useState(false)
+  const [postTitle, setPostTitle] = useState('')
+  const [postBody, setPostBody] = useState('')
+  const [postToClub, setPostToClub] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -36,7 +51,10 @@ export default function ProfilePage() {
     const [
       { count: followersCount },
       { count: followingCount },
+      { count: myIdeasCount },
       { data: discussions },
+      { data: myPosts },
+      { data: club },
     ] = await Promise.all([
       supabase
         .from('follows')
@@ -48,13 +66,40 @@ export default function ProfilePage() {
         .eq('follower_id', session.user.id),
       supabase
         .from('discussions')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', session.user.id),
+      supabase
+        .from('discussions')
         .select('id, book_id, chapter_number, body, created_at')
         .eq('author_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(10),
+      supabase
+        .from('posts')
+        .select('id, title, body, club_id, created_at')
+        .eq('author_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('clubs')
+        .select('id')
+        .order('created_at')
+        .limit(1)
+        .maybeSingle(),
     ])
     setFollowers(followersCount ?? 0)
     setFollowing(followingCount ?? 0)
+    setIdeasCount(myIdeasCount ?? 0)
+    setClubId(club?.id ?? null)
+    setPosts(
+      (myPosts ?? []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        body: p.body,
+        isClub: p.club_id != null,
+        createdAt: timeAgo(p.created_at),
+      })),
+    )
 
     const list = discussions ?? []
     const bookIds = [...new Set(list.map((d) => d.book_id))]
@@ -85,6 +130,35 @@ export default function ProfilePage() {
     setEditing(true)
   }
 
+  const publishPost = async () => {
+    if (!session) return
+    const body = postBody.trim()
+    if (!body) return
+    setBusy(true)
+    const { error } = await supabase.from('posts').insert({
+      author_id: session.user.id,
+      title: postTitle.trim() || null,
+      body,
+      club_id: postToClub ? clubId : null,
+      visibility: 'followers',
+    })
+    setBusy(false)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    setPostTitle('')
+    setPostBody('')
+    setWriting(false)
+    await load()
+  }
+
+  const deletePost = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta entrada de tu muro?')) return
+    await supabase.from('posts').delete().eq('id', id)
+    await load()
+  }
+
   const saveEdit = async () => {
     if (!session) return
     const display_name = nameDraft.trim()
@@ -108,6 +182,7 @@ export default function ProfilePage() {
 
   return (
     <section className="profile">
+      {error && <p className="profile-error body-medium">{error}</p>}
       <div className="profile-head">
         <Avatar
           name={profile?.display_name ?? '·'}
@@ -116,7 +191,6 @@ export default function ProfilePage() {
         />
         {editing ? (
           <div className="profile-edit">
-            {error && <p className="profile-error body-medium">{error}</p>}
             <input
               className="profile-input body-large"
               placeholder="Nombre visible"
@@ -160,7 +234,7 @@ export default function ProfilePage() {
                 <span className="on-surface-variant">seguidores</span>
               </span>
               <span>
-                <b>{ideas.length}</b>{' '}
+                <b>{ideasCount}</b>{' '}
                 <span className="on-surface-variant">ideas</span>
               </span>
             </div>
@@ -170,6 +244,77 @@ export default function ProfilePage() {
           </>
         )}
       </div>
+
+      <h2 className="title-small profile-sec">Mi muro</h2>
+      {writing ? (
+        <div className="post-composer">
+          <input
+            className="profile-input body-large"
+            placeholder="Título (opcional)"
+            maxLength={120}
+            value={postTitle}
+            onChange={(e) => setPostTitle(e.target.value)}
+          />
+          <textarea
+            className="profile-input body-medium"
+            placeholder="Escribe tu entrada: reseñas, ensayos, tu pila de lectura…"
+            rows={5}
+            value={postBody}
+            onChange={(e) => setPostBody(e.target.value)}
+          />
+          <div className="post-composer__row">
+            <button
+              type="button"
+              className={`club-toggle label-medium${postToClub ? ' active' : ''}`}
+              onClick={() => setPostToClub((v) => !v)}
+            >
+              <span className="material-symbols-rounded">
+                {postToClub ? 'check_circle' : 'radio_button_unchecked'}
+              </span>
+              Compartir con el club
+            </button>
+            <span style={{ flex: 1 }} />
+            <md-text-button onClick={() => setWriting(false)}>
+              Cancelar
+            </md-text-button>
+            <md-filled-button
+              disabled={!postBody.trim() || busy || undefined}
+              onClick={() => void publishPost()}
+            >
+              Publicar
+            </md-filled-button>
+          </div>
+        </div>
+      ) : (
+        <md-outlined-button onClick={() => setWriting(true)}>
+          <span slot="icon" className="material-symbols-rounded">edit</span>
+          Nueva entrada
+        </md-outlined-button>
+      )}
+
+      {posts.length > 0 && (
+        <div className="profile-ideas">
+          {posts.map((p) => (
+            <div key={p.id} className="idea-row" style={{ cursor: 'default' }}>
+              {p.title && (
+                <span className="title-small serif">{p.title}</span>
+              )}
+              <span className="body-medium idea-row__body">{p.body}</span>
+              <span className="body-small on-surface-variant post-row__meta">
+                {p.createdAt}
+                {p.isClub ? ' · Club' : ''}
+                <button
+                  className="feed-action feed-action--danger"
+                  onClick={() => void deletePost(p.id)}
+                >
+                  <span className="material-symbols-rounded">delete</span>
+                  Eliminar
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h2 className="title-small profile-sec">Mis últimas ideas</h2>
       {ideas.length === 0 ? (

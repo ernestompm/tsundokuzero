@@ -42,12 +42,12 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
     setAnchor(null)
     setError(null)
 
-    // Ancla = tu lectura más reciente (multi-libro).
+    // Ancla = tu lectura más reciente (multi-libro). Sin filtrar por
+    // status: quien TERMINÓ el libro también puede publicar (cap. final).
     const { data: prog } = await supabase
       .from('reading_progress')
       .select('book_id, current_chapter')
       .eq('user_id', session.user.id)
-      .eq('status', 'reading')
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()

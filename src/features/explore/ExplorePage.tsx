@@ -45,8 +45,11 @@ export default function ExplorePage() {
 
   // Búsqueda (con debounce); sin consulta → sugerencias
   const search = useCallback(
-    async (term: string) => {
+    async (rawTerm: string) => {
       if (!session) return
+      // PostgREST usa comas/paréntesis/porcentajes como sintaxis en or():
+      // se limpian para que escribirlos no rompa la búsqueda.
+      const term = rawTerm.replace(/[,()%]/g, ' ').trim()
       const like = `%${term}%`
       const [{ data: profiles }, { data: bookRows }] = await Promise.all([
         term

@@ -25,10 +25,11 @@ Sin `.env.local` la app arranca en modo «pendiente de conectar Supabase».
 
 1. Crear cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo
    (plan gratuito, región cercana, p. ej. `eu-west`).
-2. En **SQL Editor**, ejecutar en orden:
-   - `supabase/migrations/20260712000001_schema.sql`
-   - `supabase/migrations/20260712000002_rls.sql`
-   - `supabase/seed.sql` (ajustar antes el nº real de capítulos de vuestra edición)
+2. En **SQL Editor**, ejecutar en orden todos los archivos de
+   `supabase/migrations/` (0001 → 0007) y después:
+   - `supabase/seed.sql` (libro con sus 73 capítulos, club y votación)
+   - `supabase/seed_discussions.sql` (cuando exista el primer usuario:
+     siembra 5 conversaciones para que nadie llegue a una sala vacía)
 3. En **Authentication → Providers → Email**: dejar activada la verificación
    («Confirm email»).
 4. En **Settings → API**, copiar `Project URL` y `anon public key` a

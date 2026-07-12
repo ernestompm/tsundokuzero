@@ -2,14 +2,17 @@ import type { DiscussionKind } from '../../lib/database.types'
 
 export interface FeedItem {
   id: string
+  /** idea = discusión anclada a capítulo · post = entrada de muro */
+  type: 'idea' | 'post'
   authorName: string
   authorUsername?: string
   authorId: string
-  bookId: string
-  bookTitle: string
-  chapterNumber: number
-  chapterLabel: string | null
-  kind: DiscussionKind
+  bookId?: string | null
+  bookTitle?: string | null
+  chapterNumber?: number | null
+  chapterLabel?: string | null
+  kind: DiscussionKind | null
+  postTitle?: string | null
   body: string
   isClub: boolean
   createdAt: string

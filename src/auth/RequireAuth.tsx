@@ -29,8 +29,9 @@ export default function RequireAuth() {
   if (!profile && location.pathname !== '/onboarding')
     return <Navigate to="/onboarding" replace />
 
-  if (profile && location.pathname === '/onboarding')
-    return <Navigate to="/" replace />
+  // OJO: con perfil creado NO expulsamos de /onboarding — el paso 2
+  // (unirse al club + fijar progreso) ocurre después de crear el perfil.
+  // OnboardingPage decide por sí misma cuándo está completado.
 
   return <Outlet />
 }

@@ -21,21 +21,20 @@ export default function FeedPage() {
     if (!session || !profile) return
     const myId = session.user.id
 
-    // ---- Lectura más reciente + stats personales + descubre (en paralelo) ----
+    // ---- Lote 1: lectura, stats, seguidos, poll, descubre ----
     const [
       { data: prog },
       { count: myIdeas },
       { count: myReplies },
       { count: finished },
       { data: pollOptions },
-      { data: discussions },
+      { data: myFollows },
       { data: openPoll },
     ] = await Promise.all([
       supabase
         .from('reading_progress')
         .select('book_id, current_chapter, updated_at')
         .eq('user_id', myId)
-        .eq('status', 'reading')
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -53,18 +52,34 @@ export default function FeedPage() {
         .eq('user_id', myId)
         .eq('status', 'finished'),
       supabase.from('poll_options').select('id, book_title, book_author').limit(8),
-      // Feed global: TODOS los libros (el gate RLS filtra por libro)
-      supabase
-        .from('discussions')
-        .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at')
-        .order('created_at', { ascending: false })
-        .limit(40),
+      supabase.from('follows').select('followed_id').eq('follower_id', myId),
       supabase
         .from('polls')
         .select('id, title')
         .eq('status', 'open')
         .limit(1)
         .maybeSingle(),
+    ])
+
+    // Feed social = yo + gente a la que sigo, más todo lo del club.
+    const authorSet = [myId, ...(myFollows ?? []).map((f) => f.followed_id)]
+    const authorsCsv = authorSet.join(',')
+    const feedFilter = `author_id.in.(${authorsCsv}),club_id.not.is.null`
+
+    // ---- Lote 2: discusiones + posts (el gate RLS filtra spoilers) ----
+    const [{ data: discussions }, { data: posts }] = await Promise.all([
+      supabase
+        .from('discussions')
+        .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at')
+        .or(feedFilter)
+        .order('created_at', { ascending: false })
+        .limit(30),
+      supabase
+        .from('posts')
+        .select('id, author_id, title, body, club_id, created_at')
+        .or(feedFilter)
+        .order('created_at', { ascending: false })
+        .limit(15),
     ])
 
     // ---- Lectura actual ----
@@ -97,33 +112,45 @@ export default function FeedPage() {
       }
     }
 
-    // ---- Feed + conversaciones por libro ----
-    let feed: FeedItem[] = []
+    // ---- Mezclar feed + conversaciones por libro ----
+    const discList = discussions ?? []
+    const postList = posts ?? []
     const conversations: BookConvo[] = []
-    const list = discussions ?? []
+    let feed: FeedItem[] = []
 
-    if (list.length > 0) {
-      const authorIds = [...new Set(list.map((d) => d.author_id))]
-      const bookIds = [...new Set(list.map((d) => d.book_id))]
+    const authorIds = [
+      ...new Set([
+        ...discList.map((d) => d.author_id),
+        ...postList.map((p) => p.author_id),
+      ]),
+    ]
+    const bookIds = [...new Set(discList.map((d) => d.book_id))]
 
+    if (authorIds.length > 0) {
       const [{ data: authors }, { data: books }, { data: chapters }, { data: comments }] =
         await Promise.all([
           supabase
             .from('profiles')
             .select('id, display_name, username')
             .in('id', authorIds),
-          supabase
-            .from('books')
-            .select('id, title, author, cover_url')
-            .in('id', bookIds),
-          supabase
-            .from('chapters')
-            .select('book_id, number, label')
-            .in('book_id', bookIds),
-          supabase
-            .from('discussion_comments')
-            .select('discussion_id')
-            .in('discussion_id', list.map((d) => d.id)),
+          bookIds.length
+            ? supabase
+                .from('books')
+                .select('id, title, author, cover_url')
+                .in('id', bookIds)
+            : Promise.resolve({ data: [] }),
+          bookIds.length
+            ? supabase
+                .from('chapters')
+                .select('book_id, number, label')
+                .in('book_id', bookIds)
+            : Promise.resolve({ data: [] }),
+          discList.length
+            ? supabase
+                .from('discussion_comments')
+                .select('discussion_id')
+                .in('discussion_id', discList.map((d) => d.id))
+            : Promise.resolve({ data: [] }),
         ])
 
       const nameById = new Map((authors ?? []).map((a) => [a.id, a.display_name]))
@@ -136,25 +163,51 @@ export default function FeedPage() {
       for (const c of comments ?? [])
         countById.set(c.discussion_id, (countById.get(c.discussion_id) ?? 0) + 1)
 
-      feed = list.map((d) => ({
-        id: d.id,
-        authorId: d.author_id,
-        authorName: nameById.get(d.author_id) ?? '·',
-        authorUsername: usernameById.get(d.author_id),
-        bookId: d.book_id,
-        bookTitle: bookById.get(d.book_id)?.title ?? '',
-        chapterNumber: d.chapter_number,
-        chapterLabel: labelByKey.get(`${d.book_id}/${d.chapter_number}`) ?? null,
-        kind: d.kind,
-        body: d.body,
-        isClub: d.club_id != null,
-        createdAt: timeAgo(d.created_at),
-        commentCount: countById.get(d.id) ?? 0,
+      const ideaItems = discList.map((d) => ({
+        ts: d.created_at,
+        item: {
+          id: d.id,
+          type: 'idea',
+          authorId: d.author_id,
+          authorName: nameById.get(d.author_id) ?? '·',
+          authorUsername: usernameById.get(d.author_id),
+          bookId: d.book_id,
+          bookTitle: bookById.get(d.book_id)?.title ?? '',
+          chapterNumber: d.chapter_number,
+          chapterLabel: labelByKey.get(`${d.book_id}/${d.chapter_number}`) ?? null,
+          kind: d.kind,
+          body: d.body,
+          isClub: d.club_id != null,
+          createdAt: timeAgo(d.created_at),
+          commentCount: countById.get(d.id) ?? 0,
+        } satisfies FeedItem,
       }))
 
-      // Agrupar por libro para «Conversaciones activas»
-      const byBook = new Map<string, typeof list>()
-      for (const d of list) {
+      const postItems = postList.map((p) => ({
+        ts: p.created_at,
+        item: {
+          id: p.id,
+          type: 'post',
+          authorId: p.author_id,
+          authorName: nameById.get(p.author_id) ?? '·',
+          authorUsername: usernameById.get(p.author_id),
+          kind: null,
+          postTitle: p.title,
+          body: p.body,
+          isClub: p.club_id != null,
+          createdAt: timeAgo(p.created_at),
+          commentCount: 0,
+        } satisfies FeedItem,
+      }))
+
+      feed = [...ideaItems, ...postItems]
+        .sort((a, b) => (a.ts < b.ts ? 1 : -1))
+        .slice(0, 40)
+        .map((x) => x.item)
+
+      // Conversaciones activas agrupadas por libro
+      const byBook = new Map<string, typeof discList>()
+      for (const d of discList) {
         const arr = byBook.get(d.book_id) ?? []
         arr.push(d)
         byBook.set(d.book_id, arr)
@@ -203,8 +256,11 @@ export default function FeedPage() {
     void load()
   }, [load, version])
 
-  const deleteItem = async (id: string) => {
-    await supabase.from('discussions').delete().eq('id', id)
+  const deleteItem = async (id: string, type: 'idea' | 'post') => {
+    await supabase
+      .from(type === 'idea' ? 'discussions' : 'posts')
+      .delete()
+      .eq('id', id)
     await load()
   }
 

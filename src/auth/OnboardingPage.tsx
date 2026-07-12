@@ -29,6 +29,24 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Onboarding ya completado (perfil + membresía) → a la app.
+  useEffect(() => {
+    if (!session || !profile) return
+    let cancelled = false
+    supabase
+      .from('club_members')
+      .select('club_id')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) navigate('/', { replace: true })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [session, profile, navigate])
+
   useEffect(() => {
     supabase
       .from('clubs')
