@@ -7,10 +7,12 @@ import './ComposeSheet.css'
 
 interface Props {
   open: boolean
-  /** Capítulo al que queda anclada la idea (tu progreso actual). */
+  /** Libro y capítulo al que queda anclada la idea (tu lectura actual). */
+  bookTitle?: string | null
   chapterNumber: number
   chapterLabel: string | null
   canWrite: boolean
+  clubAvailable?: boolean
   submitting?: boolean
   onPublish: (kind: DiscussionKind, body: string, toClub: boolean) => void
   onClose: () => void
@@ -21,9 +23,11 @@ const KINDS: DiscussionKind[] = ['comment', 'theory', 'question']
 
 export default function ComposeSheet({
   open,
+  bookTitle,
   chapterNumber,
   chapterLabel,
   canWrite,
+  clubAvailable = true,
   submitting,
   onPublish,
   onClose,
@@ -45,7 +49,7 @@ export default function ComposeSheet({
 
   const anchor =
     chapterNumber > 0
-      ? `Cap. ${chapterNumber}${chapterLabel ? ` · ${chapterLabel}` : ''}`
+      ? `${bookTitle ? `${bookTitle} · ` : ''}Cap. ${chapterNumber}${chapterLabel ? ` · ${chapterLabel}` : ''}`
       : null
 
   return (
@@ -91,22 +95,24 @@ export default function ComposeSheet({
               ))}
             </div>
 
-            <button
-              type="button"
-              className={`club-toggle label-medium${toClub ? ' active' : ''}`}
-              onClick={() => setToClub((v) => !v)}
-            >
-              <span className="material-symbols-rounded">
-                {toClub ? 'check_circle' : 'radio_button_unchecked'}
-              </span>
-              Compartir con el club
-            </button>
+            {clubAvailable && (
+              <button
+                type="button"
+                className={`club-toggle label-medium${toClub ? ' active' : ''}`}
+                onClick={() => setToClub((v) => !v)}
+              >
+                <span className="material-symbols-rounded">
+                  {toClub ? 'check_circle' : 'radio_button_unchecked'}
+                </span>
+                Compartir con el club
+              </button>
+            )}
 
             <div className="sheet__actions">
               <md-text-button onClick={onClose}>Cancelar</md-text-button>
               <md-filled-button
                 disabled={!body.trim() || submitting || undefined}
-                onClick={() => onPublish(kind, body.trim(), toClub)}
+                onClick={() => onPublish(kind, body.trim(), clubAvailable && toClub)}
               >
                 Publicar
               </md-filled-button>

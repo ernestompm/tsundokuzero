@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
@@ -7,24 +7,14 @@ import BookView from './BookView'
 import type { BookViewData } from './bookTypes'
 
 export default function BookPage() {
+  const { bookId } = useParams()
   const { session } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState<BookViewData | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    if (!session) return
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('current_book_id')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
-    const bookId = club?.current_book_id
-    if (!bookId) {
-      setData(null)
-      return
-    }
+    if (!session || !bookId) return
 
     const [{ data: book }, { data: progress }, { data: chapters }] =
       await Promise.all([
@@ -35,6 +25,8 @@ export default function BookPage() {
           .eq('user_id', session.user.id)
           .eq('book_id', bookId)
           .maybeSingle(),
+        // La API solo devuelve capítulos <= progreso (RLS): los títulos
+        // de capítulos no alcanzados nunca viajan al cliente.
         supabase
           .from('chapters')
           .select('number, label')
@@ -47,8 +39,11 @@ export default function BookPage() {
     }
 
     const current = progress?.current_chapter ?? 0
+    const labelByNumber = new Map(
+      (chapters ?? []).map((c) => [c.number, c.label]),
+    )
 
-    // Recuento de conversaciones por capítulo (RLS solo devuelve las visibles).
+    // Recuento de conversaciones por capítulo (RLS devuelve solo visibles).
     const { data: discussions } = await supabase
       .from('discussions')
       .select('chapter_number')
@@ -57,6 +52,7 @@ export default function BookPage() {
     for (const d of discussions ?? [])
       counts.set(d.chapter_number, (counts.get(d.chapter_number) ?? 0) + 1)
 
+    // Lista completa 1..N sintetizada: los bloqueados no tienen título.
     setData({
       bookId,
       title: book.title,
@@ -64,17 +60,19 @@ export default function BookPage() {
       coverUrl: book.cover_url,
       currentChapter: current,
       totalChapters: book.total_chapters,
-      currentLabel:
-        (chapters ?? []).find((c) => c.number === current)?.label ?? null,
-      chapters: (chapters ?? []).map((c) => ({
-        number: c.number,
-        label: c.label,
-        unlocked: c.number <= current,
-        commentCount: counts.get(c.number) ?? 0,
-        isCurrent: c.number === current,
-      })),
+      currentLabel: labelByNumber.get(current) ?? null,
+      chapters: Array.from({ length: book.total_chapters }, (_, i) => {
+        const number = i + 1
+        return {
+          number,
+          label: labelByNumber.get(number) ?? null,
+          unlocked: number <= current,
+          commentCount: counts.get(number) ?? 0,
+          isCurrent: number === current,
+        }
+      }),
     })
-  }, [session])
+  }, [session, bookId])
 
   useEffect(() => {
     void load()
@@ -111,7 +109,7 @@ export default function BookPage() {
       data={data}
       busy={busy}
       onSetChapter={setChapter}
-      onOpenChapter={(n) => navigate(`/chapter/${n}`)}
+      onOpenChapter={(n) => navigate(`/book/${data.bookId}/chapter/${n}`)}
     />
   )
 }

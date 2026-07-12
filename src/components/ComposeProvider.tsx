@@ -13,6 +13,7 @@ import ComposeSheet from './ComposeSheet'
 
 interface Anchor {
   bookId: string
+  bookTitle: string
   clubId: string | null
   chapterNumber: number
   chapterLabel: string | null
@@ -37,38 +38,47 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
   const openCompose = useCallback(async () => {
     if (!session) return
     setOpen(true)
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id, current_book_id')
-      .order('created_at')
+    setAnchor(null)
+
+    // Ancla = tu lectura más reciente (multi-libro).
+    const { data: prog } = await supabase
+      .from('reading_progress')
+      .select('book_id, current_chapter')
+      .eq('user_id', session.user.id)
+      .eq('status', 'reading')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    if (!club?.current_book_id) {
-      setAnchor(null)
-      return
-    }
-    const { data: progress } = await supabase
-      .from('reading_progress')
-      .select('current_chapter')
-      .eq('user_id', session.user.id)
-      .eq('book_id', club.current_book_id)
-      .maybeSingle()
-    const current = progress?.current_chapter ?? 0
-    let label: string | null = null
-    if (current > 0) {
-      const { data: ch } = await supabase
+
+    if (!prog || prog.current_chapter < 1) return
+
+    const [{ data: book }, { data: ch }, { data: club }] = await Promise.all([
+      supabase
+        .from('books')
+        .select('id, title')
+        .eq('id', prog.book_id)
+        .maybeSingle(),
+      supabase
         .from('chapters')
         .select('label')
-        .eq('book_id', club.current_book_id)
-        .eq('number', current)
-        .maybeSingle()
-      label = ch?.label ?? null
-    }
+        .eq('book_id', prog.book_id)
+        .eq('number', prog.current_chapter)
+        .maybeSingle(),
+      supabase
+        .from('clubs')
+        .select('id')
+        .eq('current_book_id', prog.book_id)
+        .limit(1)
+        .maybeSingle(),
+    ])
+    if (!book) return
+
     setAnchor({
-      bookId: club.current_book_id,
-      clubId: club.id,
-      chapterNumber: current,
-      chapterLabel: label,
+      bookId: book.id,
+      bookTitle: book.title,
+      clubId: club?.id ?? null,
+      chapterNumber: prog.current_chapter,
+      chapterLabel: ch?.label ?? null,
     })
   }, [session])
 
@@ -99,9 +109,11 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
       {children}
       <ComposeSheet
         open={open}
+        bookTitle={anchor?.bookTitle ?? null}
         chapterNumber={anchor?.chapterNumber ?? 0}
         chapterLabel={anchor?.chapterLabel ?? null}
         canWrite={(anchor?.chapterNumber ?? 0) > 0}
+        clubAvailable={anchor?.clubId != null}
         submitting={submitting}
         onPublish={publish}
         onClose={() => setOpen(false)}

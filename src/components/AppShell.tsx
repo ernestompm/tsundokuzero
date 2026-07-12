@@ -32,7 +32,7 @@ function Logo() {
 
 export default function AppShell() {
   const navigate = useNavigate()
-  const { profile } = useAuth()
+  const { profile, isSuperAdmin } = useAuth()
   const { openCompose } = useCompose()
   const [dark, setDark] = useState(isDarkActive)
 
@@ -76,6 +76,20 @@ export default function AppShell() {
               )}
             </NavLink>
           ))}
+          {isSuperAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `side-item${isActive ? ' active' : ''}`
+              }
+            >
+              <md-ripple />
+              <span className="material-symbols-rounded">
+                admin_panel_settings
+              </span>
+              <span className="label-large">Admin</span>
+            </NavLink>
+          )}
         </nav>
         <div className="sidebar__foot">
           <button className="side-item" onClick={toggleTheme} type="button">

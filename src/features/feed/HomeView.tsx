@@ -5,7 +5,12 @@ import { KIND_LABEL } from '../book/chapterTypes'
 import type { FeedItem, HomeData } from './homeTypes'
 import './home.css'
 
-export default function HomeView({ data }: { data: HomeData }) {
+interface Props {
+  data: HomeData
+  onDeleteItem?: (id: string) => void
+}
+
+export default function HomeView({ data, onDeleteItem }: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
   const { reading, feed } = data
@@ -13,37 +18,41 @@ export default function HomeView({ data }: { data: HomeData }) {
   return (
     <div className="feed">
       {/* Estado de lectura compacto */}
-      {reading ? (
-        <button className="reading-strip" onClick={() => navigate('/book')}>
-          <BookCover
-            title={reading.title}
-            author={reading.author}
-            coverUrl={reading.coverUrl}
-            size="sm"
-          />
-          <div className="reading-strip__info">
-            <span className="label-small reading-strip__kicker">Vas por</span>
-            <span className="title-small serif reading-strip__where">
-              {reading.chapterNumber > 0
-                ? `Cap. ${reading.chapterNumber}${reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}`
-                : 'Aún no has empezado'}
-            </span>
-            <ProgressBar percent={reading.percent} />
-          </div>
-          <span className="material-symbols-rounded reading-strip__chev">
-            chevron_right
-          </span>
-        </button>
-      ) : (
-        <button className="reading-strip" onClick={() => navigate('/book')}>
+      <button
+        className="reading-strip"
+        onClick={() =>
+          navigate(reading ? `/book/${reading.bookId}` : '/book')
+        }
+      >
+        {reading ? (
+          <>
+            <BookCover
+              title={reading.title}
+              author={reading.author}
+              coverUrl={reading.coverUrl}
+              size="sm"
+            />
+            <div className="reading-strip__info">
+              <span className="label-small reading-strip__kicker">
+                {reading.title}
+              </span>
+              <span className="title-small serif reading-strip__where">
+                {reading.chapterNumber > 0
+                  ? `Cap. ${reading.chapterNumber}${reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}`
+                  : 'Aún no has empezado'}
+              </span>
+              <ProgressBar percent={reading.percent} />
+            </div>
+          </>
+        ) : (
           <span className="reading-strip__info title-small">
             Empieza el libro del club
           </span>
-          <span className="material-symbols-rounded reading-strip__chev">
-            chevron_right
-          </span>
-        </button>
-      )}
+        )}
+        <span className="material-symbols-rounded reading-strip__chev">
+          chevron_right
+        </span>
+      </button>
 
       {/* Entrada al composer */}
       <button className="composer-entry" onClick={() => void openCompose()}>
@@ -67,7 +76,12 @@ export default function HomeView({ data }: { data: HomeData }) {
       ) : (
         <div className="feed-list">
           {feed.map((item) => (
-            <FeedCard key={item.id} item={item} />
+            <FeedCard
+              key={item.id}
+              item={item}
+              mine={data.myId != null && item.authorId === data.myId}
+              onDelete={onDeleteItem}
+            />
           ))}
         </div>
       )}
@@ -75,9 +89,17 @@ export default function HomeView({ data }: { data: HomeData }) {
   )
 }
 
-function FeedCard({ item }: { item: FeedItem }) {
+function FeedCard({
+  item,
+  mine,
+  onDelete,
+}: {
+  item: FeedItem
+  mine: boolean
+  onDelete?: (id: string) => void
+}) {
   const navigate = useNavigate()
-  const go = () => navigate(`/chapter/${item.chapterNumber}`)
+  const go = () => navigate(`/book/${item.bookId}/chapter/${item.chapterNumber}`)
 
   return (
     <article className="feed-card">
@@ -86,19 +108,28 @@ function FeedCard({ item }: { item: FeedItem }) {
         <div className="feed-card__meta">
           <span className="title-small">{item.authorName}</span>
           <span className="body-small on-surface-variant">
-            {item.createdAt} · Cap. {item.chapterNumber}
-            {item.chapterLabel ? ` · ${item.chapterLabel}` : ''}
+            {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
           </span>
         </div>
+        {mine && onDelete && (
+          <button
+            className="feed-card__del"
+            aria-label="Eliminar publicación"
+            onClick={() => {
+              if (window.confirm('¿Eliminar esta publicación y sus respuestas?'))
+                onDelete(item.id)
+            }}
+          >
+            <span className="material-symbols-rounded">delete</span>
+          </button>
+        )}
       </header>
 
       <div className="feed-card__chips">
         <span className="chip chip--kind label-small">
           {KIND_LABEL[item.kind]}
         </span>
-        {item.isClub && (
-          <span className="chip chip--club label-small">Club</span>
-        )}
+        {item.isClub && <span className="chip chip--club label-small">Club</span>}
       </div>
 
       <p className="feed-card__body body-large" onClick={go}>
@@ -110,6 +141,12 @@ function FeedCard({ item }: { item: FeedItem }) {
           <span className="material-symbols-rounded">chat_bubble</span>
           {item.commentCount > 0 ? item.commentCount : 'Responder'}
         </button>
+        {mine && (
+          <button className="feed-action" onClick={go}>
+            <span className="material-symbols-rounded">edit</span>
+            Editar
+          </button>
+        )}
       </footer>
     </article>
   )

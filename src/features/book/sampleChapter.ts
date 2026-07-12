@@ -1,6 +1,7 @@
 import type { ChapterViewData } from './chapterTypes'
 
 export const SAMPLE_CHAPTER: ChapterViewData = {
+  bookId: 'sample',
   bookTitle: 'La Biblioteca de la Medianoche',
   chapterNumber: 8,
   chapterLabel: 'Antimateria',

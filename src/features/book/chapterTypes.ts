@@ -20,6 +20,7 @@ export interface ThreadDiscussion {
 }
 
 export interface ChapterViewData {
+  bookId: string
   bookTitle: string
   chapterNumber: number
   chapterLabel: string | null

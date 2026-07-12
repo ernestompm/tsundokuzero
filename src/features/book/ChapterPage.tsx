@@ -3,31 +3,23 @@ import { useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
+import { timeAgo } from '../../lib/time'
 import ChapterView from './ChapterView'
 import type { ChapterViewData, ThreadDiscussion } from './chapterTypes'
 import type { DiscussionKind } from '../../lib/database.types'
 
 export default function ChapterPage() {
-  const { number } = useParams()
+  const { bookId, number } = useParams()
   const chapterNumber = Number(number)
   const { session } = useAuth()
   const [data, setData] = useState<ChapterViewData | null>(null)
+  const [clubId, setClubId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    if (!session || !Number.isFinite(chapterNumber)) return
+    if (!session || !bookId || !Number.isFinite(chapterNumber)) return
 
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id, current_book_id')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
-    const bookId = club?.current_book_id
-    const clubId = club?.id ?? null
-    if (!bookId) return
-
-    const [{ data: book }, { data: progress }, { data: chapter }] =
+    const [{ data: book }, { data: progress }, { data: chapter }, { data: club }] =
       await Promise.all([
         supabase.from('books').select('title').eq('id', bookId).maybeSingle(),
         supabase
@@ -42,11 +34,19 @@ export default function ChapterPage() {
           .eq('book_id', bookId)
           .eq('number', chapterNumber)
           .maybeSingle(),
+        // Si este libro es el libro actual de un club, se puede etiquetar.
+        supabase
+          .from('clubs')
+          .select('id')
+          .eq('current_book_id', bookId)
+          .limit(1)
+          .maybeSingle(),
       ])
 
+    setClubId(club?.id ?? null)
     const canWrite = (progress?.current_chapter ?? 0) >= chapterNumber
 
-    // El spoiler gate (RLS) devuelve solo discusiones de capítulos alcanzados.
+    // El spoiler gate (RLS) filtra en servidor lo que no debe verse.
     const { data: discussions } = await supabase
       .from('discussions')
       .select('id, author_id, kind, body, club_id, created_at')
@@ -84,7 +84,7 @@ export default function ChapterPage() {
       kind: d.kind,
       body: d.body,
       isClub: d.club_id != null,
-      createdAt: new Date(d.created_at).toLocaleDateString(),
+      createdAt: timeAgo(d.created_at),
       comments: (comments ?? [])
         .filter((c) => c.discussion_id === d.id)
         .map((c) => ({
@@ -92,62 +92,43 @@ export default function ChapterPage() {
           authorId: c.author_id,
           authorName: nameById.get(c.author_id) ?? '·',
           body: c.body,
-          createdAt: new Date(c.created_at).toLocaleDateString(),
+          createdAt: timeAgo(c.created_at),
         })),
     }))
 
     setData({
+      bookId,
       bookTitle: book?.title ?? '',
       chapterNumber,
       chapterLabel: chapter?.label ?? null,
       canWrite,
       discussions: threads,
     })
-
-    return { bookId, clubId }
-  }, [session, chapterNumber])
+  }, [session, bookId, chapterNumber])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  const publish = async (
-    kind: DiscussionKind,
-    body: string,
-    toClub: boolean,
-  ) => {
-    if (!session) return
+  const run = async (op: PromiseLike<unknown>) => {
     setBusy(true)
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id, current_book_id')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
-    if (club?.current_book_id) {
-      await supabase.from('discussions').insert({
-        book_id: club.current_book_id,
+    await op
+    await load()
+    setBusy(false)
+  }
+
+  const publish = (kind: DiscussionKind, body: string, toClub: boolean) => {
+    if (!session || !bookId) return
+    void run(
+      supabase.from('discussions').insert({
+        book_id: bookId,
         chapter_number: chapterNumber,
         author_id: session.user.id,
         kind,
         body,
-        club_id: toClub ? club.id : null,
-      })
-      await load()
-    }
-    setBusy(false)
-  }
-
-  const reply = async (discussionId: string, body: string) => {
-    if (!session) return
-    setBusy(true)
-    await supabase.from('discussion_comments').insert({
-      discussion_id: discussionId,
-      author_id: session.user.id,
-      body,
-    })
-    await load()
-    setBusy(false)
+        club_id: toClub ? clubId : null,
+      }),
+    )
   }
 
   if (!data) {
@@ -159,6 +140,31 @@ export default function ChapterPage() {
   }
 
   return (
-    <ChapterView data={data} busy={busy} onPublish={publish} onReply={reply} />
+    <ChapterView
+      data={data}
+      busy={busy}
+      currentUserId={session?.user.id}
+      clubAvailable={clubId != null}
+      onPublish={publish}
+      onReply={(discussionId, body) =>
+        session &&
+        void run(
+          supabase.from('discussion_comments').insert({
+            discussion_id: discussionId,
+            author_id: session.user.id,
+            body,
+          }),
+        )
+      }
+      onEditDiscussion={(id, body) =>
+        void run(supabase.from('discussions').update({ body }).eq('id', id))
+      }
+      onDeleteDiscussion={(id) =>
+        void run(supabase.from('discussions').delete().eq('id', id))
+      }
+      onDeleteComment={(id) =>
+        void run(supabase.from('discussion_comments').delete().eq('id', id))
+      }
+    />
   )
 }

@@ -12,6 +12,7 @@ import { SAMPLE_HOME } from './features/feed/sampleHome'
 import BookPage from './features/book/BookPage'
 import BookView from './features/book/BookView'
 import { SAMPLE_BOOK } from './features/book/sampleBook'
+import ClubBookRedirect from './features/book/ClubBookRedirect'
 import ChapterPage from './features/book/ChapterPage'
 import ChapterView from './features/book/ChapterView'
 import { SAMPLE_CHAPTER } from './features/book/sampleChapter'
@@ -72,8 +73,9 @@ export default function App() {
             <Route index element={<FeedPage />} />
             <Route path="explore" element={<ExplorePage />} />
             <Route path="library" element={<LibraryPage />} />
-            <Route path="book" element={<BookPage />} />
-            <Route path="chapter/:number" element={<ChapterPage />} />
+            <Route path="book" element={<ClubBookRedirect />} />
+            <Route path="book/:bookId" element={<BookPage />} />
+            <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
             <Route path="admin" element={<AdminPage />} />

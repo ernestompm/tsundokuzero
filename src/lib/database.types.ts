@@ -173,6 +173,33 @@ export type Database = {
         Args: { book: string; title: string }
         Returns: number
       }
+      admin_list_discussions: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          body: string
+          kind: DiscussionKind
+          chapter_number: number
+          created_at: string
+          is_club: boolean
+          book_title: string
+          author_name: string
+          author_id: string
+          comment_count: number
+        }[]
+      }
+      admin_update_discussion: {
+        Args: { target: string; new_body: string }
+        Returns: undefined
+      }
+      admin_delete_discussion: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      admin_delete_user: {
+        Args: { target: string }
+        Returns: undefined
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

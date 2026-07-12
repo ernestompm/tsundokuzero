@@ -15,13 +15,30 @@ import './chapter.css'
 interface Props {
   data: ChapterViewData
   busy?: boolean
+  /** id del usuario conectado: habilita editar/eliminar lo propio */
+  currentUserId?: string
+  /** si el libro pertenece a un club, se puede etiquetar como «del club» */
+  clubAvailable?: boolean
   onPublish?: (kind: DiscussionKind, body: string, toClub: boolean) => void
   onReply?: (discussionId: string, body: string) => void
+  onEditDiscussion?: (id: string, body: string) => void
+  onDeleteDiscussion?: (id: string) => void
+  onDeleteComment?: (id: string) => void
 }
 
 const KINDS: DiscussionKind[] = ['comment', 'theory', 'question']
 
-export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
+export default function ChapterView({
+  data,
+  busy,
+  currentUserId,
+  clubAvailable = true,
+  onPublish,
+  onReply,
+  onEditDiscussion,
+  onDeleteDiscussion,
+  onDeleteComment,
+}: Props) {
   const navigate = useNavigate()
   const [kind, setKind] = useState<DiscussionKind>('comment')
   const [body, setBody] = useState('')
@@ -30,7 +47,7 @@ export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
   const publish = () => {
     const text = body.trim()
     if (!text || !onPublish) return
-    onPublish(kind, text, toClub)
+    onPublish(kind, text, clubAvailable && toClub)
     setBody('')
     setKind('comment')
   }
@@ -38,7 +55,10 @@ export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
   return (
     <section className="chapter">
       <div className="chapter__bar">
-        <md-icon-button aria-label="Volver al libro" onClick={() => navigate('/book')}>
+        <md-icon-button
+          aria-label="Volver al libro"
+          onClick={() => navigate(`/book/${data.bookId}`)}
+        >
           <span className="material-symbols-rounded">arrow_back</span>
         </md-icon-button>
         <div>
@@ -60,7 +80,16 @@ export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
       ) : (
         <div className="thread">
           {data.discussions.map((d) => (
-            <DiscussionCard key={d.id} d={d} onReply={onReply} />
+            <DiscussionCard
+              key={d.id}
+              d={d}
+              mine={currentUserId != null && d.authorId === currentUserId}
+              currentUserId={currentUserId}
+              onReply={onReply}
+              onEdit={onEditDiscussion}
+              onDelete={onDeleteDiscussion}
+              onDeleteComment={onDeleteComment}
+            />
           ))}
         </div>
       )}
@@ -90,16 +119,18 @@ export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className={`club-toggle label-small${toClub ? ' active' : ''}`}
-              onClick={() => setToClub((v) => !v)}
-            >
-              <span className="material-symbols-rounded">
-                {toClub ? 'check_circle' : 'radio_button_unchecked'}
-              </span>
-              Club
-            </button>
+            {clubAvailable && (
+              <button
+                type="button"
+                className={`club-toggle label-small${toClub ? ' active' : ''}`}
+                onClick={() => setToClub((v) => !v)}
+              >
+                <span className="material-symbols-rounded">
+                  {toClub ? 'check_circle' : 'radio_button_unchecked'}
+                </span>
+                Club
+              </button>
+            )}
           </div>
           <md-filled-button
             className="composer__send"
@@ -116,13 +147,25 @@ export default function ChapterView({ data, busy, onPublish, onReply }: Props) {
 
 function DiscussionCard({
   d,
+  mine,
+  currentUserId,
   onReply,
+  onEdit,
+  onDelete,
+  onDeleteComment,
 }: {
   d: ThreadDiscussion
+  mine: boolean
+  currentUserId?: string
   onReply?: (discussionId: string, body: string) => void
+  onEdit?: (id: string, body: string) => void
+  onDelete?: (id: string) => void
+  onDeleteComment?: (id: string) => void
 }) {
   const [replying, setReplying] = useState(false)
   const [reply, setReply] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(d.body)
 
   const send = () => {
     const text = reply.trim()
@@ -132,31 +175,92 @@ function DiscussionCard({
     setReplying(false)
   }
 
+  const saveEdit = () => {
+    const text = draft.trim()
+    if (!text || !onEdit) return
+    onEdit(d.id, text)
+    setEditing(false)
+  }
+
+  const remove = () => {
+    if (!onDelete) return
+    if (window.confirm('¿Eliminar esta publicación y sus respuestas?'))
+      onDelete(d.id)
+  }
+
   return (
     <Card tone="default" className="disc">
       <div className="disc__head">
         <Avatar name={d.authorName} size={38} />
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="who title-small">{d.authorName}</div>
           <div className="meta body-small on-surface-variant">{d.createdAt}</div>
         </div>
+        {mine && !editing && (
+          <span className="disc__tools">
+            <md-icon-button
+              aria-label="Editar"
+              onClick={() => {
+                setDraft(d.body)
+                setEditing(true)
+              }}
+            >
+              <span className="material-symbols-rounded">edit</span>
+            </md-icon-button>
+            <md-icon-button aria-label="Eliminar" onClick={remove}>
+              <span className="material-symbols-rounded">delete</span>
+            </md-icon-button>
+          </span>
+        )}
       </div>
       <div className="disc__chips">
         <span className="chip chip--kind label-small">{KIND_LABEL[d.kind]}</span>
         {d.isClub && (
-          <span className="chip chip--club label-small">Club · Tsundoku Zero</span>
+          <span className="chip chip--club label-small">Club</span>
         )}
       </div>
-      <p className="disc__body body-medium">{d.body}</p>
+
+      {editing ? (
+        <div className="disc__edit">
+          <textarea
+            className="composer__input body-medium"
+            rows={3}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <div className="disc__edit-actions">
+            <md-text-button onClick={() => setEditing(false)}>
+              Cancelar
+            </md-text-button>
+            <md-filled-button disabled={!draft.trim() || undefined} onClick={saveEdit}>
+              Guardar
+            </md-filled-button>
+          </div>
+        </div>
+      ) : (
+        <p className="disc__body body-medium">{d.body}</p>
+      )}
 
       {d.comments.length > 0 && (
         <div className="disc__comments">
           {d.comments.map((c) => (
             <div key={c.id} className="disc__comment">
               <Avatar name={c.authorName} size={26} />
-              <p className="body-small">
+              <p className="body-small" style={{ flex: 1 }}>
                 <span className="who">{c.authorName}</span> · {c.body}
               </p>
+              {currentUserId === c.authorId && onDeleteComment && (
+                <button
+                  className="disc__comment-del"
+                  aria-label="Eliminar respuesta"
+                  onClick={() => {
+                    if (window.confirm('¿Eliminar esta respuesta?'))
+                      onDeleteComment(c.id)
+                  }}
+                >
+                  <span className="material-symbols-rounded">delete</span>
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -169,6 +273,7 @@ function DiscussionCard({
               className="disc__reply-input body-medium"
               placeholder="Escribe tu respuesta…"
               value={reply}
+              autoFocus
               onChange={(e) => setReply(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
             />

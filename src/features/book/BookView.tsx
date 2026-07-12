@@ -108,7 +108,9 @@ export default function BookView({
                   onClick={() => onOpenChapter(c.number)}
                 >
                   <span className="chapter-row__num">{c.number}</span>
-                  <span className="chapter-row__title serif">{c.label}</span>
+                  <span className="chapter-row__title serif">
+                    {c.label ?? `Capítulo ${c.number}`}
+                  </span>
                   {c.isCurrent && (
                     <span className="chip chip--here label-small">Estás aquí</span>
                   )}

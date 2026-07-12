@@ -114,7 +114,7 @@ export default function LibraryPage() {
                 tone="default"
               >
                 <button
-                  onClick={() => navigate('/book')}
+                  onClick={() => navigate(`/book/${i.bookId}`)}
                   style={{
                     all: 'unset',
                     cursor: 'pointer',

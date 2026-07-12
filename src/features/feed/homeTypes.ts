@@ -4,6 +4,8 @@ export interface FeedItem {
   id: string
   authorName: string
   authorId: string
+  bookId: string
+  bookTitle: string
   chapterNumber: number
   chapterLabel: string | null
   kind: DiscussionKind
@@ -26,6 +28,8 @@ export interface HomeReading {
 
 export interface HomeData {
   displayName: string
+  /** id del usuario conectado (habilita acciones sobre lo propio) */
+  myId?: string
   reading: HomeReading | null
   feed: FeedItem[]
 }
