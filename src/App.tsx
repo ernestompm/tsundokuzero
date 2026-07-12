@@ -11,6 +11,8 @@ import BookPage from './features/book/BookPage'
 import BookView from './features/book/BookView'
 import { SAMPLE_BOOK } from './features/book/sampleBook'
 import ChapterPage from './features/book/ChapterPage'
+import ChapterView from './features/book/ChapterView'
+import { SAMPLE_CHAPTER } from './features/book/sampleChapter'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
 import ExplorePage from './features/explore/ExplorePage'
@@ -33,6 +35,16 @@ export default function App() {
                 data={SAMPLE_BOOK}
                 onSetChapter={() => {}}
                 onOpenChapter={() => {}}
+              />
+            }
+          />
+          <Route
+            path="chapter"
+            element={
+              <ChapterView
+                data={SAMPLE_CHAPTER}
+                onPublish={() => {}}
+                onReply={() => {}}
               />
             }
           />
