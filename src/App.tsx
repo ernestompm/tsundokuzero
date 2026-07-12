@@ -1,5 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
+import { ComposeProvider } from './components/ComposeProvider'
+import ComposeSheet from './components/ComposeSheet'
 import RequireAuth from './auth/RequireAuth'
 import AppShell from './components/AppShell'
 import LoginPage from './auth/LoginPage'
@@ -22,6 +24,7 @@ import AdminPage from './features/admin/AdminPage'
 export default function App() {
   return (
     <AuthProvider>
+      <ComposeProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -48,6 +51,19 @@ export default function App() {
               />
             }
           />
+          <Route
+            path="compose"
+            element={
+              <ComposeSheet
+                open
+                chapterNumber={18}
+                chapterLabel="El tablero de ajedrez"
+                canWrite
+                onPublish={() => {}}
+                onClose={() => {}}
+              />
+            }
+          />
         </Route>
 
         <Route element={<RequireAuth />}>
@@ -64,6 +80,7 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
+      </ComposeProvider>
     </AuthProvider>
   )
 }

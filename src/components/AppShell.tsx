@@ -4,6 +4,7 @@ import '@material/web/ripple/ripple.js'
 import '@material/web/iconbutton/icon-button.js'
 import { Avatar } from './ui'
 import { useAuth } from '../auth/AuthContext'
+import { useCompose } from './ComposeProvider'
 import { isDarkActive, setThemeMode } from '../theme/theme'
 import './AppShell.css'
 
@@ -32,6 +33,7 @@ function Logo() {
 export default function AppShell() {
   const navigate = useNavigate()
   const { profile } = useAuth()
+  const { openCompose } = useCompose()
   const [dark, setDark] = useState(isDarkActive)
 
   const toggleTheme = () => {
@@ -126,8 +128,8 @@ export default function AppShell() {
         <button
           className="fab"
           type="button"
-          aria-label="Crear"
-          onClick={() => navigate('/me')}
+          aria-label="Compartir una idea"
+          onClick={() => void openCompose()}
         >
           <md-ripple />
           <span className="material-symbols-rounded">add</span>

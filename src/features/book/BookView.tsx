@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import '@material/web/iconbutton/icon-button.js'
+import '@material/web/button/filled-button.js'
 import { BookCover, Card } from '../../components/ui'
 import type { BookViewData } from './bookTypes'
 import './book.css'
@@ -17,8 +18,13 @@ export default function BookView({
   onSetChapter,
   onOpenChapter,
 }: Props) {
-  const [tab, setTab] = useState<'conv' | 'info'>('conv')
+  const [showAll, setShowAll] = useState(false)
   const { currentChapter, totalChapters } = data
+
+  const unlocked = data.chapters.filter((c) => c.unlocked)
+  const withActivity = unlocked.filter((c) => c.commentCount > 0)
+  const lockedCount = totalChapters - unlocked.length
+  const listed = showAll ? unlocked : withActivity
 
   return (
     <section className="book">
@@ -71,74 +77,69 @@ export default function BookView({
         </div>
       </Card>
 
-      <div className="book-tabs">
-        <button
-          className={`book-tab${tab === 'conv' ? ' active' : ''}`}
-          onClick={() => setTab('conv')}
+      {currentChapter > 0 && (
+        <md-filled-button
+          className="book-enter"
+          onClick={() => onOpenChapter(currentChapter)}
         >
-          Conversaciones
-        </button>
-        <button
-          className={`book-tab${tab === 'info' ? ' active' : ''}`}
-          onClick={() => setTab('info')}
-        >
-          Información
-        </button>
-      </div>
-
-      {tab === 'info' ? (
-        <Card tone="soft">
-          <p className="body-medium">
-            {data.title}, de {data.author}. {totalChapters} capítulos. Cada
-            capítulo abre su propia conversación, que solo se desbloquea cuando
-            llegas a él.
-          </p>
-        </Card>
-      ) : (
-        <>
-          <h2 className="title-small book-list__kicker">
-            Conversación por capítulo
-          </h2>
-          <ul className="chapter-list">
-            {data.chapters.map((c) =>
-              c.unlocked ? (
-                <li key={c.number}>
-                  <button
-                    className={`chapter-row${c.isCurrent ? ' current' : ''}`}
-                    onClick={() => onOpenChapter(c.number)}
-                  >
-                    <span className="chapter-row__num">{c.number}</span>
-                    <span className="chapter-row__title serif">{c.label}</span>
-                    {c.isCurrent && (
-                      <span className="chip chip--here label-small">Estás aquí</span>
-                    )}
-                    <span className="chapter-row__count label-medium">
-                      <span className="material-symbols-rounded">chat_bubble</span>
-                      {c.commentCount}
-                    </span>
-                  </button>
-                </li>
-              ) : (
-                <li key={c.number}>
-                  <div className="chapter-row locked">
-                    <span className="chapter-row__num">{c.number}</span>
-                    <span className="chapter-row__title on-surface-variant">
-                      Capítulo {c.number}
-                    </span>
-                    <span className="material-symbols-rounded chapter-row__lock">
-                      lock
-                    </span>
-                  </div>
-                </li>
-              ),
-            )}
-          </ul>
-          <p className="body-small on-surface-variant chapter-list__foot">
-            Los capítulos que aún no has alcanzado se muestran bloqueados: ni su
-            título ni su conversación aparecen hasta que llegues a ellos.
-          </p>
-        </>
+          <span slot="icon" className="material-symbols-rounded">forum</span>
+          Conversación de tu capítulo
+        </md-filled-button>
       )}
+
+      <div className="book-sec">
+        <h2 className="title-small book-sec__title">
+          {showAll ? 'Capítulos leídos' : 'Conversaciones activas'}
+        </h2>
+        {listed.length === 0 ? (
+          <Card tone="outlined">
+            <p className="body-medium on-surface-variant">
+              {currentChapter === 0
+                ? 'Marca por dónde vas para desbloquear las conversaciones.'
+                : 'Todavía no hay conversaciones en lo que llevas leído. Estrena una desde tu capítulo.'}
+            </p>
+          </Card>
+        ) : (
+          <ul className="chapter-list">
+            {listed.map((c) => (
+              <li key={c.number}>
+                <button
+                  className={`chapter-row${c.isCurrent ? ' current' : ''}`}
+                  onClick={() => onOpenChapter(c.number)}
+                >
+                  <span className="chapter-row__num">{c.number}</span>
+                  <span className="chapter-row__title serif">{c.label}</span>
+                  {c.isCurrent && (
+                    <span className="chip chip--here label-small">Estás aquí</span>
+                  )}
+                  <span className="chapter-row__count label-medium">
+                    <span className="material-symbols-rounded">chat_bubble</span>
+                    {c.commentCount}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {unlocked.length > withActivity.length && (
+          <button
+            className="book-toggle label-large"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll
+              ? 'Ver solo las conversaciones activas'
+              : `Ver todos los capítulos leídos (${unlocked.length})`}
+          </button>
+        )}
+
+        {lockedCount > 0 && (
+          <p className="body-small on-surface-variant book-locked-note">
+            <span className="material-symbols-rounded">lock</span>
+            {lockedCount} capítulos por delante se desbloquean según avanzas.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

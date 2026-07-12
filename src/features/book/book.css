@@ -39,36 +39,42 @@
   white-space: nowrap;
 }
 
-/* ---- Tabs ---- */
-.book-tabs {
-  display: flex;
-  gap: 4px;
-  margin: 22px 0 4px;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-.book-tab {
-  background: none;
-  border: none;
-  padding: 12px 14px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.book-tab.active {
-  color: var(--md-sys-color-primary);
-  border-bottom-color: var(--md-sys-color-primary);
+/* ---- Botón de entrada a la conversación ---- */
+.book-enter {
+  width: 100%;
+  margin: 16px 0 8px;
 }
 
-/* ---- Lista de capítulos ---- */
-.book-list__kicker {
-  margin: 20px 2px 10px;
+/* ---- Sección de capítulos ---- */
+.book-sec {
+  margin-top: 16px;
+}
+.book-sec__title {
+  margin: 12px 2px 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--md-sys-color-on-surface-variant);
+}
+.book-toggle {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: none;
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+.book-locked-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  justify-content: center;
+}
+.book-locked-note .material-symbols-rounded {
+  font-size: 16px;
 }
 .chapter-list {
   list-style: none;
