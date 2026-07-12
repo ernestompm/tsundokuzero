@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/roboto-flex": "^5.2.8",
     "@material/material-color-utilities": "^0.4.0",
     "@material/web": "^2.4.1",

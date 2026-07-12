@@ -3,10 +3,9 @@
 -- Ejecutar UNA VEZ en el SQL Editor de Supabase tras las migraciones,
 -- en una instalación limpia.
 --
--- ✍️  SOLO tienes que editar la lista de TÍTULOS de abajo: pégalos en el
---     orden real de lectura de vuestra edición. El sistema les asigna la
---     posición (1º, 2º, 3º…) y calcula el total de capítulos solo.
---     Puedes poner los que quieras: no hace falta que estén numerados.
+-- Libro semilla: La Biblioteca de la Medianoche (Matt Haig) con sus 73
+-- capítulos titulados, en orden. El número (posición) se asigna solo y
+-- total_chapters se recalcula al final.
 -- =====================================================================
 
 -- Libro semilla (total_chapters se recalcula más abajo)
@@ -23,26 +22,89 @@ on conflict (id) do update
 -- Instalación limpia: quita capítulos previos de este libro antes de sembrar.
 delete from chapters where book_id = '00000000-0000-4000-8000-000000000001';
 
--- >>> PEGA AQUÍ LOS TÍTULOS DE TUS CAPÍTULOS, EN ORDEN <<<
--- (añade o quita filas libremente; el número se asigna por el orden)
+-- Capítulos por TÍTULO, en orden de lectura (el número lo asigna `ordinality`).
 insert into chapters (book_id, number, label)
 select
   '00000000-0000-4000-8000-000000000001',
   ord,
   title
 from unnest(array[
-  'Título del capítulo 1',
-  'Título del capítulo 2',
-  'Título del capítulo 3',
-  'Título del capítulo 4',
-  'Título del capítulo 5',
-  'Título del capítulo 6',
-  'Título del capítulo 7',
-  'Título del capítulo 8'
-  -- … sigue añadiendo tus títulos reales, uno por línea, separados por comas
+  'Una conversación sobre la lluvia',
+  'Diecinueve años después',
+  'El hombre de la puerta',
+  'Teoría de cuerdas',
+  'Vivir es sufrir',
+  'Puertas',
+  'Cómo ser un agujero negro',
+  'Antimateria',
+  '00:00:00',
+  'La bibliotecaria',
+  'La biblioteca de la medianoche',
+  'Las estanterías móviles',
+  'El libro de los arrepentimientos',
+  'Sobrecarga de arrepentimientos',
+  'Toda vida comienza ahora',
+  'Las tres herraduras',
+  'La penúltima actualización que Nora publicó antes de encontrarse entre la vida y la muerte',
+  'El tablero de ajedrez',
+  'La única manera de aprender es vivir',
+  'Fuego',
+  'Pecera',
+  'La última actualización que Nora publicó antes de encontrarse entre la vida y la muerte',
+  'La vida exitosa',
+  'Té de menta',
+  'El árbol que es nuestra vida',
+  'Error del sistema',
+  'Svalbard',
+  'Hugo Lefèvre',
+  'Caminando en círculos',
+  'Un momento de crisis extrema en medio de ninguna parte',
+  'La frustración de no encontrar una biblioteca cuando realmente necesitas una',
+  'Isla',
+  'Permafrost',
+  'Una noche en Longyearbyen',
+  'Expectativa',
+  'La vida, la muerte y la función de onda cuántica',
+  'Si algo me está ocurriendo, quiero estar allí',
+  'Dios y otros bibliotecarios',
+  'Fama',
+  'Vía Láctea',
+  'Salvaje y libre',
+  'Ryan Bailey',
+  'Una bandeja de plata con pastelitos de miel',
+  'El pódcast de las revelaciones',
+  '«Aullido»',
+  'Amor y dolor',
+  'Equidistancia',
+  'El sueño de otra persona',
+  'Una vida tranquila',
+  '¿Por qué querer otro universo si este tiene perros?',
+  'Cena con Dylan',
+  'El salón de la última oportunidad',
+  'Viñedo Buena Vista',
+  'Las muchas vidas de Nora Seed',
+  'Perdida en la biblioteca',
+  'Una perla dentro de la concha',
+  'El juego',
+  'La vida perfecta',
+  'Una búsqueda espiritual de una conexión más profunda con el universo',
+  'Hammersmith',
+  'Triciclo',
+  'Ya no está aquí',
+  'Un incidente con la policía',
+  'Una nueva manera de ver',
+  'Las flores tienen agua',
+  'Ningún lugar donde aterrizar',
+  '¡No se te ocurra rendirte, Nora Seed!',
+  'Despertar',
+  'El otro lado de la desesperación',
+  'Algo que he aprendido',
+  'Vivir frente a comprender',
+  'El volcán',
+  'Cómo termina'
 ]) with ordinality as t(title, ord);
 
--- total_chapters = nº de títulos que hayas puesto arriba
+-- total_chapters = nº real de capítulos insertados (73)
 update books
    set total_chapters = (
      select count(*) from chapters
@@ -82,5 +144,5 @@ on conflict do nothing;
 
 -- ---------------------------------------------------------------------
 -- Añadir capítulos SUELTOS más adelante (por título, sin tocar números):
---   select add_book_chapter('00000000-0000-4000-8000-000000000001', 'Nuevo capítulo');
+--   select add_book_chapter('00000000-0000-4000-8000-000000000001', 'Nuevo título');
 -- ---------------------------------------------------------------------

@@ -3,9 +3,9 @@
 :root {
   /* Typescale MD3 (familia por defecto: Roboto Flex variable) */
   --md-ref-typeface-plain: 'Roboto Flex Variable', system-ui, sans-serif;
-  --md-ref-typeface-brand: 'Roboto Flex Variable', system-ui, sans-serif;
-  /* Serif editorial como acento de marca para títulos de libros */
-  --tz-typeface-serif: Georgia, 'Times New Roman', serif;
+  --md-ref-typeface-brand: 'Fraunces Variable', Georgia, serif;
+  /* Serif editorial de marca (títulos, portadas, encabezados) */
+  --tz-typeface-serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
 
   /* Shape scale MD3 */
   --md-sys-shape-corner-extra-small: 4px;
@@ -60,12 +60,13 @@ a {
 }
 
 /* ===== Typescale MD3 (clases utilitarias) ===== */
-.display-large { font-size: 57px; line-height: 64px; font-weight: 400; letter-spacing: -0.25px; }
-.display-medium { font-size: 45px; line-height: 52px; font-weight: 400; }
-.display-small { font-size: 36px; line-height: 44px; font-weight: 400; }
-.headline-large { font-size: 32px; line-height: 40px; font-weight: 400; }
-.headline-medium { font-size: 28px; line-height: 36px; font-weight: 400; }
-.headline-small { font-size: 24px; line-height: 32px; font-weight: 400; }
+/* Display y headline usan la serif editorial de marca (Fraunces). */
+.display-large { font-family: var(--md-ref-typeface-brand); font-size: 57px; line-height: 62px; font-weight: 460; letter-spacing: -0.5px; }
+.display-medium { font-family: var(--md-ref-typeface-brand); font-size: 45px; line-height: 52px; font-weight: 460; letter-spacing: -0.25px; }
+.display-small { font-family: var(--md-ref-typeface-brand); font-size: 36px; line-height: 44px; font-weight: 460; }
+.headline-large { font-family: var(--md-ref-typeface-brand); font-size: 32px; line-height: 40px; font-weight: 460; }
+.headline-medium { font-family: var(--md-ref-typeface-brand); font-size: 28px; line-height: 36px; font-weight: 460; }
+.headline-small { font-family: var(--md-ref-typeface-brand); font-size: 24px; line-height: 32px; font-weight: 500; }
 .title-large { font-size: 22px; line-height: 28px; font-weight: 500; }
 .title-medium { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0.15px; }
 .title-small { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.1px; }
