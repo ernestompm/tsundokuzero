@@ -1,5 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { Avatar, BookCover, ProgressBar } from '../../components/ui'
+import '@material/web/button/filled-button.js'
+import {
+  Avatar,
+  AvatarStack,
+  BookCover,
+  ProgressBar,
+  SectionHeader,
+} from '../../components/ui'
 import { useCompose } from '../../components/ComposeProvider'
 import { KIND_LABEL } from '../book/chapterTypes'
 import type { FeedItem, HomeData } from './homeTypes'
@@ -13,16 +20,77 @@ interface Props {
 export default function HomeView({ data, onDeleteItem }: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
-  const { reading, feed } = data
+  const { reading, stats, conversations, discover, feed } = data
 
   return (
-    <div className="feed">
-      {/* Estado de lectura compacto */}
+    <div className="home">
+      {/* ===== Hero (escritorio): lectura actual + reto personal ===== */}
+      <div className="home-hero">
+        <div className="hero-card">
+          <span className="label-medium hero-card__kicker">
+            {reading ? 'Estás leyendo' : 'Tu próxima lectura'}
+          </span>
+          {reading ? (
+            <div className="hero-card__body">
+              <div className="hero-card__info">
+                <h1 className="display-small serif hero-card__title">
+                  {reading.title}
+                </h1>
+                <p className="body-medium on-surface-variant">
+                  {reading.chapterNumber > 0
+                    ? `Capítulo ${reading.chapterNumber} de ${reading.totalChapters}`
+                    : 'Aún no has empezado'}
+                  {reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}
+                </p>
+                <div className="hero-card__progress">
+                  <ProgressBar percent={reading.percent} />
+                  <span className="label-medium on-surface-variant">
+                    {reading.percent}%
+                  </span>
+                </div>
+                <md-filled-button
+                  onClick={() => navigate(`/book/${reading.bookId}`)}
+                >
+                  Actualizar progreso
+                </md-filled-button>
+              </div>
+              <div className="hero-card__cover">
+                <BookCover
+                  title={reading.title}
+                  author={reading.author}
+                  coverUrl={reading.coverUrl}
+                  size="xl"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="hero-card__body">
+              <div className="hero-card__info">
+                <h1 className="headline-medium serif">
+                  Empieza el libro del club
+                </h1>
+                <md-filled-button onClick={() => navigate('/book')}>
+                  Ir al libro
+                </md-filled-button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="stats-card">
+          <span className="label-medium hero-card__kicker">Reto personal</span>
+          <StatRow icon="local_fire_department" value={stats.ideas} label="ideas compartidas" />
+          <hr className="stats-card__sep" />
+          <StatRow icon="chat_bubble" value={stats.replies} label="respuestas" />
+          <hr className="stats-card__sep" />
+          <StatRow icon="menu_book" value={stats.finished} label="libros terminados" />
+        </div>
+      </div>
+
+      {/* ===== Lectura compacta (móvil) ===== */}
       <button
         className="reading-strip"
-        onClick={() =>
-          navigate(reading ? `/book/${reading.bookId}` : '/book')
-        }
+        onClick={() => navigate(reading ? `/book/${reading.bookId}` : '/book')}
       >
         {reading ? (
           <>
@@ -54,7 +122,7 @@ export default function HomeView({ data, onDeleteItem }: Props) {
         </span>
       </button>
 
-      {/* Entrada al composer */}
+      {/* ===== Composer ===== */}
       <button className="composer-entry" onClick={() => void openCompose()}>
         <Avatar name={data.displayName} size={38} />
         <span className="composer-entry__hint body-medium">
@@ -63,7 +131,46 @@ export default function HomeView({ data, onDeleteItem }: Props) {
         <span className="composer-entry__plus material-symbols-rounded">add</span>
       </button>
 
-      {/* Feed */}
+      {/* ===== Conversaciones activas ===== */}
+      {conversations.length > 0 && (
+        <>
+          <SectionHeader title="Conversaciones activas" />
+          <div className="conv-grid">
+            {conversations.map((c) => (
+              <button
+                key={c.bookId}
+                className="conv-card"
+                onClick={() => navigate(`/book/${c.bookId}`)}
+              >
+                <BookCover
+                  title={c.bookTitle}
+                  author={c.author}
+                  coverUrl={c.coverUrl}
+                  size="md"
+                />
+                <div className="conv-card__body">
+                  <span className="title-small serif conv-card__title">
+                    {c.bookTitle}
+                  </span>
+                  <span className="body-small on-surface-variant">
+                    Capítulos 1 – {c.upTo}
+                  </span>
+                  <span className="conv-card__foot">
+                    <AvatarStack names={c.avatars} extra={c.extra} />
+                    <span className="label-medium on-surface-variant conv-card__count">
+                      <span className="material-symbols-rounded">chat_bubble</span>
+                      {c.count}
+                    </span>
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ===== Últimas ideas (el feed) ===== */}
+      <SectionHeader title="Últimas ideas" />
       {feed.length === 0 ? (
         <div className="feed-empty">
           <span className="material-symbols-rounded feed-empty__icon">forum</span>
@@ -85,6 +192,40 @@ export default function HomeView({ data, onDeleteItem }: Props) {
           ))}
         </div>
       )}
+
+      {/* ===== Descubre nuevas lecturas ===== */}
+      {discover.length > 0 && (
+        <>
+          <SectionHeader title="Descubre nuevas lecturas" />
+          <div className="discover-row">
+            {discover.map((b) => (
+              <div key={b.id} className="discover-item" title={`${b.title} · ${b.author}`}>
+                <BookCover title={b.title} author={b.author} size="lg" />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function StatRow({
+  icon,
+  value,
+  label,
+}: {
+  icon: string
+  value: number
+  label: string
+}) {
+  return (
+    <div className="stat-row">
+      <div>
+        <div className="headline-medium stat-row__value">{value}</div>
+        <div className="body-small on-surface-variant">{label}</div>
+      </div>
+      <span className="material-symbols-rounded stat-row__icon">{icon}</span>
     </div>
   )
 }
@@ -111,26 +252,13 @@ function FeedCard({
             {item.createdAt} · {item.bookTitle} · Cap. {item.chapterNumber}
           </span>
         </div>
-        {mine && onDelete && (
-          <button
-            className="feed-card__del"
-            aria-label="Eliminar publicación"
-            onClick={() => {
-              if (window.confirm('¿Eliminar esta publicación y sus respuestas?'))
-                onDelete(item.id)
-            }}
-          >
-            <span className="material-symbols-rounded">delete</span>
-          </button>
-        )}
-      </header>
-
-      <div className="feed-card__chips">
-        <span className="chip chip--kind label-small">
-          {KIND_LABEL[item.kind]}
+        <span className="feed-card__chips">
+          <span className="chip chip--kind label-small">
+            {KIND_LABEL[item.kind]}
+          </span>
+          {item.isClub && <span className="chip chip--club label-small">Club</span>}
         </span>
-        {item.isClub && <span className="chip chip--club label-small">Club</span>}
-      </div>
+      </header>
 
       <p className="feed-card__body body-large" onClick={go}>
         {item.body}
@@ -142,10 +270,28 @@ function FeedCard({
           {item.commentCount > 0 ? item.commentCount : 'Responder'}
         </button>
         {mine && (
-          <button className="feed-action" onClick={go}>
-            <span className="material-symbols-rounded">edit</span>
-            Editar
-          </button>
+          <>
+            <button className="feed-action" onClick={go}>
+              <span className="material-symbols-rounded">edit</span>
+              Editar
+            </button>
+            {onDelete && (
+              <button
+                className="feed-action feed-action--danger"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      '¿Eliminar esta publicación y sus respuestas?',
+                    )
+                  )
+                    onDelete(item.id)
+                }}
+              >
+                <span className="material-symbols-rounded">delete</span>
+                Eliminar
+              </button>
+            )}
+          </>
         )}
       </footer>
     </article>

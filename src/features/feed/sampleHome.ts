@@ -13,6 +13,43 @@ export const SAMPLE_HOME: HomeData = {
     totalChapters: 73,
     percent: 25,
   },
+  stats: { ideas: 12, replies: 34, finished: 3 },
+  conversations: [
+    {
+      bookId: 'sample',
+      bookTitle: 'La Biblioteca de la Medianoche',
+      author: 'Matt Haig',
+      upTo: 18,
+      count: 12,
+      avatars: ['Marina Ruiz', 'Carla Vega', 'Ola Prieto'],
+      extra: 8,
+    },
+    {
+      bookId: 'sample2',
+      bookTitle: 'Proyecto Hail Mary',
+      author: 'Andy Weir',
+      upTo: 8,
+      count: 8,
+      avatars: ['Ander Gil', 'Rosa Mateo', 'Iván Sol'],
+      extra: 5,
+    },
+    {
+      bookId: 'sample3',
+      bookTitle: 'Dune',
+      author: 'Frank Herbert',
+      upTo: 5,
+      count: 6,
+      avatars: ['Nuria Paz', 'Pau Roig'],
+      extra: 3,
+    },
+  ],
+  discover: [
+    { id: 'd1', title: 'Stoner', author: 'John Williams' },
+    { id: 'd2', title: 'Los detectives salvajes', author: 'Roberto Bolaño' },
+    { id: 'd3', title: 'La casa de hojas', author: 'Mark Z. Danielewski' },
+    { id: 'd4', title: 'Piranesi', author: 'Susanna Clarke' },
+    { id: 'd5', title: 'El infinito en un junco', author: 'Irene Vallejo' },
+  ],
   feed: [
     {
       id: '1',

@@ -26,10 +26,38 @@ export interface HomeReading {
   percent: number
 }
 
+/** Tarjeta «Conversaciones activas»: un libro con conversación en marcha. */
+export interface BookConvo {
+  bookId: string
+  bookTitle: string
+  author: string
+  coverUrl?: string | null
+  /** hasta qué capítulo hay conversación visible para ti */
+  upTo: number
+  count: number
+  avatars: string[]
+  extra: number
+}
+
+export interface HomeStats {
+  ideas: number
+  replies: number
+  finished: number
+}
+
+export interface HomeDiscover {
+  id: string
+  title: string
+  author: string
+}
+
 export interface HomeData {
   displayName: string
   /** id del usuario conectado (habilita acciones sobre lo propio) */
   myId?: string
   reading: HomeReading | null
+  stats: HomeStats
+  conversations: BookConvo[]
+  discover: HomeDiscover[]
   feed: FeedItem[]
 }

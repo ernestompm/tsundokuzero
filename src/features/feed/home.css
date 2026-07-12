@@ -1,10 +1,87 @@
-.feed {
-  max-width: 600px;
+/* Layout base = MÓVIL. El hero rico aparece en escritorio (>=1040px). */
+
+.home {
+  max-width: 640px;
   margin: 0 auto;
   padding-top: 4px;
 }
 
-/* ---- Estado de lectura compacto ---- */
+/* ===================== Hero (solo escritorio) ===================== */
+.home-hero {
+  display: none;
+}
+
+.hero-card {
+  position: relative;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow: 0 1px 2px rgba(35, 35, 30, 0.04), 0 8px 24px rgba(35, 35, 30, 0.05);
+}
+.hero-card__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.hero-card__body {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+  align-items: flex-start;
+}
+.hero-card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.hero-card__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hero-card__progress {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+.hero-card__cover {
+  flex: none;
+}
+
+.stats-card {
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 6px;
+}
+.stat-row__value {
+  font-weight: 600;
+}
+.stat-row__icon {
+  font-size: 26px;
+  color: var(--md-sys-color-tertiary);
+}
+.stats-card__sep {
+  border: none;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  margin: 4px 0;
+}
+
+/* ===================== Lectura compacta (móvil) ===================== */
 .reading-strip {
   width: 100%;
   display: flex;
@@ -30,6 +107,9 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--md-sys-color-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .reading-strip__where {
   overflow: hidden;
@@ -40,19 +120,23 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* ---- Entrada al composer ---- */
+/* ===================== Entrada al composer ===================== */
 .composer-entry {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  margin-bottom: 20px;
+  margin: 0 0 8px;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
   cursor: pointer;
   text-align: left;
+  transition: box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+.composer-entry:hover {
+  box-shadow: 0 2px 10px rgba(35, 35, 30, 0.08);
 }
 .composer-entry__hint {
   flex: 1;
@@ -70,7 +154,60 @@
   font-size: 22px;
 }
 
-/* ---- Feed ---- */
+/* ===================== Conversaciones activas ===================== */
+.conv-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.conv-card {
+  display: flex;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+.conv-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(35, 35, 30, 0.1);
+}
+.conv-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.conv-card__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conv-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.conv-card__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.conv-card__count .material-symbols-rounded {
+  font-size: 16px;
+}
+
+/* ===================== Feed ===================== */
 .feed-list {
   display: flex;
   flex-direction: column;
@@ -81,6 +218,7 @@
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow: 0 1px 2px rgba(35, 35, 30, 0.03);
 }
 .feed-card__head {
   display: flex;
@@ -93,21 +231,10 @@
   min-width: 0;
   flex: 1;
 }
-.feed-card__del {
-  flex: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.feed-card__del .material-symbols-rounded {
-  font-size: 19px;
-}
 .feed-card__chips {
-  display: flex;
+  flex: none;
+  display: inline-flex;
   gap: 6px;
-  margin-top: 12px;
 }
 .chip {
   padding: 3px 10px;
@@ -149,11 +276,35 @@
 .feed-action .material-symbols-rounded {
   font-size: 19px;
 }
+.feed-action--danger:hover {
+  color: var(--md-sys-color-error);
+}
 
-/* ---- Vacío ---- */
+/* ===================== Descubre ===================== */
+.discover-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  scrollbar-width: none;
+}
+.discover-row::-webkit-scrollbar {
+  display: none;
+}
+.discover-item {
+  flex: none;
+  transition: transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+.discover-item:hover {
+  transform: translateY(-3px);
+}
+
+/* ===================== Vacío ===================== */
 .feed-empty {
   text-align: center;
-  padding: 48px 24px;
+  padding: 40px 24px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px dashed var(--md-sys-color-outline-variant);
 }
 .feed-empty__icon {
   font-size: 44px;
@@ -162,4 +313,26 @@
 }
 .feed-empty p {
   margin: 4px 0;
+}
+
+/* ===================== ESCRITORIO ===================== */
+@media (min-width: 1040px) {
+  .home {
+    max-width: 920px;
+  }
+  .home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .reading-strip {
+    display: none;
+  }
+  .conv-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .feed-card__body {
+    font-size: 15px;
+  }
 }

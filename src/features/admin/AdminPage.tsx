@@ -13,11 +13,11 @@ import { KIND_LABEL } from '../book/chapterTypes'
 import type { Book, DiscussionKind } from '../../lib/database.types'
 import './admin.css'
 
-type Tab = 'users' | 'content' | 'books'
+type Tab = 'summary' | 'users' | 'content' | 'books'
 
 export default function AdminPage() {
   const { isSuperAdmin, loading } = useAuth()
-  const [tab, setTab] = useState<Tab>('users')
+  const [tab, setTab] = useState<Tab>('summary')
 
   if (loading) return null
   if (!isSuperAdmin) return <Navigate to="/" replace />
@@ -28,6 +28,7 @@ export default function AdminPage() {
       <div className="admin-tabs">
         {(
           [
+            ['summary', 'Resumen'],
             ['users', 'Usuarios'],
             ['content', 'Moderación'],
             ['books', 'Libros'],
@@ -43,10 +44,60 @@ export default function AdminPage() {
         ))}
       </div>
 
+      {tab === 'summary' && <SummaryTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'content' && <ContentTab />}
       {tab === 'books' && <BooksTab />}
     </section>
+  )
+}
+
+/* ===================== Resumen ===================== */
+
+interface AdminStats {
+  users: number
+  ideas: number
+  replies: number
+  books: number
+  ideas_week: number
+  new_users_week: number
+}
+
+function SummaryTab() {
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.rpc('admin_stats').then(({ data, error }) => {
+      if (error) setError(error.message)
+      else setStats(((data as AdminStats[] | null) ?? [])[0] ?? null)
+    })
+  }, [])
+
+  if (!stats) return <Spinner error={error} />
+
+  const tiles = [
+    { icon: 'group', value: stats.users, label: 'usuarios', sub: `+${stats.new_users_week} esta semana` },
+    { icon: 'forum', value: stats.ideas, label: 'ideas', sub: `+${stats.ideas_week} esta semana` },
+    { icon: 'chat_bubble', value: stats.replies, label: 'respuestas', sub: '' },
+    { icon: 'menu_book', value: stats.books, label: 'libros', sub: '' },
+  ]
+
+  return (
+    <div className="admin-tiles">
+      {tiles.map((t) => (
+        <div key={t.label} className="admin-tile">
+          <span className="material-symbols-rounded admin-tile__icon">
+            {t.icon}
+          </span>
+          <span className="headline-medium admin-tile__value">{t.value}</span>
+          <span className="body-small on-surface-variant">{t.label}</span>
+          {t.sub && (
+            <span className="label-small admin-tile__sub">{t.sub}</span>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -67,6 +118,7 @@ function UsersTab() {
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_users')
@@ -105,13 +157,29 @@ function UsersTab() {
 
   if (users === null) return <Spinner error={error} />
 
+  const q = search.trim().toLowerCase()
+  const visible = q
+    ? users.filter(
+        (u) =>
+          u.display_name.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q),
+      )
+    : users
+
   return (
     <div className="admin-list">
       {error && <p className="admin-error body-medium">{error}</p>}
-      {users.length === 0 && (
-        <p className="body-medium on-surface-variant">Sin usuarios todavía.</p>
+      <input
+        className="admin-search body-medium"
+        placeholder="Buscar por nombre, @usuario o email…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      {visible.length === 0 && (
+        <p className="body-medium on-surface-variant">Sin resultados.</p>
       )}
-      {users.map((u) => (
+      {visible.map((u) => (
         <div key={u.id} className="admin-row">
           <Avatar name={u.display_name} size={40} />
           <div className="admin-row__main">

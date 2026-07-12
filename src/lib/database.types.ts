@@ -200,6 +200,17 @@ export type Database = {
         Args: { target: string }
         Returns: undefined
       }
+      admin_stats: {
+        Args: Record<string, never>
+        Returns: {
+          users: number
+          ideas: number
+          replies: number
+          books: number
+          ideas_week: number
+          new_users_week: number
+        }[]
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
