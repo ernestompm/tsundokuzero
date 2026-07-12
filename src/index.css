@@ -80,8 +80,17 @@ a {
 .on-surface-variant { color: var(--md-sys-color-on-surface-variant); }
 .serif { font-family: var(--tz-typeface-serif); }
 
-/* ===== Material Symbols ===== */
+/* ===== Material Symbols (subconjunto desde Google Fonts, ver index.html) ===== */
 .material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   user-select: none;
   vertical-align: middle;
