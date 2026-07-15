@@ -53,6 +53,13 @@ export type BookRating = {
   created_at: string
 }
 
+export type Reaction = {
+  discussion_id: string
+  user_id: string
+  emoji: string
+  created_at: string
+}
+
 export type NotificationType = 'reply' | 'follow' | 'poll'
 
 export type Notification = {
@@ -187,6 +194,7 @@ export type Database = {
       poll_votes: TableDef<PollVote, 'poll_id' | 'option_id' | 'user_id', 'created_at'>
       authors: TableDef<Author, 'name', 'id' | 'created_at'>
       book_ratings: TableDef<BookRating, 'book_id' | 'user_id' | 'rating', 'created_at'>
+      reactions: TableDef<Reaction, 'discussion_id' | 'user_id' | 'emoji', 'created_at'>
       notifications: TableDef<
         Notification,
         'user_id' | 'type',

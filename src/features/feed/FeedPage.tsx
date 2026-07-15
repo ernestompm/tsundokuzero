@@ -82,16 +82,31 @@ export default function FeedPage() {
         .limit(15),
     ])
 
-    // Respuestas ligadas a cada publicación (vista con teaser)
+    // Respuestas ligadas a cada publicación (vista con teaser) + reacciones
     const discIds = (discussions ?? []).map((d) => d.id)
-    const { data: replyRows } = discIds.length
-      ? await supabase
-          .from('thread_comments')
-          .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
-          .in('discussion_id', discIds)
-          .order('created_at', { ascending: false })
-          .limit(120)
-      : { data: [] }
+    const [{ data: replyRows }, { data: reactionRows }] = discIds.length
+      ? await Promise.all([
+          supabase
+            .from('thread_comments')
+            .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
+            .in('discussion_id', discIds)
+            .order('created_at', { ascending: false })
+            .limit(120),
+          supabase
+            .from('reactions')
+            .select('discussion_id, emoji, user_id')
+            .in('discussion_id', discIds),
+        ])
+      : [{ data: [] }, { data: [] }]
+
+    const reactByDisc = new Map<string, Record<string, number>>()
+    const myReactByDisc = new Map<string, string>()
+    for (const r of reactionRows ?? []) {
+      const m = reactByDisc.get(r.discussion_id) ?? {}
+      m[r.emoji] = (m[r.emoji] ?? 0) + 1
+      reactByDisc.set(r.discussion_id, m)
+      if (r.user_id === myId) myReactByDisc.set(r.discussion_id, r.emoji)
+    }
 
     // ---- Lectura actual ----
     let reading: HomeReading | null = null
@@ -192,9 +207,9 @@ export default function FeedPage() {
           isClub: d.club_id != null,
           createdAt: timeAgo(d.created_at),
           commentCount: countById.get(d.id) ?? 0,
-          // últimas 2, en orden cronológico, colgando de la publicación
+          // últimas 3, en orden cronológico, colgando de la publicación
           replies: (repliesById.get(d.id) ?? [])
-            .slice(0, 2)
+            .slice(0, 3)
             .reverse()
             .map((r) => ({
               id: r.id,
@@ -205,6 +220,8 @@ export default function FeedPage() {
               unlockChapter: r.author_chapter,
               createdAt: timeAgo(r.created_at),
             })),
+          reactions: reactByDisc.get(d.id) ?? {},
+          myReaction: myReactByDisc.get(d.id) ?? null,
         } satisfies FeedItem,
       }))
 
@@ -223,6 +240,8 @@ export default function FeedPage() {
           createdAt: timeAgo(p.created_at),
           commentCount: 0,
           replies: [],
+          reactions: {},
+          myReaction: null,
         } satisfies FeedItem,
       }))
 
@@ -290,6 +309,33 @@ export default function FeedPage() {
     await load()
   }
 
+  const react = async (discussionId: string, emoji: string | null) => {
+    if (!session) return
+    if (emoji === null) {
+      await supabase
+        .from('reactions')
+        .delete()
+        .eq('discussion_id', discussionId)
+        .eq('user_id', session.user.id)
+    } else {
+      await supabase
+        .from('reactions')
+        .upsert(
+          { discussion_id: discussionId, user_id: session.user.id, emoji },
+          { onConflict: 'discussion_id,user_id' },
+        )
+    }
+    await load()
+  }
+
+  const reply = async (discussionId: string, body: string) => {
+    if (!session) return
+    await supabase
+      .from('discussion_comments')
+      .insert({ discussion_id: discussionId, author_id: session.user.id, body })
+    await load()
+  }
+
   if (!data) {
     return (
       <div style={{ display: 'grid', placeItems: 'center', padding: 48 }}>
@@ -298,5 +344,12 @@ export default function FeedPage() {
     )
   }
 
-  return <HomeView data={data} onDeleteItem={deleteItem} />
+  return (
+    <HomeView
+      data={data}
+      onDeleteItem={deleteItem}
+      onReact={react}
+      onReply={reply}
+    />
+  )
 }

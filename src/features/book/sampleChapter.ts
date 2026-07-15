@@ -15,6 +15,8 @@ export const SAMPLE_CHAPTER: ChapterViewData = {
       body: 'La biblioteca no es un lugar: creo que cada estantería es una decisión que Nora no tomó. Fijaos en cómo la describe la señora Elm.',
       isClub: true,
       createdAt: 'hace 2 h',
+      reactions: { '❤️': 6, '💡': 2 },
+      myReaction: '💡',
       comments: [
         {
           id: 'c1',
@@ -41,6 +43,8 @@ export const SAMPLE_CHAPTER: ChapterViewData = {
       body: '¿Alguien más se ha parado en la cita inicial? Creo que resume el libro entero.',
       isClub: false,
       createdAt: 'hace 40 min',
+      reactions: {},
+      myReaction: null,
       comments: [],
     },
   ],

@@ -20,6 +20,8 @@ export interface ThreadDiscussion {
   isClub: boolean
   createdAt: string
   comments: ThreadComment[]
+  reactions: Record<string, number>
+  myReaction: string | null
 }
 
 export interface ChapterViewData {

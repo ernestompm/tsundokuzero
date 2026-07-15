@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import {
@@ -9,6 +10,7 @@ import {
 } from '../../components/ui'
 import { useCompose } from '../../components/ComposeProvider'
 import LockedTeaser from '../../components/LockedTeaser'
+import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
 import type { FeedItem, FeedReply, HomeData } from './homeTypes'
 import './home.css'
@@ -16,9 +18,16 @@ import './home.css'
 interface Props {
   data: HomeData
   onDeleteItem?: (id: string, type: 'idea' | 'post') => void
+  onReact?: (discussionId: string, emoji: string | null) => void
+  onReply?: (discussionId: string, body: string) => void
 }
 
-export default function HomeView({ data, onDeleteItem }: Props) {
+export default function HomeView({
+  data,
+  onDeleteItem,
+  onReact,
+  onReply,
+}: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
   const { reading, stats, conversations, discover, feed } = data
@@ -200,6 +209,8 @@ export default function HomeView({ data, onDeleteItem }: Props) {
               item={item}
               mine={data.myId != null && item.authorId === data.myId}
               onDelete={onDeleteItem}
+              onReact={onReact}
+              onReply={onReply}
             />
           ))}
         </div>
@@ -274,21 +285,49 @@ function FeedCard({
   item,
   mine,
   onDelete,
+  onReact,
+  onReply,
 }: {
   item: FeedItem
   mine: boolean
   onDelete?: (id: string, type: 'idea' | 'post') => void
+  onReact?: (discussionId: string, emoji: string | null) => void
+  onReply?: (discussionId: string, body: string) => void
 }) {
   const navigate = useNavigate()
+  const [replying, setReplying] = useState(false)
+  const [replyText, setReplyText] = useState('')
   const isIdea = item.type === 'idea'
+  const unlocked = item.body != null
+
   const go = () => {
     if (isIdea) navigate(`/book/${item.bookId}/chapter/${item.chapterNumber}`)
     else if (item.authorUsername) navigate(`/u/${item.authorUsername}`)
   }
 
+  const chapterPart = isIdea
+    ? item.chapterLabel
+      ? `Cap. ${item.chapterNumber} · ${item.chapterLabel}`
+      : `Cap. ${item.chapterNumber}`
+    : ''
   const metaLine = isIdea
-    ? `${item.createdAt} · ${item.bookTitle} · Cap. ${item.chapterNumber}`
+    ? `${item.createdAt} · ${item.bookTitle} · ${chapterPart}`
     : `${item.createdAt} · En su muro`
+
+  const sendReply = () => {
+    const text = replyText.trim()
+    if (!text || !onReply) return
+    onReply(item.id, text)
+    setReplyText('')
+    setReplying(false)
+  }
+
+  const meta = (
+    <span className="feed-card__meta">
+      <span className="title-small">{item.authorName}</span>
+      <span className="body-small on-surface-variant">{metaLine}</span>
+    </span>
+  )
 
   return (
     <article className="feed-card">
@@ -296,18 +335,12 @@ function FeedCard({
         {item.authorUsername ? (
           <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
             <Avatar name={item.authorName} size={40} />
-            <span className="feed-card__meta">
-              <span className="title-small">{item.authorName}</span>
-              <span className="body-small on-surface-variant">{metaLine}</span>
-            </span>
+            {meta}
           </Link>
         ) : (
           <div className="feed-card__author">
             <Avatar name={item.authorName} size={40} />
-            <span className="feed-card__meta">
-              <span className="title-small">{item.authorName}</span>
-              <span className="body-small on-surface-variant">{metaLine}</span>
-            </span>
+            {meta}
           </div>
         )}
         <span className="feed-card__chips">
@@ -318,7 +351,7 @@ function FeedCard({
         </span>
       </header>
 
-      {item.body == null ? (
+      {!unlocked ? (
         <div style={{ margin: '12px 0 4px' }}>
           <LockedTeaser
             label={`Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`}
@@ -335,6 +368,18 @@ function FeedCard({
         </div>
       )}
 
+      {/* Reacciones (solo ideas desbloqueadas) */}
+      {isIdea && unlocked && onReact && (
+        <div className="feed-card__reactions">
+          <Reactions
+            counts={item.reactions}
+            mine={item.myReaction}
+            onReact={(emoji) => onReact(item.id, emoji)}
+          />
+        </div>
+      )}
+
+      {/* Respuestas colgando de la publicación (estilo hilo) */}
       {item.replies.length > 0 && (
         <div className="feed-thread">
           {item.replies.map((r) => (
@@ -348,38 +393,54 @@ function FeedCard({
         </div>
       )}
 
+      {/* Caja de respuesta inline */}
+      {replying && (
+        <div className="feed-reply-box">
+          <input
+            className="feed-reply-box__input body-medium"
+            placeholder="Escribe tu respuesta…"
+            autoFocus
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendReply()}
+          />
+          <button
+            className="feed-reply-box__send"
+            aria-label="Enviar respuesta"
+            onClick={sendReply}
+          >
+            <span className="material-symbols-rounded">send</span>
+          </button>
+        </div>
+      )}
+
       <footer className="feed-card__foot">
-        {isIdea && (
-          <button className="feed-action" onClick={go}>
+        {isIdea && unlocked && onReply && (
+          <button
+            className="feed-action"
+            onClick={() => setReplying((v) => !v)}
+          >
             <span className="material-symbols-rounded">chat_bubble</span>
             {item.commentCount > 0 ? item.commentCount : 'Responder'}
           </button>
         )}
-        {mine && (
-          <>
-            {isIdea && (
-              <button className="feed-action" onClick={go}>
-                <span className="material-symbols-rounded">edit</span>
-                Editar
-              </button>
-            )}
-            {onDelete && (
-              <button
-                className="feed-action feed-action--danger"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      '¿Eliminar esta publicación definitivamente?',
-                    )
-                  )
-                    onDelete(item.id, item.type)
-                }}
-              >
-                <span className="material-symbols-rounded">delete</span>
-                Eliminar
-              </button>
-            )}
-          </>
+        {isIdea && unlocked && (
+          <button className="feed-action" onClick={go}>
+            <span className="material-symbols-rounded">forum</span>
+            Ver hilo
+          </button>
+        )}
+        {mine && onDelete && (
+          <button
+            className="feed-action feed-action--danger"
+            onClick={() => {
+              if (window.confirm('¿Eliminar esta publicación definitivamente?'))
+                onDelete(item.id, item.type)
+            }}
+          >
+            <span className="material-symbols-rounded">delete</span>
+            Eliminar
+          </button>
         )}
       </footer>
     </article>

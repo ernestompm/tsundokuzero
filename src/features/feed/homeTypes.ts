@@ -31,6 +31,10 @@ export interface FeedItem {
   commentCount: number
   /** últimas respuestas, ligadas a la publicación (estilo hilo) */
   replies: FeedReply[]
+  /** reacciones: emoji → nº */
+  reactions: Record<string, number>
+  /** el emoji con el que TÚ reaccionaste, o null */
+  myReaction: string | null
 }
 
 export interface HomeReading {

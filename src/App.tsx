@@ -34,7 +34,17 @@ export default function App() {
 
         {/* Vista de diseño sin login (revisión de apariencia) */}
         <Route path="/preview" element={<AppShell />}>
-          <Route index element={<HomeView data={SAMPLE_HOME} />} />
+          <Route
+            index
+            element={
+              <HomeView
+                data={SAMPLE_HOME}
+                onReact={() => {}}
+                onReply={() => {}}
+                onDeleteItem={() => {}}
+              />
+            }
+          />
           <Route
             path="book"
             element={
@@ -52,6 +62,7 @@ export default function App() {
                 data={SAMPLE_CHAPTER}
                 onPublish={() => {}}
                 onReply={() => {}}
+                onReact={() => {}}
               />
             }
           />

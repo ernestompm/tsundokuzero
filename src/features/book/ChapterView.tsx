@@ -4,6 +4,7 @@ import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import { Avatar, Card } from '../../components/ui'
+import Reactions from '../../components/Reactions'
 import type { DiscussionKind } from '../../lib/database.types'
 import {
   KIND_LABEL,
@@ -24,6 +25,7 @@ interface Props {
   onEditDiscussion?: (id: string, body: string) => void
   onDeleteDiscussion?: (id: string) => void
   onDeleteComment?: (id: string) => void
+  onReact?: (discussionId: string, emoji: string | null) => void
 }
 
 const KINDS: DiscussionKind[] = ['comment', 'theory', 'question']
@@ -38,6 +40,7 @@ export default function ChapterView({
   onEditDiscussion,
   onDeleteDiscussion,
   onDeleteComment,
+  onReact,
 }: Props) {
   const navigate = useNavigate()
   const [kind, setKind] = useState<DiscussionKind>('comment')
@@ -89,6 +92,7 @@ export default function ChapterView({
               onEdit={onEditDiscussion}
               onDelete={onDeleteDiscussion}
               onDeleteComment={onDeleteComment}
+              onReact={onReact}
             />
           ))}
         </div>
@@ -171,6 +175,7 @@ function DiscussionCard({
   onEdit,
   onDelete,
   onDeleteComment,
+  onReact,
 }: {
   d: ThreadDiscussion
   mine: boolean
@@ -179,6 +184,7 @@ function DiscussionCard({
   onEdit?: (id: string, body: string) => void
   onDelete?: (id: string) => void
   onDeleteComment?: (id: string) => void
+  onReact?: (discussionId: string, emoji: string | null) => void
 }) {
   const [replying, setReplying] = useState(false)
   const [reply, setReply] = useState('')
@@ -272,6 +278,16 @@ function DiscussionCard({
         </div>
       ) : (
         <p className="disc__body body-medium">{d.body}</p>
+      )}
+
+      {onReact && (
+        <div className="disc__reactions">
+          <Reactions
+            counts={d.reactions}
+            mine={d.myReaction}
+            onReact={(emoji) => onReact(d.id, emoji)}
+          />
+        </div>
       )}
 
       {d.comments.length > 0 && (

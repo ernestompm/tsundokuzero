@@ -84,6 +84,8 @@ export const SAMPLE_HOME: HomeData = {
           createdAt: 'hace 20 min',
         },
       ],
+      reactions: { '❤️': 4, '🔥': 2, '💡': 1 },
+      myReaction: '❤️',
     },
     {
       id: '2',
@@ -100,6 +102,8 @@ export const SAMPLE_HOME: HomeData = {
       createdAt: 'hace 40 min',
       commentCount: 1,
       replies: [],
+      reactions: { '💡': 3 },
+      myReaction: null,
     },
     {
       id: '3',
@@ -113,6 +117,8 @@ export const SAMPLE_HOME: HomeData = {
       createdAt: 'ayer',
       commentCount: 0,
       replies: [],
+      reactions: {},
+      myReaction: null,
     },
     {
       id: '4',
@@ -129,6 +135,8 @@ export const SAMPLE_HOME: HomeData = {
       createdAt: 'hace 5 min',
       commentCount: 0,
       replies: [],
+      reactions: {},
+      myReaction: null,
     },
   ],
 }

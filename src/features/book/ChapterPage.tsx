@@ -68,6 +68,21 @@ export default function ChapterPage() {
       : { data: [] }
     for (const c of comments ?? []) authorIds.add(c.author_id)
 
+    const { data: reactionRows } = discIds.length
+      ? await supabase
+          .from('reactions')
+          .select('discussion_id, emoji, user_id')
+          .in('discussion_id', discIds)
+      : { data: [] }
+    const reactByDisc = new Map<string, Record<string, number>>()
+    const myReactByDisc = new Map<string, string>()
+    for (const r of reactionRows ?? []) {
+      const m = reactByDisc.get(r.discussion_id) ?? {}
+      m[r.emoji] = (m[r.emoji] ?? 0) + 1
+      reactByDisc.set(r.discussion_id, m)
+      if (r.user_id === session.user.id) myReactByDisc.set(r.discussion_id, r.emoji)
+    }
+
     const { data: profiles } = authorIds.size
       ? await supabase
           .from('profiles')
@@ -90,6 +105,8 @@ export default function ChapterPage() {
       body: d.body,
       isClub: d.club_id != null,
       createdAt: timeAgo(d.created_at),
+      reactions: reactByDisc.get(d.id) ?? {},
+      myReaction: myReactByDisc.get(d.id) ?? null,
       comments: (comments ?? [])
         .filter((c) => c.discussion_id === d.id)
         .map((c) => ({
@@ -171,6 +188,25 @@ export default function ChapterPage() {
       }
       onDeleteComment={(id) =>
         void run(supabase.from('discussion_comments').delete().eq('id', id))
+      }
+      onReact={(discussionId, emoji) =>
+        session &&
+        void run(
+          emoji === null
+            ? supabase
+                .from('reactions')
+                .delete()
+                .eq('discussion_id', discussionId)
+                .eq('user_id', session.user.id)
+            : supabase.from('reactions').upsert(
+                {
+                  discussion_id: discussionId,
+                  user_id: session.user.id,
+                  emoji,
+                },
+                { onConflict: 'discussion_id,user_id' },
+              ),
+        )
       }
     />
   )
