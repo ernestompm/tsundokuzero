@@ -25,7 +25,9 @@ export default function ClubManagePage() {
   const [club, setClub] = useState<Club | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [books, setBooks] = useState<Book[]>([])
-  const [openPollId, setOpenPollId] = useState<string | null>(null)
+  const [openPoll, setOpenPoll] = useState<{ id: string; title: string } | null>(
+    null,
+  )
   const [allowed, setAllowed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -61,14 +63,14 @@ export default function ClubManagePage() {
         supabase.from('books').select('*').order('title'),
         supabase
           .from('polls')
-          .select('id')
+          .select('id, title')
           .eq('club_id', c.id)
           .eq('status', 'open')
           .limit(1)
           .maybeSingle(),
       ])
     setBooks(bookRows ?? [])
-    setOpenPollId(poll?.id ?? null)
+    setOpenPoll(poll ?? null)
 
     const roleById = new Map((memberRows ?? []).map((m) => [m.user_id, m.role]))
     const ids = (memberRows ?? []).map((m) => m.user_id)
@@ -133,6 +135,39 @@ export default function ClubManagePage() {
       club: club.id,
       target: userId,
     })
+    if (error) window.alert(error.message)
+    await load()
+    setBusy(false)
+  }
+
+  const discardPoll = async () => {
+    if (!openPoll) return
+    if (
+      !window.confirm(
+        `¿Descartar la votación «${openPoll.title}»? Se borra sin aplicar ninguna ganadora ni cambiar el libro. Podrás crear una nueva.`,
+      )
+    )
+      return
+    setBusy(true)
+    const { error } = await supabase.from('polls').delete().eq('id', openPoll.id)
+    if (error) window.alert(error.message)
+    await load()
+    setBusy(false)
+  }
+
+  const closePollWithWinner = async () => {
+    if (!openPoll) return
+    if (
+      !window.confirm(
+        'Cerrar la votación: la opción más votada quedará como ganadora. ¿Continuar?',
+      )
+    )
+      return
+    setBusy(true)
+    const { error } = await supabase
+      .from('polls')
+      .update({ status: 'closed' })
+      .eq('id', openPoll.id)
     if (error) window.alert(error.message)
     await load()
     setBusy(false)
@@ -248,10 +283,30 @@ export default function ClubManagePage() {
       {/* Votación */}
       <div className="manage-card">
         <h2 className="title-small manage-card__title">Votación del próximo libro</h2>
-        {openPollId ? (
-          <p className="body-medium on-surface-variant">
-            Ya hay una votación abierta. Ciérrala desde la página del club.
-          </p>
+        {openPoll ? (
+          <>
+            <p className="body-medium">
+              Hay una votación abierta: <b>{openPoll.title}</b>.
+            </p>
+            <p className="body-small on-surface-variant">
+              Para crear una nueva, primero cierra o descarta la actual.
+            </p>
+            <div className="club-poll__form-actions">
+              <md-outlined-button
+                disabled={busy || undefined}
+                onClick={() => void discardPoll()}
+              >
+                <span slot="icon" className="material-symbols-rounded">delete</span>
+                Descartar (sin efecto)
+              </md-outlined-button>
+              <md-filled-button
+                disabled={busy || undefined}
+                onClick={() => void closePollWithWinner()}
+              >
+                Cerrar y aplicar ganadora
+              </md-filled-button>
+            </div>
+          </>
         ) : (
           <>
             <input
