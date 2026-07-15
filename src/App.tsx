@@ -16,6 +16,9 @@ import ClubBookRedirect from './features/book/ClubBookRedirect'
 import ChapterPage from './features/book/ChapterPage'
 import ChapterView from './features/book/ChapterView'
 import { SAMPLE_CHAPTER } from './features/book/sampleChapter'
+import ThreadPage from './features/book/ThreadPage'
+import ThreadView from './features/book/ThreadView'
+import { SAMPLE_THREAD } from './features/book/sampleThread'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
 import UserProfilePage from './features/profile/UserProfilePage'
@@ -79,6 +82,19 @@ export default function App() {
               />
             }
           />
+          <Route
+            path="thread"
+            element={
+              <ThreadView
+                data={SAMPLE_THREAD}
+                currentUserId="e"
+                onReply={() => {}}
+                onReact={() => {}}
+                onDeleteComment={() => {}}
+                onDeleteDiscussion={() => {}}
+              />
+            }
+          />
         </Route>
 
         <Route element={<RequireAuth />}>
@@ -90,6 +106,7 @@ export default function App() {
             <Route path="book" element={<ClubBookRedirect />} />
             <Route path="book/:bookId" element={<BookPage />} />
             <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
+            <Route path="thread/:discussionId" element={<ThreadPage />} />
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
             <Route path="u/:username" element={<UserProfilePage />} />

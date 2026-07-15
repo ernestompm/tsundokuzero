@@ -36,6 +36,28 @@ export interface ChapterViewData {
   discussions: ThreadDiscussion[]
 }
 
+export interface ThreadViewData {
+  discussionId: string
+  bookId: string
+  bookTitle: string
+  chapterNumber: number
+  chapterLabel: string | null
+  authorName: string
+  authorUsername?: string
+  authorId: string
+  kind: DiscussionKind
+  /** null = el hilo está por delante de tu progreso */
+  body: string | null
+  isClub: boolean
+  createdAt: string
+  reactions: Record<string, number>
+  myReaction: string | null
+  /** puedes responder (has llegado al capítulo del hilo) */
+  canWrite: boolean
+  myChapter: number
+  comments: ThreadComment[]
+}
+
 export const KIND_LABEL: Record<DiscussionKind, string> = {
   comment: 'Comentario',
   theory: 'Teoría',

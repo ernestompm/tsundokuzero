@@ -37,33 +37,21 @@ export default function NotificationsPage() {
 
     const list = rows ?? []
     const actorIds = [...new Set(list.map((n) => n.actor_id).filter(Boolean))] as string[]
-    const discIds = [...new Set(list.map((n) => n.discussion_id).filter(Boolean))] as string[]
-
-    const [{ data: actors }, { data: discs }] = await Promise.all([
-      actorIds.length
-        ? supabase
-            .from('profiles')
-            .select('id, display_name, username')
-            .in('id', actorIds)
-        : Promise.resolve({ data: [] }),
-      discIds.length
-        ? supabase
-            .from('feed_discussions')
-            .select('id, book_id, chapter_number')
-            .in('id', discIds)
-        : Promise.resolve({ data: [] }),
-    ])
+    const { data: actors } = actorIds.length
+      ? await supabase
+          .from('profiles')
+          .select('id, display_name, username')
+          .in('id', actorIds)
+      : { data: [] }
     const actorById = new Map((actors ?? []).map((a) => [a.id, a]))
-    const discById = new Map((discs ?? []).map((d) => [d.id, d]))
 
     setItems(
       list.map((n) => {
         const actor = n.actor_id ? actorById.get(n.actor_id) : undefined
-        const disc = n.discussion_id ? discById.get(n.discussion_id) : undefined
         let to = '/'
         let detail = ''
         if (n.type === 'reply') {
-          to = disc ? `/book/${disc.book_id}/chapter/${disc.chapter_number}` : '/'
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'respondió a tu idea'
         } else if (n.type === 'follow') {
           to = actor?.username ? `/u/${actor.username}` : '/'

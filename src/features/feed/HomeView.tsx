@@ -300,8 +300,9 @@ function FeedCard({
   const isIdea = item.type === 'idea'
   const unlocked = item.body != null
 
+  // «Ver hilo» / tocar → el hilo enfocado (mensaje principal + respuestas)
   const go = () => {
-    if (isIdea) navigate(`/book/${item.bookId}/chapter/${item.chapterNumber}`)
+    if (isIdea) navigate(`/thread/${item.id}`)
     else if (item.authorUsername) navigate(`/u/${item.authorUsername}`)
   }
 
