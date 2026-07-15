@@ -209,6 +209,18 @@ export type Database = {
       >
     }
     Views: {
+      /** reseñas: review=null hasta que TERMINAS el libro (o es tuya) */
+      book_reviews: {
+        Row: {
+          book_id: string
+          user_id: string
+          rating: number
+          created_at: string
+          has_review: boolean
+          review: string | null
+        }
+        Relationships: []
+      }
       /** discusiones con teaser: body=null cuando está bloqueada para ti */
       feed_discussions: {
         Row: {

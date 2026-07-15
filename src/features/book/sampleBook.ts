@@ -56,6 +56,7 @@ export const SAMPLE_BOOK: BookViewData = {
       review: 'El concepto es brillante; a veces se repite, pero merece muchísimo la pena.',
     },
   ],
+  hiddenReviews: 0,
   chapters: TITLES.map((label, i) => {
     const number = i + 1
     const unlocked = number <= CURRENT

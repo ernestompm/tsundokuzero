@@ -32,9 +32,10 @@ export default function BookPage() {
           .select('number, label')
           .eq('book_id', bookId)
           .order('number'),
+        // Vista enmascarada: `review` llega null si no has terminado el libro
         supabase
-          .from('book_ratings')
-          .select('user_id, rating, review')
+          .from('book_reviews')
+          .select('user_id, rating, review, has_review')
           .eq('book_id', bookId),
       ])
     if (!book) {
@@ -65,15 +66,18 @@ export default function BookPage() {
         : null
     const mine = ratingRows.find((r) => r.user_id === session.user.id)
 
-    // Nombres de quienes dejaron reseña (para mostrarlas)
-    const reviewerIds = ratingRows
-      .filter((r) => r.review && r.user_id !== session.user.id)
-      .map((r) => r.user_id)
-    const { data: reviewers } = reviewerIds.length
+    // Reseñas de otros: texto solo si la vista te lo dejó ver (terminaste).
+    const others = ratingRows.filter((r) => r.user_id !== session.user.id)
+    const visibleReviews = others.filter((r) => r.review)
+    const hiddenReviews = others.filter(
+      (r) => r.has_review && !r.review,
+    ).length
+
+    const { data: reviewers } = visibleReviews.length
       ? await supabase
           .from('profiles')
           .select('id, display_name')
-          .in('id', reviewerIds)
+          .in('id', visibleReviews.map((r) => r.user_id))
       : { data: [] }
     const nameById = new Map((reviewers ?? []).map((p) => [p.id, p.display_name]))
 
@@ -104,13 +108,12 @@ export default function BookPage() {
       myReview: mine?.review ?? null,
       canRate: progress?.status === 'finished',
       status: progress?.status ?? null,
-      reviews: ratingRows
-        .filter((r) => r.review && r.user_id !== session.user.id)
-        .map((r) => ({
-          name: nameById.get(r.user_id) ?? 'Lector',
-          rating: r.rating,
-          review: r.review as string,
-        })),
+      reviews: visibleReviews.map((r) => ({
+        name: nameById.get(r.user_id) ?? 'Lector',
+        rating: r.rating,
+        review: r.review as string,
+      })),
+      hiddenReviews,
     })
   }, [session, bookId])
 

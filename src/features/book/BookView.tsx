@@ -206,19 +206,30 @@ export default function BookView({
         </Card>
       )}
 
-      {/* Reseñas de otros lectores */}
-      {data.reviews.length > 0 && (
+      {/* Reseñas de otros lectores (ocultas hasta terminar el libro) */}
+      {(data.reviews.length > 0 || data.hiddenReviews > 0) && (
         <div className="book-others-reviews">
           <h2 className="title-small book-sec__title">Reseñas del club</h2>
-          {data.reviews.map((r, i) => (
-            <Card key={i} tone="soft" className="review-card">
-              <div className="review-card__head">
-                <span className="title-small">{r.name}</span>
-                <Stars value={r.rating} size={15} />
-              </div>
-              <p className="body-medium">{r.review}</p>
+          {data.status !== 'finished' && data.hiddenReviews > 0 ? (
+            <Card tone="outlined" className="review-locked">
+              <span className="material-symbols-rounded">lock</span>
+              <p className="body-medium">
+                Hay {data.hiddenReviews}{' '}
+                {data.hiddenReviews === 1 ? 'reseña' : 'reseñas'} del club, pero
+                pueden contener spoilers. <b>Termina el libro</b> para leerlas.
+              </p>
             </Card>
-          ))}
+          ) : (
+            data.reviews.map((r, i) => (
+              <Card key={i} tone="soft" className="review-card">
+                <div className="review-card__head">
+                  <span className="title-small">{r.name}</span>
+                  <Stars value={r.rating} size={15} />
+                </div>
+                <p className="body-medium">{r.review}</p>
+              </Card>
+            ))
+          )}
         </div>
       )}
 
