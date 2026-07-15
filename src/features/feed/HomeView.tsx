@@ -12,7 +12,7 @@ import { useCompose } from '../../components/ComposeProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
-import type { FeedItem, FeedReply, HomeData } from './homeTypes'
+import type { FeedItem, HomeData } from './homeTypes'
 import './home.css'
 
 interface Props {
@@ -233,33 +233,6 @@ export default function HomeView({
   )
 }
 
-function FeedReplyRow({
-  reply,
-  onOpen,
-}: {
-  reply: FeedReply
-  onOpen: () => void
-}) {
-  return (
-    <div className="feed-reply">
-      <Avatar name={reply.authorName} size={26} />
-      <div className="feed-reply__content">
-        {reply.body == null ? (
-          <span className="feed-reply__locked body-small">
-            <span className="material-symbols-rounded">lock</span>
-            Desbloquearás esta respuesta al llegar al capítulo{' '}
-            {reply.unlockChapter}
-          </span>
-        ) : (
-          <p className="body-small feed-reply__body" onClick={onOpen}>
-            <span className="feed-reply__who">{reply.authorName}</span>{' '}
-            {reply.body}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
 
 function StatRow({
   icon,
@@ -298,27 +271,41 @@ function FeedCard({
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState('')
   const isIdea = item.type === 'idea'
+  const isReply = item.type === 'reply'
+  const isPost = item.type === 'post'
   const unlocked = item.body != null
 
-  // «Ver hilo» / tocar → el hilo enfocado (mensaje principal + respuestas)
+  // Hilo sobre el que se comenta (para responder / ver hilo)
+  const threadId = isReply ? item.parent!.discussionId : item.id
   const go = () => {
-    if (isIdea) navigate(`/thread/${item.id}`)
+    if (isIdea || isReply) navigate(`/thread/${threadId}`)
     else if (item.authorUsername) navigate(`/u/${item.authorUsername}`)
   }
 
-  const chapterPart = isIdea
-    ? item.chapterLabel
-      ? `Cap. ${item.chapterNumber} · ${item.chapterLabel}`
-      : `Cap. ${item.chapterNumber}`
-    : ''
+  const chapterPart =
+    isIdea && item.chapterNumber != null
+      ? item.chapterLabel
+        ? `Cap. ${item.chapterNumber} · ${item.chapterLabel}`
+        : `Cap. ${item.chapterNumber}`
+      : ''
   const metaLine = isIdea
     ? `${item.createdAt} · ${item.bookTitle} · ${chapterPart}`
-    : `${item.createdAt} · En su muro`
+    : isReply
+      ? `${item.createdAt} · respondió`
+      : `${item.createdAt} · En su muro`
+
+  const kindChip = isIdea
+    ? item.kind
+      ? KIND_LABEL[item.kind]
+      : 'Idea'
+    : isReply
+      ? 'Respuesta'
+      : 'Entrada'
 
   const sendReply = () => {
     const text = replyText.trim()
     if (!text || !onReply) return
-    onReply(item.id, text)
+    onReply(threadId, text)
     setReplyText('')
     setReplying(false)
   }
@@ -332,6 +319,30 @@ function FeedCard({
 
   return (
     <article className="feed-card">
+      {/* Mensaje padre citado (contexto de la respuesta) */}
+      {isReply && item.parent && (
+        <button className="feed-quote" onClick={go}>
+          <span className="feed-quote__head">
+            <Avatar name={item.parent.authorName} size={22} />
+            <span className="title-small">{item.parent.authorName}</span>
+            <span className="body-small on-surface-variant feed-quote__meta">
+              · {item.parent.bookTitle} · Cap. {item.parent.chapterNumber}
+              {item.parent.chapterLabel ? ` · ${item.parent.chapterLabel}` : ''}
+            </span>
+          </span>
+          {item.parent.body == null ? (
+            <span className="feed-quote__locked body-small">
+              <span className="material-symbols-rounded">lock</span>
+              Mensaje aún por delante de tu progreso
+            </span>
+          ) : (
+            <span className="feed-quote__body body-medium">
+              {item.parent.body}
+            </span>
+          )}
+        </button>
+      )}
+
       <header className="feed-card__head">
         {item.authorUsername ? (
           <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
@@ -345,9 +356,7 @@ function FeedCard({
           </div>
         )}
         <span className="feed-card__chips">
-          <span className="chip chip--kind label-small">
-            {isIdea && item.kind ? KIND_LABEL[item.kind] : 'Entrada'}
-          </span>
+          <span className="chip chip--kind label-small">{kindChip}</span>
           {item.isClub && <span className="chip chip--club label-small">Club</span>}
         </span>
       </header>
@@ -355,7 +364,11 @@ function FeedCard({
       {!unlocked ? (
         <div style={{ margin: '12px 0 4px' }}>
           <LockedTeaser
-            label={`Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`}
+            label={
+              isReply
+                ? `Desbloquearás esta respuesta al llegar al capítulo ${item.chapterNumber}`
+                : `Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`
+            }
           />
         </div>
       ) : (
@@ -373,24 +386,10 @@ function FeedCard({
       {isIdea && unlocked && onReact && (
         <div className="feed-card__reactions">
           <Reactions
-            counts={item.reactions}
-            mine={item.myReaction}
+            counts={item.reactions ?? {}}
+            mine={item.myReaction ?? null}
             onReact={(emoji) => onReact(item.id, emoji)}
           />
-        </div>
-      )}
-
-      {/* Respuestas colgando de la publicación (estilo hilo) */}
-      {item.replies.length > 0 && (
-        <div className="feed-thread">
-          {item.replies.map((r) => (
-            <FeedReplyRow key={r.id} reply={r} onOpen={go} />
-          ))}
-          {item.commentCount > item.replies.length && (
-            <button className="feed-thread__more label-medium" onClick={go}>
-              Ver las {item.commentCount} respuestas
-            </button>
-          )}
         </div>
       )}
 
@@ -416,27 +415,26 @@ function FeedCard({
       )}
 
       <footer className="feed-card__foot">
-        {isIdea && unlocked && onReply && (
-          <button
-            className="feed-action"
-            onClick={() => setReplying((v) => !v)}
-          >
+        {(isIdea || isReply) && unlocked && onReply && (
+          <button className="feed-action" onClick={() => setReplying((v) => !v)}>
             <span className="material-symbols-rounded">chat_bubble</span>
-            {item.commentCount > 0 ? item.commentCount : 'Responder'}
+            {isIdea && (item.commentCount ?? 0) > 0
+              ? item.commentCount
+              : 'Responder'}
           </button>
         )}
-        {isIdea && unlocked && (
+        {(isIdea || isReply) && (
           <button className="feed-action" onClick={go}>
             <span className="material-symbols-rounded">forum</span>
             Ver hilo
           </button>
         )}
-        {mine && onDelete && (
+        {mine && !isReply && onDelete && (
           <button
             className="feed-action feed-action--danger"
             onClick={() => {
               if (window.confirm('¿Eliminar esta publicación definitivamente?'))
-                onDelete(item.id, item.type)
+                onDelete(item.id, isPost ? 'post' : 'idea')
             }}
           >
             <span className="material-symbols-rounded">delete</span>

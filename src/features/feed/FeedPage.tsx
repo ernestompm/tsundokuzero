@@ -66,38 +66,59 @@ export default function FeedPage() {
     const authorsCsv = authorSet.join(',')
     const feedFilter = `author_id.in.(${authorsCsv}),club_id.not.is.null`
 
-    // ---- Lote 2: discusiones (vista con teaser) + posts ----
-    const [{ data: discussions }, { data: posts }] = await Promise.all([
-      supabase
-        .from('feed_discussions')
-        .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at, unlocked')
-        .or(feedFilter)
-        .order('created_at', { ascending: false })
-        .limit(30),
-      supabase
-        .from('posts')
-        .select('id, author_id, title, body, club_id, created_at')
-        .or(feedFilter)
-        .order('created_at', { ascending: false })
-        .limit(15),
-    ])
+    // ---- Lote 2: ideas + posts + respuestas (mías y de mis seguidos) ----
+    const [{ data: discussions }, { data: posts }, { data: myReplyRows }] =
+      await Promise.all([
+        supabase
+          .from('feed_discussions')
+          .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at, unlocked')
+          .or(feedFilter)
+          .order('created_at', { ascending: false })
+          .limit(30),
+        supabase
+          .from('posts')
+          .select('id, author_id, title, body, club_id, created_at')
+          .or(feedFilter)
+          .order('created_at', { ascending: false })
+          .limit(15),
+        supabase
+          .from('thread_comments')
+          .select('id, discussion_id, author_id, body, created_at, unlocked, author_chapter')
+          .in('author_id', authorSet)
+          .order('created_at', { ascending: false })
+          .limit(20),
+      ])
 
-    // Respuestas ligadas a cada publicación (vista con teaser) + reacciones
-    const discIds = (discussions ?? []).map((d) => d.id)
-    const [{ data: replyRows }, { data: reactionRows }] = discIds.length
-      ? await Promise.all([
-          supabase
-            .from('thread_comments')
-            .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
-            .in('discussion_id', discIds)
-            .order('created_at', { ascending: false })
-            .limit(120),
-          supabase
-            .from('reactions')
-            .select('discussion_id, emoji, user_id')
-            .in('discussion_id', discIds),
-        ])
-      : [{ data: [] }, { data: [] }]
+    const discList0 = discussions ?? []
+    const replyList = myReplyRows ?? []
+    const discIds = discList0.map((d) => d.id)
+
+    // Padres de esas respuestas que aún no están entre las ideas del feed
+    const parentIds = [...new Set(replyList.map((r) => r.discussion_id))].filter(
+      (id) => !discIds.includes(id),
+    )
+
+    const [{ data: parentDiscs }, { data: reactionRows }, { data: commentRows }] =
+      await Promise.all([
+        parentIds.length
+          ? supabase
+              .from('feed_discussions')
+              .select('id, author_id, book_id, chapter_number, body, club_id, created_at, unlocked')
+              .in('id', parentIds)
+          : Promise.resolve({ data: [] }),
+        discIds.length
+          ? supabase
+              .from('reactions')
+              .select('discussion_id, emoji, user_id')
+              .in('discussion_id', discIds)
+          : Promise.resolve({ data: [] }),
+        discIds.length
+          ? supabase
+              .from('thread_comments')
+              .select('discussion_id')
+              .in('discussion_id', discIds)
+          : Promise.resolve({ data: [] }),
+      ])
 
     const reactByDisc = new Map<string, Record<string, number>>()
     const myReactByDisc = new Map<string, string>()
@@ -107,6 +128,10 @@ export default function FeedPage() {
       reactByDisc.set(r.discussion_id, m)
       if (r.user_id === myId) myReactByDisc.set(r.discussion_id, r.emoji)
     }
+
+    const countById = new Map<string, number>()
+    for (const c of commentRows ?? [])
+      countById.set(c.discussion_id, (countById.get(c.discussion_id) ?? 0) + 1)
 
     // ---- Lectura actual ----
     let reading: HomeReading | null = null
@@ -139,20 +164,26 @@ export default function FeedPage() {
     }
 
     // ---- Mezclar feed + conversaciones por libro ----
-    const discList = discussions ?? []
+    const discList = discList0
     const postList = posts ?? []
+    const parentList = parentDiscs ?? []
     const conversations: BookConvo[] = []
     let feed: FeedItem[] = []
 
-    const replies = replyRows ?? []
     const authorIds = [
       ...new Set([
         ...discList.map((d) => d.author_id),
         ...postList.map((p) => p.author_id),
-        ...replies.map((r) => r.author_id),
+        ...replyList.map((r) => r.author_id),
+        ...parentList.map((p) => p.author_id),
       ]),
     ]
-    const bookIds = [...new Set(discList.map((d) => d.book_id))]
+    const bookIds = [
+      ...new Set([
+        ...discList.map((d) => d.book_id),
+        ...parentList.map((p) => p.book_id),
+      ]),
+    ]
 
     if (authorIds.length > 0) {
       const [{ data: authors }, { data: books }, { data: chapters }] =
@@ -181,14 +212,19 @@ export default function FeedPage() {
       const labelByKey = new Map(
         (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
       )
-      const countById = new Map<string, number>()
-      const repliesById = new Map<string, typeof replies>()
-      for (const r of replies) {
-        countById.set(r.discussion_id, (countById.get(r.discussion_id) ?? 0) + 1)
-        const arr = repliesById.get(r.discussion_id) ?? []
-        arr.push(r)
-        repliesById.set(r.discussion_id, arr)
+
+      // Origen del mensaje padre citado: ideas del feed + padres cargados aparte
+      type ParentSrc = {
+        id: string
+        author_id: string
+        book_id: string
+        chapter_number: number
+        body: string | null
+        unlocked: boolean
       }
+      const parentSourceById = new Map<string, ParentSrc>()
+      for (const d of discList) parentSourceById.set(d.id, d)
+      for (const d of parentList) parentSourceById.set(d.id, d)
 
       const ideaItems = discList.map((d) => ({
         ts: d.created_at,
@@ -207,23 +243,42 @@ export default function FeedPage() {
           isClub: d.club_id != null,
           createdAt: timeAgo(d.created_at),
           commentCount: countById.get(d.id) ?? 0,
-          // últimas 3, en orden cronológico, colgando de la publicación
-          replies: (repliesById.get(d.id) ?? [])
-            .slice(0, 3)
-            .reverse()
-            .map((r) => ({
-              id: r.id,
-              authorId: r.author_id,
-              authorName: nameById.get(r.author_id) ?? '·',
-              authorUsername: usernameById.get(r.author_id),
-              body: r.unlocked ? r.body : null,
-              unlockChapter: r.author_chapter,
-              createdAt: timeAgo(r.created_at),
-            })),
           reactions: reactByDisc.get(d.id) ?? {},
           myReaction: myReactByDisc.get(d.id) ?? null,
         } satisfies FeedItem,
       }))
+
+      // Cada respuesta = su propia tarjeta, con el mensaje padre citado encima.
+      const replyItems = replyList.flatMap((r) => {
+        const p = parentSourceById.get(r.discussion_id)
+        if (!p) return []
+        return [
+          {
+            ts: r.created_at,
+            item: {
+              id: r.id,
+              type: 'reply',
+              authorId: r.author_id,
+              authorName: nameById.get(r.author_id) ?? '·',
+              authorUsername: usernameById.get(r.author_id),
+              body: r.unlocked ? r.body : null,
+              chapterNumber: r.author_chapter,
+              isClub: false,
+              createdAt: timeAgo(r.created_at),
+              parent: {
+                discussionId: p.id,
+                authorName: nameById.get(p.author_id) ?? '·',
+                authorUsername: usernameById.get(p.author_id),
+                body: p.unlocked ? p.body : null,
+                chapterNumber: p.chapter_number,
+                chapterLabel:
+                  labelByKey.get(`${p.book_id}/${p.chapter_number}`) ?? null,
+                bookTitle: bookById.get(p.book_id)?.title ?? '',
+              },
+            } satisfies FeedItem,
+          },
+        ]
+      })
 
       const postItems = postList.map((p) => ({
         ts: p.created_at,
@@ -238,14 +293,10 @@ export default function FeedPage() {
           body: p.body,
           isClub: p.club_id != null,
           createdAt: timeAgo(p.created_at),
-          commentCount: 0,
-          replies: [],
-          reactions: {},
-          myReaction: null,
         } satisfies FeedItem,
       }))
 
-      feed = [...ideaItems, ...postItems]
+      feed = [...ideaItems, ...replyItems, ...postItems]
         .sort((a, b) => (a.ts < b.ts ? 1 : -1))
         .slice(0, 40)
         .map((x) => x.item)

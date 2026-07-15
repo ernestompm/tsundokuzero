@@ -1,40 +1,44 @@
 import type { DiscussionKind } from '../../lib/database.types'
 
-export interface FeedReply {
-  id: string
+/** Mensaje padre citado encima de una respuesta (contexto en el feed). */
+export interface FeedParent {
+  discussionId: string
   authorName: string
   authorUsername?: string
-  authorId: string
-  /** null = bloqueada para ti (teaser) */
+  /** null = el padre está por delante de tu progreso */
   body: string | null
-  unlockChapter: number
-  createdAt: string
+  chapterNumber: number
+  chapterLabel: string | null
+  bookTitle: string
 }
 
 export interface FeedItem {
   id: string
-  /** idea = discusión anclada a capítulo · post = entrada de muro */
-  type: 'idea' | 'post'
+  /** idea = publicación anclada · reply = respuesta (con padre citado) · post = muro */
+  type: 'idea' | 'reply' | 'post'
   authorName: string
   authorUsername?: string
   authorId: string
+  createdAt: string
+  /** null = bloqueada para ti (teaser con blur) */
+  body: string | null
+  isClub: boolean
+
+  // --- idea ---
   bookId?: string | null
   bookTitle?: string | null
   chapterNumber?: number | null
   chapterLabel?: string | null
-  kind: DiscussionKind | null
+  kind?: DiscussionKind | null
+  commentCount?: number
+  reactions?: Record<string, number>
+  myReaction?: string | null
+
+  // --- reply ---
+  parent?: FeedParent
+
+  // --- post ---
   postTitle?: string | null
-  /** null = bloqueada para ti (teaser con blur) */
-  body: string | null
-  isClub: boolean
-  createdAt: string
-  commentCount: number
-  /** últimas respuestas, ligadas a la publicación (estilo hilo) */
-  replies: FeedReply[]
-  /** reacciones: emoji → nº */
-  reactions: Record<string, number>
-  /** el emoji con el que TÚ reaccionaste, o null */
-  myReaction: string | null
 }
 
 export interface HomeReading {
@@ -54,7 +58,6 @@ export interface BookConvo {
   bookTitle: string
   author: string
   coverUrl?: string | null
-  /** hasta qué capítulo hay conversación visible para ti */
   upTo: number
   count: number
   avatars: string[]
@@ -75,13 +78,11 @@ export interface HomeDiscover {
 
 export interface HomeData {
   displayName: string
-  /** id del usuario conectado (habilita acciones sobre lo propio) */
   myId?: string
   reading: HomeReading | null
   stats: HomeStats
   conversations: BookConvo[]
   discover: HomeDiscover[]
   feed: FeedItem[]
-  /** votación abierta del club, si la hay (banner) */
   openPoll?: { id: string; title: string } | null
 }
