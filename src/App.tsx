@@ -55,6 +55,8 @@ export default function App() {
                 data={SAMPLE_BOOK}
                 onSetChapter={() => {}}
                 onOpenChapter={() => {}}
+                onRate={() => {}}
+                onAddToShelf={() => {}}
               />
             }
           />
@@ -74,9 +76,15 @@ export default function App() {
             element={
               <ComposeSheet
                 open
-                chapterNumber={18}
-                chapterLabel="El tablero de ajedrez"
-                canWrite
+                targets={[
+                  {
+                    bookId: 'sample',
+                    bookTitle: 'La Biblioteca de la Medianoche',
+                    chapterNumber: 18,
+                    chapterLabel: 'El tablero de ajedrez',
+                    clubId: 'club',
+                  },
+                ]}
                 onPublish={() => {}}
                 onClose={() => {}}
               />

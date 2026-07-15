@@ -21,6 +21,11 @@ export interface BookViewData {
   avgRating: number | null
   ratingCount: number
   myRating: number | null
+  myReview: string | null
   /** puede valorar: tiene el libro terminado */
   canRate: boolean
+  /** estado de lectura: null si el libro no está en tu biblioteca */
+  status: 'reading' | 'finished' | 'want' | null
+  /** reseñas de otros lectores */
+  reviews: { name: string; rating: number; review: string }[]
 }

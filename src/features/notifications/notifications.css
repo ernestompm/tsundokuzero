@@ -32,3 +32,14 @@
   font-size: 20px;
   color: var(--md-sys-color-on-surface-variant);
 }
+.noti-row__sysicon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}

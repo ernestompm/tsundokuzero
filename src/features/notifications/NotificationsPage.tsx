@@ -30,7 +30,7 @@ export default function NotificationsPage() {
     if (!session) return
     const { data: rows } = await supabase
       .from('notifications')
-      .select('id, actor_id, type, discussion_id, poll_id, read, created_at')
+      .select('id, actor_id, type, discussion_id, poll_id, book_id, read, created_at')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(40)
@@ -53,6 +53,12 @@ export default function NotificationsPage() {
         if (n.type === 'reply') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'respondió a tu idea'
+        } else if (n.type === 'unlock') {
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
+          detail = 'Se ha desbloqueado una respuesta a tu mensaje'
+        } else if (n.type === 'book_done') {
+          to = n.book_id ? `/book/${n.book_id}` : '/club'
+          detail = '¡El club ha terminado el libro! Deja tu reseña'
         } else if (n.type === 'follow') {
           to = actor?.username ? `/u/${actor.username}` : '/'
           detail = 'empezó a seguirte'
@@ -104,30 +110,53 @@ export default function NotificationsPage() {
         </p>
       ) : (
         <div className="noti-list">
-          {items.map((n) => (
-            <button
-              key={n.id}
-              className={`noti-row${n.read ? '' : ' unread'}`}
-              onClick={() => navigate(n.to)}
-            >
-              <Avatar name={n.actorName} size={40} />
-              <span className="noti-row__text">
-                <span className="body-medium">
-                  <b>{n.actorName}</b> {n.detail}
+          {items.map((n) => {
+            const systemMsg = n.type === 'unlock' || n.type === 'book_done'
+            const icon =
+              n.type === 'reply'
+                ? 'chat_bubble'
+                : n.type === 'follow'
+                  ? 'group'
+                  : n.type === 'unlock'
+                    ? 'lock_open'
+                    : n.type === 'book_done'
+                      ? 'menu_book'
+                      : 'how_to_vote'
+            return (
+              <button
+                key={n.id}
+                className={`noti-row${n.read ? '' : ' unread'}`}
+                onClick={() => navigate(n.to)}
+              >
+                {systemMsg ? (
+                  <span className="noti-row__sysicon material-symbols-rounded">
+                    {icon}
+                  </span>
+                ) : (
+                  <Avatar name={n.actorName} size={40} />
+                )}
+                <span className="noti-row__text">
+                  <span className="body-medium">
+                    {systemMsg ? (
+                      n.detail
+                    ) : (
+                      <>
+                        <b>{n.actorName}</b> {n.detail}
+                      </>
+                    )}
+                  </span>
+                  <span className="body-small on-surface-variant">
+                    {n.createdAt}
+                  </span>
                 </span>
-                <span className="body-small on-surface-variant">
-                  {n.createdAt}
-                </span>
-              </span>
-              <span className="material-symbols-rounded noti-row__icon">
-                {n.type === 'reply'
-                  ? 'chat_bubble'
-                  : n.type === 'follow'
-                    ? 'group'
-                    : 'how_to_vote'}
-              </span>
-            </button>
-          ))}
+                {!systemMsg && (
+                  <span className="material-symbols-rounded noti-row__icon">
+                    {icon}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       )}
     </section>

@@ -9,19 +9,10 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import type { DiscussionKind } from '../lib/database.types'
-import ComposeSheet from './ComposeSheet'
-
-interface Anchor {
-  bookId: string
-  bookTitle: string
-  clubId: string | null
-  chapterNumber: number
-  chapterLabel: string | null
-}
+import ComposeSheet, { type ComposeTarget } from './ComposeSheet'
 
 interface ComposeCtx {
   openCompose: () => void
-  /** Se incrementa tras cada publicación; las pantallas lo observan para recargar. */
   version: number
 }
 
@@ -31,7 +22,7 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [anchor, setAnchor] = useState<Anchor | null>(null)
+  const [targets, setTargets] = useState<ComposeTarget[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
@@ -39,73 +30,77 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
   const openCompose = useCallback(async () => {
     if (!session) return
     setOpen(true)
-    setAnchor(null)
     setError(null)
+    setTargets([])
 
-    // Ancla = tu lectura más reciente (multi-libro). Sin filtrar por
-    // status: quien TERMINÓ el libro también puede publicar (cap. final).
-    const { data: prog } = await supabase
+    // Libros que estás leyendo (capítulo >= 1) = destinos posibles del anclaje.
+    const { data: progress } = await supabase
       .from('reading_progress')
       .select('book_id, current_chapter')
       .eq('user_id', session.user.id)
+      .gte('current_chapter', 1)
       .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (!prog || prog.current_chapter < 1) return
-
-    const [{ data: book }, { data: ch }, { data: club }] = await Promise.all([
-      supabase
-        .from('books')
-        .select('id, title')
-        .eq('id', prog.book_id)
-        .maybeSingle(),
-      supabase
-        .from('chapters')
-        .select('label')
-        .eq('book_id', prog.book_id)
-        .eq('number', prog.current_chapter)
-        .maybeSingle(),
-      supabase
-        .from('clubs')
-        .select('id')
-        .eq('current_book_id', prog.book_id)
-        .limit(1)
-        .maybeSingle(),
-    ])
-    if (!book) return
-
-    setAnchor({
-      bookId: book.id,
-      bookTitle: book.title,
-      clubId: club?.id ?? null,
-      chapterNumber: prog.current_chapter,
-      chapterLabel: ch?.label ?? null,
-    })
+    const rows = progress ?? []
+    if (rows.length === 0) {
+      setTargets([])
+      return
+    }
+    const bookIds = rows.map((r) => r.book_id)
+    const [{ data: books }, { data: clubs }, { data: chapters }] =
+      await Promise.all([
+        supabase.from('books').select('id, title').in('id', bookIds),
+        supabase.from('clubs').select('id, current_book_id').in('current_book_id', bookIds),
+        supabase.from('chapters').select('book_id, number, label').in('book_id', bookIds),
+      ])
+    const titleById = new Map((books ?? []).map((b) => [b.id, b.title]))
+    const clubByBook = new Map((clubs ?? []).map((c) => [c.current_book_id, c.id]))
+    const labelByKey = new Map(
+      (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
+    )
+    setTargets(
+      rows.map((r) => ({
+        bookId: r.book_id,
+        bookTitle: titleById.get(r.book_id) ?? '',
+        chapterNumber: r.current_chapter,
+        chapterLabel: labelByKey.get(`${r.book_id}/${r.current_chapter}`) ?? null,
+        clubId: clubByBook.get(r.book_id) ?? null,
+      })),
+    )
   }, [session])
 
   const publish = async (
     kind: DiscussionKind,
     body: string,
     toClub: boolean,
+    target: ComposeTarget | null,
   ) => {
-    if (!session || !anchor) return
+    if (!session) return
     setSubmitting(true)
     setError(null)
-    const { error } = await supabase.from('discussions').insert({
-      book_id: anchor.bookId,
-      chapter_number: anchor.chapterNumber,
-      author_id: session.user.id,
-      kind,
-      body,
-      club_id: toClub ? anchor.clubId : null,
-    })
+    let err
+    if (target) {
+      // Idea anclada a un libro/capítulo
+      const { error } = await supabase.from('discussions').insert({
+        book_id: target.bookId,
+        chapter_number: target.chapterNumber,
+        author_id: session.user.id,
+        kind,
+        body,
+        club_id: toClub ? target.clubId : null,
+      })
+      err = error
+    } else {
+      // Entrada general → muro
+      const { error } = await supabase.from('posts').insert({
+        author_id: session.user.id,
+        body,
+        visibility: 'followers',
+      })
+      err = error
+    }
     setSubmitting(false)
-    if (error) {
-      setError(
-        'No se pudo publicar. Revisa tu conexión e inténtalo de nuevo. ' +
-          `(${error.message})`,
-      )
+    if (err) {
+      setError('No se pudo publicar. Inténtalo de nuevo. (' + err.message + ')')
     } else {
       setOpen(false)
       setVersion((v) => v + 1)
@@ -117,18 +112,14 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
       {children}
       <ComposeSheet
         open={open}
-        bookTitle={anchor?.bookTitle ?? null}
-        chapterNumber={anchor?.chapterNumber ?? 0}
-        chapterLabel={anchor?.chapterLabel ?? null}
-        canWrite={(anchor?.chapterNumber ?? 0) > 0}
-        clubAvailable={anchor?.clubId != null}
+        targets={targets}
         submitting={submitting}
         error={error}
         onPublish={publish}
         onClose={() => setOpen(false)}
         onGoToBook={() => {
           setOpen(false)
-          navigate('/book')
+          navigate('/library')
         }}
       />
     </Ctx.Provider>

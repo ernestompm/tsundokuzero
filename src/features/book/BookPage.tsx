@@ -34,7 +34,7 @@ export default function BookPage() {
           .order('number'),
         supabase
           .from('book_ratings')
-          .select('user_id, rating')
+          .select('user_id, rating, review')
           .eq('book_id', bookId),
       ])
     if (!book) {
@@ -63,6 +63,19 @@ export default function BookPage() {
       ratingRows.length > 0
         ? ratingRows.reduce((sum, r) => sum + r.rating, 0) / ratingRows.length
         : null
+    const mine = ratingRows.find((r) => r.user_id === session.user.id)
+
+    // Nombres de quienes dejaron reseña (para mostrarlas)
+    const reviewerIds = ratingRows
+      .filter((r) => r.review && r.user_id !== session.user.id)
+      .map((r) => r.user_id)
+    const { data: reviewers } = reviewerIds.length
+      ? await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', reviewerIds)
+      : { data: [] }
+    const nameById = new Map((reviewers ?? []).map((p) => [p.id, p.display_name]))
 
     setData({
       bookId,
@@ -87,9 +100,17 @@ export default function BookPage() {
       }),
       avgRating: avg,
       ratingCount: ratingRows.length,
-      myRating:
-        ratingRows.find((r) => r.user_id === session.user.id)?.rating ?? null,
+      myRating: mine?.rating ?? null,
+      myReview: mine?.review ?? null,
       canRate: progress?.status === 'finished',
+      status: progress?.status ?? null,
+      reviews: ratingRows
+        .filter((r) => r.review && r.user_id !== session.user.id)
+        .map((r) => ({
+          name: nameById.get(r.user_id) ?? 'Lector',
+          rating: r.rating,
+          review: r.review as string,
+        })),
     })
   }, [session, bookId])
 
@@ -136,12 +157,33 @@ export default function BookPage() {
     )
   }
 
-  const rate = async (n: number) => {
+  const rate = async (n: number, review: string | null) => {
     if (!session || !data) return
     setBusy(true)
     await supabase.from('book_ratings').upsert(
-      { book_id: data.bookId, user_id: session.user.id, rating: n },
+      {
+        book_id: data.bookId,
+        user_id: session.user.id,
+        rating: n,
+        review: review ?? data.myReview,
+      },
       { onConflict: 'book_id,user_id' },
+    )
+    await load()
+    setBusy(false)
+  }
+
+  const addToShelf = async (status: 'want' | 'reading') => {
+    if (!session || !data) return
+    setBusy(true)
+    await supabase.from('reading_progress').upsert(
+      {
+        user_id: session.user.id,
+        book_id: data.bookId,
+        status,
+        current_chapter: status === 'reading' ? Math.max(1, data.currentChapter) : 0,
+      },
+      { onConflict: 'user_id,book_id' },
     )
     await load()
     setBusy(false)
@@ -154,6 +196,7 @@ export default function BookPage() {
       onSetChapter={setChapter}
       onOpenChapter={(n) => navigate(`/book/${data.bookId}/chapter/${n}`)}
       onRate={rate}
+      onAddToShelf={addToShelf}
     />
   )
 }

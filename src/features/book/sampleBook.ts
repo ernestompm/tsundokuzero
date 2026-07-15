@@ -41,7 +41,21 @@ export const SAMPLE_BOOK: BookViewData = {
   avgRating: 4.3,
   ratingCount: 6,
   myRating: 4,
+  myReview: null,
   canRate: true,
+  status: 'finished',
+  reviews: [
+    {
+      name: 'Carmen Ruiz',
+      rating: 5,
+      review: 'Una carta de amor a las segundas oportunidades. Lloré con el final.',
+    },
+    {
+      name: 'Chas Molina',
+      rating: 4,
+      review: 'El concepto es brillante; a veces se repite, pero merece muchísimo la pena.',
+    },
+  ],
   chapters: TITLES.map((label, i) => {
     const number = i + 1
     const unlocked = number <= CURRENT

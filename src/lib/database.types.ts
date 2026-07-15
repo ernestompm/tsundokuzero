@@ -50,6 +50,7 @@ export type BookRating = {
   book_id: string
   user_id: string
   rating: number
+  review: string | null
   created_at: string
 }
 
@@ -60,7 +61,12 @@ export type Reaction = {
   created_at: string
 }
 
-export type NotificationType = 'reply' | 'follow' | 'poll'
+export type NotificationType =
+  | 'reply'
+  | 'follow'
+  | 'poll'
+  | 'unlock'
+  | 'book_done'
 
 export type Notification = {
   id: string
@@ -69,6 +75,7 @@ export type Notification = {
   type: NotificationType
   discussion_id: string | null
   poll_id: string | null
+  book_id: string | null
   read: boolean
   created_at: string
 }
@@ -252,6 +259,14 @@ export type Database = {
       add_book_chapter: {
         Args: { book: string; title: string }
         Returns: number
+      }
+      transfer_captaincy: {
+        Args: { club: string; new_captain: string }
+        Returns: undefined
+      }
+      admin_create_club: {
+        Args: { club_name: string; club_slug: string; book: string }
+        Returns: string
       }
       admin_list_discussions: {
         Args: Record<string, never>

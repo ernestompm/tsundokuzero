@@ -15,6 +15,8 @@ interface Member {
   display_name: string
   avatar_url: string | null
   role: string
+  /** capítulo actual en el libro del club (para insights) */
+  chapter: number
 }
 
 interface PollState {
@@ -77,16 +79,34 @@ export default function ClubPage() {
 
     const memberIds = (memberRows ?? []).map((m) => m.user_id)
     const roleById = new Map((memberRows ?? []).map((m) => [m.user_id, m.role]))
-    const { data: profiles } = memberIds.length
-      ? await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', memberIds)
-      : { data: [] }
+    const [{ data: profiles }, { data: progressRows }] = await Promise.all([
+      memberIds.length
+        ? supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .in('id', memberIds)
+        : Promise.resolve({ data: [] }),
+      memberIds.length && clubData.current_book_id
+        ? supabase
+            .from('reading_progress')
+            .select('user_id, current_chapter')
+            .eq('book_id', clubData.current_book_id)
+            .in('user_id', memberIds)
+        : Promise.resolve({ data: [] }),
+    ])
+    const chapterByUser = new Map(
+      (progressRows ?? []).map((p) => [p.user_id, p.current_chapter]),
+    )
     setMembers(
       (profiles ?? [])
-        .map((p) => ({ ...p, role: roleById.get(p.id) ?? 'member' }))
-        .sort((a) => (a.role === 'captain' ? -1 : 1)),
+        .map((p) => ({
+          ...p,
+          role: roleById.get(p.id) ?? 'member',
+          chapter: chapterByUser.get(p.id) ?? 0,
+        }))
+        .sort((a, b) =>
+          a.role === 'captain' ? -1 : b.role === 'captain' ? 1 : b.chapter - a.chapter,
+        ),
     )
 
     if (poll) {
@@ -139,6 +159,24 @@ export default function ClubPage() {
       },
       { onConflict: 'poll_id,user_id' },
     )
+    await load()
+    setBusy(false)
+  }
+
+  const transferCaptaincy = async (newCaptainId: string) => {
+    if (!club) return
+    const target = members.find((m) => m.id === newCaptainId)
+    if (
+      !target ||
+      !window.confirm(`¿Nombrar capitán a ${target.display_name}? Dejarás de serlo tú.`)
+    )
+      return
+    setBusy(true)
+    const { error } = await supabase.rpc('transfer_captaincy', {
+      club: club.id,
+      new_captain: newCaptainId,
+    })
+    if (error) window.alert(error.message)
     await load()
     setBusy(false)
   }
@@ -209,6 +247,19 @@ export default function ClubPage() {
       ? pollState.options.find((o) => o.id === pollState.poll.winner_option_id)
       : null
 
+  // Insights: tu avance frente al grupo
+  const me = members.find((m) => m.id === session?.user.id)
+  const myChapter = me?.chapter ?? 0
+  const chapters = members.map((m) => m.chapter)
+  const groupAvg =
+    chapters.length > 0
+      ? Math.round(chapters.reduce((s, c) => s + c, 0) / chapters.length)
+      : 0
+  const aheadOf = members.filter(
+    (m) => m.id !== me?.id && m.chapter < myChapter,
+  ).length
+  const others = members.length - 1
+
   return (
     <section className="club">
       <div className="club-head">
@@ -238,6 +289,35 @@ export default function ClubPage() {
             chevron_right
           </span>
         </button>
+      )}
+
+      {/* Insights: tu avance frente al grupo */}
+      {book && members.length > 1 && (
+        <div className="club-insights">
+          <span className="material-symbols-rounded club-insights__icon">
+            trending_up
+          </span>
+          <div>
+            <p className="body-medium">
+              {myChapter === 0 ? (
+                <>
+                  El grupo va por el capítulo <b>{groupAvg}</b> de media.
+                  ¡Empieza para unirte a la conversación!
+                </>
+              ) : aheadOf === 0 ? (
+                <>
+                  Vas por el capítulo <b>{myChapter}</b>. El grupo va por el{' '}
+                  <b>{groupAvg}</b> de media — acelera para alcanzarlos.
+                </>
+              ) : (
+                <>
+                  Vas por el capítulo <b>{myChapter}</b>, por delante de{' '}
+                  <b>{aheadOf}</b> de {others}. Media del grupo: cap. {groupAvg}.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
       )}
 
       {pollState && (
@@ -399,29 +479,43 @@ export default function ClubPage() {
         </div>
       )}
 
-      <h2 className="title-small club-sec">Miembros</h2>
+      <h2 className="title-small club-sec">
+        Miembros
+        {book ? ' · avance' : ''}
+      </h2>
       <div className="club-members">
         {members.map((m) => (
-          <Link key={m.id} to={`/u/${m.username}`} className="club-member">
-            <Avatar name={m.display_name} url={m.avatar_url} size={40} />
-            <span className="club-member__names">
-              <span className="title-small">
-                {m.display_name}
-                {m.role === 'captain' && (
-                  <span
-                    className="label-small"
-                    style={{ color: 'var(--md-sys-color-primary)' }}
-                  >
-                    {' '}
-                    ★ capitán
-                  </span>
-                )}
+          <div key={m.id} className="club-member">
+            <Link to={`/u/${m.username}`} className="club-member__id">
+              <Avatar name={m.display_name} url={m.avatar_url} size={40} />
+              <span className="club-member__names">
+                <span className="title-small">
+                  {m.display_name}
+                  {m.role === 'captain' && (
+                    <span
+                      className="label-small"
+                      style={{ color: 'var(--md-sys-color-primary)' }}
+                    >
+                      {' '}
+                      ★ capitán
+                    </span>
+                  )}
+                </span>
+                <span className="body-small on-surface-variant">
+                  @{m.username}
+                  {book && m.chapter > 0 ? ` · cap. ${m.chapter}` : ''}
+                </span>
               </span>
-              <span className="body-small on-surface-variant">
-                @{m.username}
-              </span>
-            </span>
-          </Link>
+            </Link>
+            {iAmCaptain && m.role !== 'captain' && (
+              <md-text-button
+                disabled={busy || undefined}
+                onClick={() => void transferCaptaincy(m.id)}
+              >
+                Hacer capitán
+              </md-text-button>
+            )}
+          </div>
         ))}
       </div>
     </section>

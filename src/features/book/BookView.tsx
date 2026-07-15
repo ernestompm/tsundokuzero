@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
+import '@material/web/button/filled-tonal-button.js'
 import { BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
 import type { BookViewData } from './bookTypes'
@@ -13,7 +14,8 @@ interface Props {
   busy?: boolean
   onSetChapter: (n: number) => void
   onOpenChapter: (n: number) => void
-  onRate?: (n: number) => void
+  onRate?: (n: number, review: string | null) => void
+  onAddToShelf?: (status: 'want' | 'reading') => void
 }
 
 export default function BookView({
@@ -22,8 +24,11 @@ export default function BookView({
   onSetChapter,
   onOpenChapter,
   onRate,
+  onAddToShelf,
 }: Props) {
   const [showSynopsis, setShowSynopsis] = useState(false)
+  const [reviewDraft, setReviewDraft] = useState(data.myReview ?? '')
+  const [pendingStars, setPendingStars] = useState(data.myRating ?? 0)
   const [showAll, setShowAll] = useState(false)
   const { currentChapter, totalChapters } = data
   // Borrador del slider: se confirma con «Guardar», nada de 40 toques.
@@ -154,13 +159,67 @@ export default function BookView({
         </Card>
       )}
 
+      {/* Añadir a la biblioteca si no está */}
+      {(data.status == null || data.status === 'want') && onAddToShelf && (
+        <div className="book-shelf-actions">
+          {data.status == null && (
+            <md-outlined-button onClick={() => onAddToShelf('want')}>
+              <span slot="icon" className="material-symbols-rounded">bookmark</span>
+              Añadir a «por leer»
+            </md-outlined-button>
+          )}
+          <md-filled-button onClick={() => onAddToShelf('reading')}>
+            Empezar a leer
+          </md-filled-button>
+        </div>
+      )}
+
+      {/* Terminado: reseña + estrellas */}
       {data.canRate && onRate && (
-        <Card tone="default" className="book-rate">
+        <Card tone="default" className="book-review">
           <span className="title-small">
-            {data.myRating ? 'Tu valoración' : '¿Qué te ha parecido?'}
+            {data.myRating ? 'Tu reseña' : '¡Terminado! ¿Qué te ha parecido?'}
           </span>
-          <Stars value={data.myRating ?? 0} onRate={onRate} size={28} />
+          <Stars
+            value={pendingStars}
+            onRate={(n) => {
+              setPendingStars(n)
+              onRate(n, reviewDraft.trim() || null)
+            }}
+            size={30}
+          />
+          <textarea
+            className="book-review__text body-medium"
+            rows={3}
+            placeholder="Deja una reseña para el club (opcional)…"
+            value={reviewDraft}
+            onChange={(e) => setReviewDraft(e.target.value)}
+          />
+          {pendingStars > 0 && (
+            <md-filled-button
+              disabled={busy || undefined}
+              onClick={() => onRate(pendingStars, reviewDraft.trim() || null)}
+            >
+              Guardar reseña
+            </md-filled-button>
+          )}
         </Card>
+      )}
+
+      {/* Reseñas de otros lectores */}
+      {data.reviews.length > 0 && (
+        <div className="book-others-reviews">
+          <h2 className="title-small book-sec__title">Reseñas del club</h2>
+          {data.reviews.map((r, i) => (
+            <Card key={i} tone="soft" className="review-card">
+              <div className="review-card__head">
+                <span className="title-small">{r.name}</span>
+                <Stars value={r.rating} size={15} />
+              </div>
+              <p className="body-medium">{r.review}</p>
+            </Card>
+          ))}
+        </div>
       )}
 
       {currentChapter > 0 && (
