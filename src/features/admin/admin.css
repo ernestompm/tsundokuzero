@@ -165,3 +165,18 @@
   flex-direction: column;
   gap: 10px;
 }
+.admin-newbook {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-newbook__row {
+  display: flex;
+  gap: 10px;
+}
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}

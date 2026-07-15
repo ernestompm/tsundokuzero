@@ -38,13 +38,28 @@ function Logo() {
   )
 }
 
+const DRAWER_LINKS = [
+  { to: '/', icon: 'home', label: 'Inicio' },
+  { to: '/explore', icon: 'travel_explore', label: 'Explorar' },
+  { to: '/library', icon: 'auto_stories', label: 'Biblioteca' },
+  { to: '/club', icon: 'group', label: 'Mi club' },
+  { to: '/notifications', icon: 'notifications', label: 'Notificaciones' },
+  { to: '/me', icon: 'account_circle', label: 'Perfil' },
+]
+
 export default function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { session, profile, isSuperAdmin } = useAuth()
+  const { session, profile, isSuperAdmin, signOut } = useAuth()
   const { openCompose } = useCompose()
   const [dark, setDark] = useState(isDarkActive)
   const [unread, setUnread] = useState(0)
+  const [drawer, setDrawer] = useState(false)
+
+  // Cierra el drawer al cambiar de ruta
+  useEffect(() => {
+    setDrawer(false)
+  }, [location.pathname])
 
   // Contador de no leídas: al navegar y cuando la bandeja marca leído.
   useEffect(() => {
@@ -159,10 +174,95 @@ export default function AppShell() {
         </div>
       </aside>
 
+      {/* ---- Drawer (móvil) ---- */}
+      {drawer && (
+        <div className="drawer-scrim" onClick={() => setDrawer(false)}>
+          <nav
+            className="drawer"
+            aria-label="Menú"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="drawer__profile"
+              onClick={() => navigate('/me')}
+            >
+              <Avatar
+                name={profile?.display_name ?? 'Tú'}
+                url={profile?.avatar_url}
+                size={48}
+              />
+              <span className="drawer__names">
+                <span className="title-medium">{profile?.display_name}</span>
+                <span className="body-small on-surface-variant">
+                  @{profile?.username}
+                </span>
+              </span>
+            </button>
+
+            <div className="drawer__links">
+              {DRAWER_LINKS.map(({ to, icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive }) =>
+                    `drawer__link${isActive ? ' active' : ''}`
+                  }
+                >
+                  <span className="material-symbols-rounded">{icon}</span>
+                  <span className="label-large">{label}</span>
+                  {to === '/notifications' && unread > 0 && (
+                    <span className="drawer__badge label-small">{unread}</span>
+                  )}
+                </NavLink>
+              ))}
+              {isSuperAdmin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `drawer__link${isActive ? ' active' : ''}`
+                  }
+                >
+                  <span className="material-symbols-rounded">
+                    admin_panel_settings
+                  </span>
+                  <span className="label-large">Administración</span>
+                </NavLink>
+              )}
+            </div>
+
+            <div className="drawer__foot">
+              <button className="drawer__link" onClick={toggleTheme}>
+                <span className="material-symbols-rounded">
+                  {dark ? 'light_mode' : 'dark_mode'}
+                </span>
+                <span className="label-large">
+                  {dark ? 'Tema claro' : 'Tema oscuro'}
+                </span>
+              </button>
+              <button
+                className="drawer__link"
+                onClick={() => void signOut()}
+              >
+                <span className="material-symbols-rounded">logout</span>
+                <span className="label-large">Cerrar sesión</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+
       {/* ---- Columna principal ---- */}
       <div className="main">
         <header className="top-bar">
           <span className="top-bar__brand">
+            <md-icon-button
+              class="top-bar__menu"
+              aria-label="Abrir menú"
+              onClick={() => setDrawer(true)}
+            >
+              <span className="material-symbols-rounded">menu</span>
+            </md-icon-button>
             <Logo />
           </span>
           <span className="top-bar__actions">

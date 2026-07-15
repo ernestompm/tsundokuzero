@@ -361,7 +361,10 @@ function BooksTab() {
   const [newTitle, setNewTitle] = useState('')
   const [newAuthor, setNewAuthor] = useState('')
   const [newCover, setNewCover] = useState('')
+  const [newSynopsis, setNewSynopsis] = useState('')
+  const [newBuy, setNewBuy] = useState('')
   const [newChapters, setNewChapters] = useState('')
+  const [adding, setAdding] = useState(false)
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
 
@@ -394,6 +397,8 @@ function BooksTab() {
         title,
         author,
         cover_url: newCover.trim() || null,
+        synopsis: newSynopsis.trim() || null,
+        buy_url: newBuy.trim() || null,
         total_chapters: chapterTitles.length,
       })
       .select()
@@ -414,7 +419,10 @@ function BooksTab() {
     setNewTitle('')
     setNewAuthor('')
     setNewCover('')
+    setNewSynopsis('')
+    setNewBuy('')
     setNewChapters('')
+    setAdding(false)
     setBusy(false)
     await load()
   }
@@ -499,6 +507,90 @@ function BooksTab() {
     <div className="admin-list">
       {error && <p className="admin-error body-medium">{error}</p>}
 
+      {/* ---- Alta de libro (guiada) ---- */}
+      {!adding ? (
+        <md-filled-button onClick={() => setAdding(true)}>
+          <span slot="icon" className="material-symbols-rounded">add</span>
+          Añadir un libro nuevo
+        </md-filled-button>
+      ) : (
+        <div className="admin-card admin-newbook">
+          <h2 className="title-medium serif">Nuevo libro</h2>
+          <p className="body-small on-surface-variant">
+            Rellena título, autor y pega los capítulos (uno por línea). Portada,
+            sinopsis y enlace de compra son opcionales y editables después.
+          </p>
+          <label className="admin-field label-medium">
+            Título *
+            <input
+              className="admin-input body-medium"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+            />
+          </label>
+          <label className="admin-field label-medium">
+            Autor *
+            <input
+              className="admin-input body-medium"
+              value={newAuthor}
+              onChange={(e) => setNewAuthor(e.target.value)}
+            />
+          </label>
+          <label className="admin-field label-medium">
+            Sinopsis
+            <textarea
+              className="admin-edit body-medium"
+              rows={3}
+              value={newSynopsis}
+              onChange={(e) => setNewSynopsis(e.target.value)}
+            />
+          </label>
+          <div className="admin-newbook__row">
+            <label className="admin-field label-medium" style={{ flex: 1 }}>
+              URL de portada
+              <input
+                className="admin-input body-medium"
+                placeholder="https://…"
+                value={newCover}
+                onChange={(e) => setNewCover(e.target.value)}
+              />
+            </label>
+            <label className="admin-field label-medium" style={{ flex: 1 }}>
+              Enlace de compra
+              <input
+                className="admin-input body-medium"
+                placeholder="Amazon…"
+                value={newBuy}
+                onChange={(e) => setNewBuy(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="admin-field label-medium">
+            Capítulos * — un título por línea, en orden
+            <textarea
+              className="admin-edit body-medium"
+              rows={6}
+              placeholder={'Cero horas\nLa señora Elm\nLa biblioteca de la medianoche\n…'}
+              value={newChapters}
+              onChange={(e) => setNewChapters(e.target.value)}
+            />
+            <span className="body-small on-surface-variant">
+              {newChapters.split('\n').filter((l) => l.trim()).length} capítulos
+            </span>
+          </label>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <md-text-button onClick={() => setAdding(false)}>Cancelar</md-text-button>
+            <md-filled-button disabled={busy || undefined} onClick={() => void createBook()}>
+              Crear libro
+            </md-filled-button>
+          </div>
+        </div>
+      )}
+
+      <h2 className="title-small manage-card__title" style={{ marginTop: 6 }}>
+        Catálogo ({books.length})
+      </h2>
+
       {books.map((b) => (
         <div key={b.id} className="admin-card admin-book">
           <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="md" />
@@ -576,41 +668,6 @@ function BooksTab() {
         </div>
       ))}
 
-      <div className="admin-card">
-        <h2 className="title-medium serif" style={{ marginBottom: 10 }}>
-          Nuevo libro
-        </h2>
-        <div className="admin-new-book">
-          <input
-            className="admin-input body-medium"
-            placeholder="Título"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-          />
-          <input
-            className="admin-input body-medium"
-            placeholder="Autor"
-            value={newAuthor}
-            onChange={(e) => setNewAuthor(e.target.value)}
-          />
-          <input
-            className="admin-input body-medium"
-            placeholder="URL de portada (opcional)"
-            value={newCover}
-            onChange={(e) => setNewCover(e.target.value)}
-          />
-          <textarea
-            className="admin-edit body-medium"
-            rows={6}
-            placeholder={'Capítulos: un título por línea, en orden\nCapítulo uno\nCapítulo dos…'}
-            value={newChapters}
-            onChange={(e) => setNewChapters(e.target.value)}
-          />
-          <md-filled-button disabled={busy || undefined} onClick={() => void createBook()}>
-            Crear libro
-          </md-filled-button>
-        </div>
-      </div>
     </div>
   )
 }

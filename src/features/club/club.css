@@ -8,6 +8,9 @@
   text-align: center;
   padding: 18px 16px 8px;
 }
+.club-manage-btn {
+  margin-top: 10px;
+}
 
 .club-kicker {
   text-transform: uppercase;
@@ -106,6 +109,77 @@
 .poll-option__note {
   font-style: italic;
   margin-top: 2px;
+}
+
+/* ===================== Gestión del club ===================== */
+.club-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.manage-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.manage-card__title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.manage-card md-filled-button {
+  align-self: flex-start;
+}
+.manage-current-book {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.manage-book-picker {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.manage-book {
+  flex: none;
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 2px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.manage-book.active {
+  border-color: var(--md-sys-color-primary);
+}
+.manage-book__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.manage-member-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.manage-kick {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  color: var(--md-sys-color-error);
 }
 
 .poll-new-option {

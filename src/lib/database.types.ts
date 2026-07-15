@@ -264,6 +264,10 @@ export type Database = {
         Args: { club: string; new_captain: string }
         Returns: undefined
       }
+      club_kick_member: {
+        Args: { club: string; target: string }
+        Returns: undefined
+      }
       admin_create_club: {
         Args: { club_name: string; club_slug: string; book: string }
         Returns: string

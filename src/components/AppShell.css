@@ -53,10 +53,110 @@
   background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
   backdrop-filter: blur(12px);
 }
+.top-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .top-bar__actions {
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+/* ===================== Drawer (móvil) ===================== */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 40%, transparent);
+  animation: sheet-fade 160ms ease;
+}
+.drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 82%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+  background: var(--md-sys-color-surface-container);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  animation: drawer-slide 220ms var(--md-sys-motion-easing-emphasized);
+  overflow-y: auto;
+}
+@keyframes drawer-slide {
+  from { transform: translateX(-100%); }
+}
+.drawer__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+}
+.drawer__names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.drawer__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding-top: 10px;
+}
+.drawer__link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 16px;
+  border-radius: var(--md-sys-shape-corner-full);
+  color: var(--md-sys-color-on-surface-variant);
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+.drawer__link.active {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 600;
+}
+.drawer__link .material-symbols-rounded {
+  font-size: 22px;
+}
+.drawer__badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+  display: grid;
+  place-items: center;
+}
+.drawer__foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* La hamburguesa solo en móvil */
+@media (min-width: 1040px) {
+  .drawer-scrim {
+    display: none;
+  }
 }
 .top-bar__avatar {
   border: none;

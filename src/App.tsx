@@ -20,6 +20,7 @@ import ThreadPage from './features/book/ThreadPage'
 import ThreadView from './features/book/ThreadView'
 import { SAMPLE_THREAD } from './features/book/sampleThread'
 import ClubPage from './features/club/ClubPage'
+import ClubManagePage from './features/club/ClubManagePage'
 import ProfilePage from './features/profile/ProfilePage'
 import UserProfilePage from './features/profile/UserProfilePage'
 import AuthorPage from './features/author/AuthorPage'
@@ -116,6 +117,7 @@ export default function App() {
             <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
             <Route path="thread/:discussionId" element={<ThreadPage />} />
             <Route path="club" element={<ClubPage />} />
+            <Route path="club/manage" element={<ClubManagePage />} />
             <Route path="me" element={<ProfilePage />} />
             <Route path="u/:username" element={<UserProfilePage />} />
             <Route path="author/:authorId" element={<AuthorPage />} />
