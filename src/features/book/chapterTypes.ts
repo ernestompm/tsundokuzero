@@ -4,7 +4,9 @@ export interface ThreadComment {
   id: string
   authorName: string
   authorId: string
-  body: string
+  /** null = bloqueada: su autor iba más adelante que tú */
+  body: string | null
+  unlockChapter?: number
   createdAt: string
 }
 

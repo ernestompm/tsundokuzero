@@ -66,11 +66,11 @@ export default function FeedPage() {
     const authorsCsv = authorSet.join(',')
     const feedFilter = `author_id.in.(${authorsCsv}),club_id.not.is.null`
 
-    // ---- Lote 2: discusiones + posts (el gate RLS filtra spoilers) ----
+    // ---- Lote 2: discusiones (vista con teaser) + posts ----
     const [{ data: discussions }, { data: posts }] = await Promise.all([
       supabase
-        .from('discussions')
-        .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at')
+        .from('feed_discussions')
+        .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at, unlocked')
         .or(feedFilter)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -81,6 +81,17 @@ export default function FeedPage() {
         .order('created_at', { ascending: false })
         .limit(15),
     ])
+
+    // Respuestas ligadas a cada publicación (vista con teaser)
+    const discIds = (discussions ?? []).map((d) => d.id)
+    const { data: replyRows } = discIds.length
+      ? await supabase
+          .from('thread_comments')
+          .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
+          .in('discussion_id', discIds)
+          .order('created_at', { ascending: false })
+          .limit(120)
+      : { data: [] }
 
     // ---- Lectura actual ----
     let reading: HomeReading | null = null
@@ -118,16 +129,18 @@ export default function FeedPage() {
     const conversations: BookConvo[] = []
     let feed: FeedItem[] = []
 
+    const replies = replyRows ?? []
     const authorIds = [
       ...new Set([
         ...discList.map((d) => d.author_id),
         ...postList.map((p) => p.author_id),
+        ...replies.map((r) => r.author_id),
       ]),
     ]
     const bookIds = [...new Set(discList.map((d) => d.book_id))]
 
     if (authorIds.length > 0) {
-      const [{ data: authors }, { data: books }, { data: chapters }, { data: comments }] =
+      const [{ data: authors }, { data: books }, { data: chapters }] =
         await Promise.all([
           supabase
             .from('profiles')
@@ -145,12 +158,6 @@ export default function FeedPage() {
                 .select('book_id, number, label')
                 .in('book_id', bookIds)
             : Promise.resolve({ data: [] }),
-          discList.length
-            ? supabase
-                .from('discussion_comments')
-                .select('discussion_id')
-                .in('discussion_id', discList.map((d) => d.id))
-            : Promise.resolve({ data: [] }),
         ])
 
       const nameById = new Map((authors ?? []).map((a) => [a.id, a.display_name]))
@@ -160,8 +167,13 @@ export default function FeedPage() {
         (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
       )
       const countById = new Map<string, number>()
-      for (const c of comments ?? [])
-        countById.set(c.discussion_id, (countById.get(c.discussion_id) ?? 0) + 1)
+      const repliesById = new Map<string, typeof replies>()
+      for (const r of replies) {
+        countById.set(r.discussion_id, (countById.get(r.discussion_id) ?? 0) + 1)
+        const arr = repliesById.get(r.discussion_id) ?? []
+        arr.push(r)
+        repliesById.set(r.discussion_id, arr)
+      }
 
       const ideaItems = discList.map((d) => ({
         ts: d.created_at,
@@ -176,10 +188,23 @@ export default function FeedPage() {
           chapterNumber: d.chapter_number,
           chapterLabel: labelByKey.get(`${d.book_id}/${d.chapter_number}`) ?? null,
           kind: d.kind,
-          body: d.body,
+          body: d.unlocked ? d.body : null,
           isClub: d.club_id != null,
           createdAt: timeAgo(d.created_at),
           commentCount: countById.get(d.id) ?? 0,
+          // últimas 2, en orden cronológico, colgando de la publicación
+          replies: (repliesById.get(d.id) ?? [])
+            .slice(0, 2)
+            .reverse()
+            .map((r) => ({
+              id: r.id,
+              authorId: r.author_id,
+              authorName: nameById.get(r.author_id) ?? '·',
+              authorUsername: usernameById.get(r.author_id),
+              body: r.unlocked ? r.body : null,
+              unlockChapter: r.author_chapter,
+              createdAt: timeAgo(r.created_at),
+            })),
         } satisfies FeedItem,
       }))
 
@@ -197,6 +222,7 @@ export default function FeedPage() {
           isClub: p.club_id != null,
           createdAt: timeAgo(p.created_at),
           commentCount: 0,
+          replies: [],
         } satisfies FeedItem,
       }))
 

@@ -23,6 +23,14 @@ export const SAMPLE_CHAPTER: ChapterViewData = {
           body: 'Yo también lo pensé, y ojo al reloj parado a las 00:00…',
           createdAt: 'hace 1 h',
         },
+        {
+          id: 'c2',
+          authorName: 'Pau Roig',
+          authorId: 'z',
+          body: null,
+          unlockChapter: 40,
+          createdAt: 'hace 20 min',
+        },
       ],
     },
     {

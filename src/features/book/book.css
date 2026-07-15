@@ -43,6 +43,51 @@
   margin-top: 10px;
 }
 
+/* ---- Ficha: sinopsis, compra, valoración ---- */
+.book-author-link {
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+}
+.book-rating-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.book-extra {
+  margin-top: 12px;
+}
+.book-synopsis {
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.book-synopsis.open {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+.book-synopsis-toggle {
+  background: none;
+  border: none;
+  padding: 8px 0 0;
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+.book-buy {
+  display: inline-block;
+  margin-top: 12px;
+}
+.book-rate {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 /* ---- Botón de entrada a la conversación ---- */
 .book-enter {
   width: 100%;

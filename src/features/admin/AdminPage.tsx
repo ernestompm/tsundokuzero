@@ -8,6 +8,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
+import PageHeader from '../../components/PageHeader'
 import { timeAgo } from '../../lib/time'
 import { KIND_LABEL } from '../book/chapterTypes'
 import type { Book, DiscussionKind } from '../../lib/database.types'
@@ -24,7 +25,7 @@ export default function AdminPage() {
 
   return (
     <section className="admin">
-      <h1 className="headline-medium serif">Administración</h1>
+      <PageHeader title="Administración" sub="Resumen, usuarios, moderación y catálogo" />
       <div className="admin-tabs">
         {(
           [
@@ -451,11 +452,41 @@ function BooksTab() {
     await load()
   }
 
-  const saveCover = async (bookId: string, cover: string) => {
+  const saveField = async (
+    bookId: string,
+    patch: Partial<Pick<Book, 'cover_url' | 'buy_url' | 'synopsis'>>,
+  ) => {
     setBusy(true)
+    const { error } = await supabase.from('books').update(patch).eq('id', bookId)
+    if (error) setError(error.message)
+    setBusy(false)
+    await load()
+  }
+
+  /** Cambia el autor de un libro creando su ficha si hace falta. */
+  const saveAuthor = async (bookId: string, name: string) => {
+    setBusy(true)
+    let { data: author } = await supabase
+      .from('authors')
+      .select('id')
+      .eq('name', name)
+      .maybeSingle()
+    if (!author) {
+      const { data: created, error } = await supabase
+        .from('authors')
+        .insert({ name })
+        .select('id')
+        .single()
+      if (error) {
+        setError(error.message)
+        setBusy(false)
+        return
+      }
+      author = created
+    }
     const { error } = await supabase
       .from('books')
-      .update({ cover_url: cover.trim() || null })
+      .update({ author: name, author_id: author.id })
       .eq('id', bookId)
     if (error) setError(error.message)
     setBusy(false)
@@ -483,10 +514,42 @@ function BooksTab() {
                 defaultValue={b.cover_url ?? ''}
                 onBlur={(e) => {
                   if (e.target.value !== (b.cover_url ?? ''))
-                    void saveCover(b.id, e.target.value)
+                    void saveField(b.id, { cover_url: e.target.value.trim() || null })
                 }}
               />
             </div>
+            <div className="admin-book__row">
+              <input
+                className="admin-input body-small"
+                placeholder="Enlace de compra (Amazon…)"
+                defaultValue={b.buy_url ?? ''}
+                onBlur={(e) => {
+                  if (e.target.value !== (b.buy_url ?? ''))
+                    void saveField(b.id, { buy_url: e.target.value.trim() || null })
+                }}
+              />
+            </div>
+            <div className="admin-book__row">
+              <input
+                className="admin-input body-small"
+                placeholder="Autor (crea su página si no existe)"
+                defaultValue={b.author}
+                onBlur={(e) => {
+                  if (e.target.value.trim() && e.target.value.trim() !== b.author)
+                    void saveAuthor(b.id, e.target.value.trim())
+                }}
+              />
+            </div>
+            <textarea
+              className="admin-edit body-small"
+              rows={3}
+              placeholder="Sinopsis (se muestra en la ficha del libro)"
+              defaultValue={b.synopsis ?? ''}
+              onBlur={(e) => {
+                if (e.target.value !== (b.synopsis ?? ''))
+                  void saveField(b.id, { synopsis: e.target.value.trim() || null })
+              }}
+            />
             <div className="admin-book__row">
               <input
                 className="admin-input body-small"

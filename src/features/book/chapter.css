@@ -95,6 +95,18 @@
   gap: 8px;
   margin-top: 8px;
 }
+.disc__comment-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-style: italic;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.disc__comment-locked .material-symbols-rounded {
+  font-size: 15px;
+  color: var(--md-sys-color-primary);
+  margin-top: 2px;
+}
 .disc__comment-del {
   flex: none;
   background: none;

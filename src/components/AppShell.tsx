@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import '@material/web/ripple/ripple.js'
 import '@material/web/iconbutton/icon-button.js'
+import { supabase } from '../lib/supabase'
 import { Avatar } from './ui'
 import { useAuth } from '../auth/AuthContext'
 import { useCompose } from './ComposeProvider'
@@ -39,15 +40,53 @@ function Logo() {
 
 export default function AppShell() {
   const navigate = useNavigate()
-  const { profile, isSuperAdmin } = useAuth()
+  const location = useLocation()
+  const { session, profile, isSuperAdmin } = useAuth()
   const { openCompose } = useCompose()
   const [dark, setDark] = useState(isDarkActive)
+  const [unread, setUnread] = useState(0)
+
+  // Contador de no leídas: al navegar y cuando la bandeja marca leído.
+  useEffect(() => {
+    if (!session) return
+    let cancelled = false
+    const refresh = () => {
+      supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('read', false)
+        .then(({ count }) => {
+          if (!cancelled) setUnread(count ?? 0)
+        })
+    }
+    refresh()
+    window.addEventListener('tz-notifications-read', refresh)
+    return () => {
+      cancelled = true
+      window.removeEventListener('tz-notifications-read', refresh)
+    }
+  }, [session, location.pathname])
 
   const toggleTheme = () => {
     const next = !dark
     setDark(next)
     setThemeMode(next ? 'dark' : 'light')
   }
+
+  const bell = (
+    <span className="bell">
+      <md-icon-button
+        aria-label={`Notificaciones${unread ? ` (${unread} sin leer)` : ''}`}
+        onClick={() => navigate('/notifications')}
+      >
+        <span className="material-symbols-rounded">notifications</span>
+      </md-icon-button>
+      {unread > 0 && (
+        <span className="bell__badge">{unread > 9 ? '9+' : unread}</span>
+      )}
+    </span>
+  )
 
   // Barra móvil: 5 ranuras con el FAB en el centro.
   const mobileLeft = DESTINATIONS.slice(0, 2)
@@ -83,6 +122,18 @@ export default function AppShell() {
               )}
             </NavLink>
           ))}
+          <NavLink
+            to="/notifications"
+            className={({ isActive }) =>
+              `side-item${isActive ? ' active' : ''}`
+            }
+          >
+            <md-ripple />
+            <span className="material-symbols-rounded">notifications</span>
+            <span className="label-large">
+              Avisos{unread > 0 ? ` (${unread})` : ''}
+            </span>
+          </NavLink>
           {isSuperAdmin && (
             <NavLink
               to="/admin"
@@ -118,6 +169,7 @@ export default function AppShell() {
             <md-icon-button aria-label="Buscar" onClick={() => navigate('/explore')}>
               <span className="material-symbols-rounded">search</span>
             </md-icon-button>
+            {bell}
             <md-icon-button
               aria-label={dark ? 'Tema claro' : 'Tema oscuro'}
               onClick={toggleTheme}

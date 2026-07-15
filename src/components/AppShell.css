@@ -209,7 +209,30 @@
     display: none;
   }
   .content {
-    max-width: 1120px;
-    padding: 32px 40px 48px;
+    max-width: 800px;
+    padding: 32px 28px 48px;
   }
+}
+
+/* ===== Campana de notificaciones ===== */
+.bell {
+  position: relative;
+  display: inline-flex;
+}
+.bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
 }

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/button/filled-button.js'
+import '@material/web/button/outlined-button.js'
 import { BookCover, Card } from '../../components/ui'
+import Stars from '../../components/Stars'
 import type { BookViewData } from './bookTypes'
 import './book.css'
 
@@ -10,6 +13,7 @@ interface Props {
   busy?: boolean
   onSetChapter: (n: number) => void
   onOpenChapter: (n: number) => void
+  onRate?: (n: number) => void
 }
 
 export default function BookView({
@@ -17,7 +21,9 @@ export default function BookView({
   busy,
   onSetChapter,
   onOpenChapter,
+  onRate,
 }: Props) {
+  const [showSynopsis, setShowSynopsis] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const { currentChapter, totalChapters } = data
   // Borrador del slider: se confirma con «Guardar», nada de 40 toques.
@@ -47,8 +53,23 @@ export default function BookView({
         <div className="book-head__info">
           <h1 className="headline-small serif book-head__title">{data.title}</h1>
           <p className="body-medium on-surface-variant">
-            {data.author} · Libro del club
+            {data.authorId ? (
+              <Link to={`/author/${data.authorId}`} className="book-author-link">
+                {data.author}
+              </Link>
+            ) : (
+              data.author
+            )}
           </p>
+          {data.ratingCount > 0 && data.avgRating != null && (
+            <p className="book-rating-line">
+              <Stars value={data.avgRating} size={17} />
+              <span className="label-medium on-surface-variant">
+                {data.avgRating.toFixed(1)} · {data.ratingCount}{' '}
+                {data.ratingCount === 1 ? 'valoración' : 'valoraciones'}
+              </span>
+            </p>
+          )}
 
           <div className="book-progress">
             <span className="label-medium book-progress__kicker">Tu progreso</span>
@@ -97,6 +118,50 @@ export default function BookView({
           </div>
         </div>
       </Card>
+
+      {(data.synopsis || data.buyUrl) && (
+        <Card tone="soft" className="book-extra">
+          {data.synopsis && (
+            <>
+              <p
+                className={`body-medium book-synopsis${showSynopsis ? ' open' : ''}`}
+              >
+                {data.synopsis}
+              </p>
+              <button
+                className="book-synopsis-toggle label-large"
+                onClick={() => setShowSynopsis((v) => !v)}
+              >
+                {showSynopsis ? 'Mostrar menos' : 'Leer sinopsis completa'}
+              </button>
+            </>
+          )}
+          {data.buyUrl && (
+            <a
+              href={data.buyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="book-buy"
+            >
+              <md-outlined-button>
+                <span slot="icon" className="material-symbols-rounded">
+                  shopping_bag
+                </span>
+                Comprar el libro
+              </md-outlined-button>
+            </a>
+          )}
+        </Card>
+      )}
+
+      {data.canRate && onRate && (
+        <Card tone="default" className="book-rate">
+          <span className="title-small">
+            {data.myRating ? 'Tu valoración' : '¿Qué te ha parecido?'}
+          </span>
+          <Stars value={data.myRating ?? 0} onRate={onRate} size={28} />
+        </Card>
+      )}
 
       {currentChapter > 0 && (
         <md-filled-button

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookCover, Card, ProgressBar } from '../../components/ui'
+import PageHeader from '../../components/PageHeader'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 
@@ -67,9 +68,7 @@ export default function LibraryPage() {
 
   return (
     <section>
-      <h1 className="headline-medium serif" style={{ marginBottom: 16 }}>
-        Mi biblioteca
-      </h1>
+      <PageHeader title="Mi biblioteca" sub="Leyendo, leídos y por leer" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {TABS.map((t) => (

@@ -31,6 +31,39 @@ export type Book = {
   author: string
   cover_url: string | null
   total_chapters: number
+  author_id: string | null
+  synopsis: string | null
+  buy_url: string | null
+}
+
+export type Author = {
+  id: string
+  name: string
+  bio: string | null
+  birth_year: number | null
+  nationality: string | null
+  website: string | null
+  created_at: string
+}
+
+export type BookRating = {
+  book_id: string
+  user_id: string
+  rating: number
+  created_at: string
+}
+
+export type NotificationType = 'reply' | 'follow' | 'poll'
+
+export type Notification = {
+  id: string
+  user_id: string
+  actor_id: string | null
+  type: NotificationType
+  discussion_id: string | null
+  poll_id: string | null
+  read: boolean
+  created_at: string
 }
 
 export type Chapter = {
@@ -65,6 +98,8 @@ export type DiscussionComment = {
   author_id: string
   body: string
   created_at: string
+  /** capítulo por el que iba el autor al responder (lo fija un trigger) */
+  author_chapter: number | null
 }
 
 export type Post = {
@@ -150,8 +185,45 @@ export type Database = {
       polls: TableDef<Poll, 'club_id' | 'title' | 'created_by', 'id'>
       poll_options: TableDef<PollOption, 'poll_id' | 'book_title' | 'book_author', 'id'>
       poll_votes: TableDef<PollVote, 'poll_id' | 'option_id' | 'user_id', 'created_at'>
+      authors: TableDef<Author, 'name', 'id' | 'created_at'>
+      book_ratings: TableDef<BookRating, 'book_id' | 'user_id' | 'rating', 'created_at'>
+      notifications: TableDef<
+        Notification,
+        'user_id' | 'type',
+        'id' | 'created_at'
+      >
     }
-    Views: Record<string, never>
+    Views: {
+      /** discusiones con teaser: body=null cuando está bloqueada para ti */
+      feed_discussions: {
+        Row: {
+          id: string
+          book_id: string
+          chapter_number: number
+          author_id: string
+          kind: DiscussionKind
+          club_id: string | null
+          created_at: string
+          unlocked: boolean
+          body: string | null
+        }
+        Relationships: []
+      }
+      /** respuestas con teaser: body=null hasta llegar a author_chapter */
+      thread_comments: {
+        Row: {
+          id: string
+          discussion_id: string
+          author_id: string
+          created_at: string
+          author_chapter: number
+          book_id: string
+          unlocked: boolean
+          body: string | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       admin_list_users: {
         Args: Record<string, never>

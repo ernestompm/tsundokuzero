@@ -1,6 +1,4 @@
 .club {
-  max-width: 560px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -108,6 +106,22 @@
 .poll-option__note {
   font-style: italic;
   margin-top: 2px;
+}
+
+.poll-new-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+}
+.club-poll__form-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .club-sec {

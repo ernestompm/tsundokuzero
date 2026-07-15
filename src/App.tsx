@@ -19,6 +19,8 @@ import { SAMPLE_CHAPTER } from './features/book/sampleChapter'
 import ClubPage from './features/club/ClubPage'
 import ProfilePage from './features/profile/ProfilePage'
 import UserProfilePage from './features/profile/UserProfilePage'
+import AuthorPage from './features/author/AuthorPage'
+import NotificationsPage from './features/notifications/NotificationsPage'
 import ExplorePage from './features/explore/ExplorePage'
 import LibraryPage from './features/library/LibraryPage'
 import AdminPage from './features/admin/AdminPage'
@@ -80,6 +82,8 @@ export default function App() {
             <Route path="club" element={<ClubPage />} />
             <Route path="me" element={<ProfilePage />} />
             <Route path="u/:username" element={<UserProfilePage />} />
+            <Route path="author/:authorId" element={<AuthorPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="admin" element={<AdminPage />} />
           </Route>
         </Route>

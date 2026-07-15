@@ -6,6 +6,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover, SectionHeader } from '../../components/ui'
+import PageHeader from '../../components/PageHeader'
 import './explore.css'
 
 interface PersonRow {
@@ -112,9 +113,7 @@ export default function ExplorePage() {
 
   return (
     <section className="explore">
-      <h1 className="headline-medium serif" style={{ marginBottom: 14 }}>
-        Explorar
-      </h1>
+      <PageHeader title="Explorar" sub="Libros, autores y lectores del club" />
       <input
         className="explore-search body-large"
         placeholder="Busca libros, autores o personas…"

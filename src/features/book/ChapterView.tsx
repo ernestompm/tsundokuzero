@@ -279,9 +279,20 @@ function DiscussionCard({
           {d.comments.map((c) => (
             <div key={c.id} className="disc__comment">
               <Avatar name={c.authorName} size={26} />
-              <p className="body-small" style={{ flex: 1 }}>
-                <span className="who">{c.authorName}</span> · {c.body}
-              </p>
+              {c.body == null ? (
+                <p className="body-small disc__comment-locked" style={{ flex: 1 }}>
+                  <span className="material-symbols-rounded">lock</span>
+                  <span>
+                    <span className="who">{c.authorName}</span> respondió más
+                    adelante — desbloquearás este comentario cuando llegues al
+                    capítulo {c.unlockChapter}
+                  </span>
+                </p>
+              ) : (
+                <p className="body-small" style={{ flex: 1 }}>
+                  <span className="who">{c.authorName}</span> · {c.body}
+                </p>
+              )}
               {currentUserId === c.authorId && onDeleteComment && (
                 <button
                   className="disc__comment-del"

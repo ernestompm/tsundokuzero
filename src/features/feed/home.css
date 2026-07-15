@@ -1,8 +1,6 @@
 /* Layout base = MÓVIL. El hero rico aparece en escritorio (>=1040px). */
 
 .home {
-  max-width: 640px;
-  margin: 0 auto;
   padding-top: 4px;
 }
 
@@ -280,6 +278,51 @@
   line-height: 1.55;
   cursor: pointer;
 }
+/* ---- Hilo de respuestas dentro de la publicación ---- */
+.feed-thread {
+  margin: 10px 0 2px;
+  padding-left: 12px;
+  border-left: 2px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.feed-reply {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.feed-reply__content {
+  flex: 1;
+  min-width: 0;
+}
+.feed-reply__who {
+  font-weight: 700;
+}
+.feed-reply__body {
+  cursor: pointer;
+  line-height: 1.5;
+}
+.feed-reply__locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-style: italic;
+}
+.feed-reply__locked .material-symbols-rounded {
+  font-size: 14px;
+  color: var(--md-sys-color-primary);
+}
+.feed-thread__more {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+
 .feed-card__foot {
   display: flex;
   gap: 20px;
@@ -344,9 +387,6 @@
 
 /* ===================== ESCRITORIO ===================== */
 @media (min-width: 1040px) {
-  .home {
-    max-width: 920px;
-  }
   .home-hero {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 260px;

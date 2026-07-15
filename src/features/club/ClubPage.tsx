@@ -32,6 +32,14 @@ export default function ClubPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [pollState, setPollState] = useState<PollState | null>(null)
   const [busy, setBusy] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [pollTitle, setPollTitle] = useState('')
+  const [options, setOptions] = useState(
+    [
+      { title: '', author: '', note: '' },
+      { title: '', author: '', note: '' },
+    ],
+  )
 
   const load = useCallback(async () => {
     if (!session) return
@@ -131,6 +139,50 @@ export default function ClubPage() {
       },
       { onConflict: 'poll_id,user_id' },
     )
+    await load()
+    setBusy(false)
+  }
+
+  const createPoll = async () => {
+    if (!session || !club) return
+    const title = pollTitle.trim()
+    const clean = options
+      .map((o) => ({
+        title: o.title.trim(),
+        author: o.author.trim(),
+        note: o.note.trim(),
+      }))
+      .filter((o) => o.title && o.author)
+    if (!title || clean.length < 2) {
+      window.alert(
+        'Pon un título y al menos dos opciones completas (libro + autor).',
+      )
+      return
+    }
+    setBusy(true)
+    const { data: poll, error } = await supabase
+      .from('polls')
+      .insert({ club_id: club.id, title, created_by: session.user.id })
+      .select()
+      .single()
+    if (!error && poll) {
+      await supabase.from('poll_options').insert(
+        clean.map((o) => ({
+          poll_id: poll.id,
+          book_title: o.title,
+          book_author: o.author,
+          note: o.note || null,
+        })),
+      )
+      setCreating(false)
+      setPollTitle('')
+      setOptions([
+        { title: '', author: '', note: '' },
+        { title: '', author: '', note: '' },
+      ])
+    } else if (error) {
+      window.alert(`No se pudo crear la votación: ${error.message}`)
+    }
     await load()
     setBusy(false)
   }
@@ -255,6 +307,94 @@ export default function ClubPage() {
             <md-text-button disabled={busy || undefined} onClick={() => void closePoll()}>
               Cerrar votación (capitán)
             </md-text-button>
+          )}
+        </div>
+      )}
+
+      {/* El capitán propone la siguiente votación */}
+      {iAmCaptain && (!pollState || pollState.poll.status === 'closed') && (
+        <div className="club-poll">
+          {creating ? (
+            <>
+              <span className="title-medium serif">Nueva votación</span>
+              <input
+                className="profile-input body-medium"
+                placeholder="Título — p. ej. «Libro de septiembre»"
+                value={pollTitle}
+                onChange={(e) => setPollTitle(e.target.value)}
+              />
+              {options.map((o, i) => (
+                <div key={i} className="poll-new-option">
+                  <input
+                    className="profile-input body-medium"
+                    placeholder={`Opción ${i + 1} · título del libro`}
+                    value={o.title}
+                    onChange={(e) =>
+                      setOptions((prev) =>
+                        prev.map((x, j) =>
+                          j === i ? { ...x, title: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <input
+                    className="profile-input body-medium"
+                    placeholder="Autor"
+                    value={o.author}
+                    onChange={(e) =>
+                      setOptions((prev) =>
+                        prev.map((x, j) =>
+                          j === i ? { ...x, author: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <input
+                    className="profile-input body-medium"
+                    placeholder="Tu pitch (opcional)"
+                    value={o.note}
+                    onChange={(e) =>
+                      setOptions((prev) =>
+                        prev.map((x, j) =>
+                          j === i ? { ...x, note: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              ))}
+              <div className="club-poll__form-actions">
+                {options.length < 5 && (
+                  <md-text-button
+                    onClick={() =>
+                      setOptions((prev) => [
+                        ...prev,
+                        { title: '', author: '', note: '' },
+                      ])
+                    }
+                  >
+                    + Añadir opción
+                  </md-text-button>
+                )}
+                <span style={{ flex: 1 }} />
+                <md-text-button onClick={() => setCreating(false)}>
+                  Cancelar
+                </md-text-button>
+                <md-filled-button
+                  disabled={busy || undefined}
+                  onClick={() => void createPoll()}
+                >
+                  Abrir votación
+                </md-filled-button>
+              </div>
+            </>
+          ) : (
+            <md-filled-button onClick={() => setCreating(true)}>
+              <span slot="icon" className="material-symbols-rounded">
+                how_to_vote
+              </span>
+              Proponer nueva votación
+            </md-filled-button>
           )}
         </div>
       )}

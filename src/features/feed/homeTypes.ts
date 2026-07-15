@@ -1,5 +1,16 @@
 import type { DiscussionKind } from '../../lib/database.types'
 
+export interface FeedReply {
+  id: string
+  authorName: string
+  authorUsername?: string
+  authorId: string
+  /** null = bloqueada para ti (teaser) */
+  body: string | null
+  unlockChapter: number
+  createdAt: string
+}
+
 export interface FeedItem {
   id: string
   /** idea = discusión anclada a capítulo · post = entrada de muro */
@@ -13,10 +24,13 @@ export interface FeedItem {
   chapterLabel?: string | null
   kind: DiscussionKind | null
   postTitle?: string | null
-  body: string
+  /** null = bloqueada para ti (teaser con blur) */
+  body: string | null
   isClub: boolean
   createdAt: string
   commentCount: number
+  /** últimas respuestas, ligadas a la publicación (estilo hilo) */
+  replies: FeedReply[]
 }
 
 export interface HomeReading {

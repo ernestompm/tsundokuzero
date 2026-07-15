@@ -58,10 +58,11 @@ export default function ChapterPage() {
     const discIds = list.map((d) => d.id)
     const authorIds = new Set(list.map((d) => d.author_id))
 
+    // Vista enmascarada: body=null si el autor iba por delante de ti
     const { data: comments } = discIds.length
       ? await supabase
-          .from('discussion_comments')
-          .select('id, discussion_id, author_id, body, created_at')
+          .from('thread_comments')
+          .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
           .in('discussion_id', discIds)
           .order('created_at', { ascending: true })
       : { data: [] }
@@ -95,7 +96,8 @@ export default function ChapterPage() {
           id: c.id,
           authorId: c.author_id,
           authorName: nameById.get(c.author_id) ?? '·',
-          body: c.body,
+          body: c.unlocked ? c.body : null,
+          unlockChapter: c.author_chapter,
           createdAt: timeAgo(c.created_at),
         })),
     }))

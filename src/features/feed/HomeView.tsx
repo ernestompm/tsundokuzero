@@ -8,8 +8,9 @@ import {
   SectionHeader,
 } from '../../components/ui'
 import { useCompose } from '../../components/ComposeProvider'
+import LockedTeaser from '../../components/LockedTeaser'
 import { KIND_LABEL } from '../book/chapterTypes'
-import type { FeedItem, HomeData } from './homeTypes'
+import type { FeedItem, FeedReply, HomeData } from './homeTypes'
 import './home.css'
 
 interface Props {
@@ -221,6 +222,34 @@ export default function HomeView({ data, onDeleteItem }: Props) {
   )
 }
 
+function FeedReplyRow({
+  reply,
+  onOpen,
+}: {
+  reply: FeedReply
+  onOpen: () => void
+}) {
+  return (
+    <div className="feed-reply">
+      <Avatar name={reply.authorName} size={26} />
+      <div className="feed-reply__content">
+        {reply.body == null ? (
+          <span className="feed-reply__locked body-small">
+            <span className="material-symbols-rounded">lock</span>
+            Desbloquearás esta respuesta al llegar al capítulo{' '}
+            {reply.unlockChapter}
+          </span>
+        ) : (
+          <p className="body-small feed-reply__body" onClick={onOpen}>
+            <span className="feed-reply__who">{reply.authorName}</span>{' '}
+            {reply.body}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StatRow({
   icon,
   value,
@@ -289,14 +318,35 @@ function FeedCard({
         </span>
       </header>
 
-      <div className="feed-card__body body-large" onClick={go}>
-        {item.postTitle && (
-          <div className="title-medium serif" style={{ marginBottom: 4 }}>
-            {item.postTitle}
-          </div>
-        )}
-        {item.body}
-      </div>
+      {item.body == null ? (
+        <div style={{ margin: '12px 0 4px' }}>
+          <LockedTeaser
+            label={`Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`}
+          />
+        </div>
+      ) : (
+        <div className="feed-card__body body-large" onClick={go}>
+          {item.postTitle && (
+            <div className="title-medium serif" style={{ marginBottom: 4 }}>
+              {item.postTitle}
+            </div>
+          )}
+          {item.body}
+        </div>
+      )}
+
+      {item.replies.length > 0 && (
+        <div className="feed-thread">
+          {item.replies.map((r) => (
+            <FeedReplyRow key={r.id} reply={r} onOpen={go} />
+          ))}
+          {item.commentCount > item.replies.length && (
+            <button className="feed-thread__more label-medium" onClick={go}>
+              Ver las {item.commentCount} respuestas
+            </button>
+          )}
+        </div>
+      )}
 
       <footer className="feed-card__foot">
         {isIdea && (
