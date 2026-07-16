@@ -1,0 +1,59 @@
+.bookform {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bookform__isbn {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.bookform__isbn .bookform__input {
+  flex: 1;
+}
+.bookform__msg {
+  padding: 8px 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.bookform__error {
+  padding: 8px 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+.bookform__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bookform__row {
+  display: flex;
+  gap: 10px;
+}
+.bookform__input {
+  width: 100%;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 10px 14px;
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  resize: vertical;
+  outline: none;
+}
+.bookform__input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+.bookform__coverpreview {
+  width: 84px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.bookform__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

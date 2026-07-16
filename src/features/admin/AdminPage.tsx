@@ -8,6 +8,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
+import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
 import { timeAgo } from '../../lib/time'
 import { KIND_LABEL } from '../book/chapterTypes'
@@ -358,92 +359,7 @@ function ContentTab() {
 function BooksTab() {
   const [books, setBooks] = useState<Book[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newCover, setNewCover] = useState('')
-  const [newSynopsis, setNewSynopsis] = useState('')
-  const [newBuy, setNewBuy] = useState('')
-  const [newChapters, setNewChapters] = useState('')
   const [adding, setAdding] = useState(false)
-  const [isbn, setIsbn] = useState('')
-  const [lookupBusy, setLookupBusy] = useState(false)
-  const [lookupMsg, setLookupMsg] = useState<string | null>(null)
-
-  /** Autorrelleno por ISBN: Google Books y, si falla, Open Library.
-   *  Ninguna API pública da los CAPÍTULOS (varían por edición): a mano. */
-  const lookupIsbn = async () => {
-    const clean = isbn.replace(/[^0-9Xx]/g, '')
-    if (clean.length < 10) {
-      setLookupMsg('Escribe un ISBN válido (10 o 13 dígitos).')
-      return
-    }
-    setLookupBusy(true)
-    setLookupMsg(null)
-    try {
-      let title = ''
-      let author = ''
-      let synopsis = ''
-      let cover = ''
-
-      // 1) Google Books
-      try {
-        const res = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}`,
-        )
-        const data = await res.json()
-        const v = data?.items?.[0]?.volumeInfo
-        if (v) {
-          title = v.title ?? ''
-          if (v.subtitle) title += ` — ${v.subtitle}`
-          author = (v.authors ?? []).join(' y ')
-          synopsis = v.description ?? ''
-          cover = (v.imageLinks?.thumbnail ?? '').replace(
-            'http://',
-            'https://',
-          )
-        }
-      } catch {
-        /* probamos Open Library */
-      }
-
-      // 2) Open Library (fallback o complemento)
-      if (!title || !author) {
-        try {
-          const res = await fetch(
-            `https://openlibrary.org/api/books?bibkeys=ISBN:${clean}&jscmd=data&format=json`,
-          )
-          const data = await res.json()
-          const v = data?.[`ISBN:${clean}`]
-          if (v) {
-            title = title || v.title || ''
-            author =
-              author ||
-              (v.authors ?? []).map((a: { name: string }) => a.name).join(' y ')
-            cover = cover || v.cover?.large || v.cover?.medium || ''
-          }
-        } catch {
-          /* sin red o sin datos */
-        }
-      }
-
-      if (!title) {
-        setLookupMsg(
-          'No se encontró ese ISBN en Google Books ni Open Library. Rellena los datos a mano.',
-        )
-        return
-      }
-      setNewTitle(title)
-      if (author) setNewAuthor(author)
-      if (synopsis) setNewSynopsis(synopsis)
-      if (cover) setNewCover(cover)
-      setNewBuy(`https://www.amazon.es/s?k=${clean}`)
-      setLookupMsg(
-        `Encontrado: «${title}»${author ? ` de ${author}` : ''}. Revisa los datos y pega los capítulos (eso no lo da ninguna API).`,
-      )
-    } finally {
-      setLookupBusy(false)
-    }
-  }
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
 
@@ -456,55 +372,6 @@ function BooksTab() {
   useEffect(() => {
     void load()
   }, [load])
-
-  const createBook = async () => {
-    const title = newTitle.trim()
-    const author = newAuthor.trim()
-    const chapterTitles = newChapters
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-    if (!title || !author || chapterTitles.length === 0) {
-      setError('Título, autor y al menos un capítulo (uno por línea).')
-      return
-    }
-    setBusy(true)
-    setError(null)
-    const { data: book, error: bookError } = await supabase
-      .from('books')
-      .insert({
-        title,
-        author,
-        cover_url: newCover.trim() || null,
-        synopsis: newSynopsis.trim() || null,
-        buy_url: newBuy.trim() || null,
-        total_chapters: chapterTitles.length,
-      })
-      .select()
-      .single()
-    if (bookError || !book) {
-      setError(bookError?.message ?? 'No se pudo crear el libro')
-      setBusy(false)
-      return
-    }
-    const { error: chError } = await supabase.from('chapters').insert(
-      chapterTitles.map((label, i) => ({
-        book_id: book.id,
-        number: i + 1,
-        label,
-      })),
-    )
-    if (chError) setError(chError.message)
-    setNewTitle('')
-    setNewAuthor('')
-    setNewCover('')
-    setNewSynopsis('')
-    setNewBuy('')
-    setNewChapters('')
-    setAdding(false)
-    setBusy(false)
-    await load()
-  }
 
   const addChapter = async (bookId: string) => {
     const title = (chapterDrafts[bookId] ?? '').trim()
@@ -586,104 +453,24 @@ function BooksTab() {
     <div className="admin-list">
       {error && <p className="admin-error body-medium">{error}</p>}
 
-      {/* ---- Alta de libro (guiada) ---- */}
+      {/* ---- Alta de libro (guiada, compartida con la capitanía) ---- */}
       {!adding ? (
         <md-filled-button onClick={() => setAdding(true)}>
           <span slot="icon" className="material-symbols-rounded">add</span>
           Añadir un libro nuevo
         </md-filled-button>
       ) : (
-        <div className="admin-card admin-newbook">
-          <h2 className="title-medium serif">Nuevo libro</h2>
-          <p className="body-small on-surface-variant">
-            Escribe el ISBN y pulsa Buscar para autorrellenar título, autor,
-            sinopsis y portada. Los capítulos se pegan a mano (ninguna API los
-            da: dependen de la edición).
-          </p>
-          <div className="admin-isbn-row">
-            <input
-              className="admin-input body-medium"
-              placeholder="ISBN — p. ej. 978-84-663-8033-1"
-              inputMode="numeric"
-              value={isbn}
-              onChange={(e) => setIsbn(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && void lookupIsbn()}
-            />
-            <md-outlined-button
-              disabled={lookupBusy || undefined}
-              onClick={() => void lookupIsbn()}
-            >
-              <span slot="icon" className="material-symbols-rounded">search</span>
-              {lookupBusy ? 'Buscando…' : 'Buscar'}
-            </md-outlined-button>
-          </div>
-          {lookupMsg && (
-            <p className="body-small admin-isbn-msg">{lookupMsg}</p>
-          )}
-          <label className="admin-field label-medium">
-            Título *
-            <input
-              className="admin-input body-medium"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
-          </label>
-          <label className="admin-field label-medium">
-            Autor *
-            <input
-              className="admin-input body-medium"
-              value={newAuthor}
-              onChange={(e) => setNewAuthor(e.target.value)}
-            />
-          </label>
-          <label className="admin-field label-medium">
-            Sinopsis
-            <textarea
-              className="admin-edit body-medium"
-              rows={3}
-              value={newSynopsis}
-              onChange={(e) => setNewSynopsis(e.target.value)}
-            />
-          </label>
-          <div className="admin-newbook__row">
-            <label className="admin-field label-medium" style={{ flex: 1 }}>
-              URL de portada
-              <input
-                className="admin-input body-medium"
-                placeholder="https://…"
-                value={newCover}
-                onChange={(e) => setNewCover(e.target.value)}
-              />
-            </label>
-            <label className="admin-field label-medium" style={{ flex: 1 }}>
-              Enlace de compra
-              <input
-                className="admin-input body-medium"
-                placeholder="Amazon…"
-                value={newBuy}
-                onChange={(e) => setNewBuy(e.target.value)}
-              />
-            </label>
-          </div>
-          <label className="admin-field label-medium">
-            Capítulos * — un título por línea, en orden
-            <textarea
-              className="admin-edit body-medium"
-              rows={6}
-              placeholder={'Cero horas\nLa señora Elm\nLa biblioteca de la medianoche\n…'}
-              value={newChapters}
-              onChange={(e) => setNewChapters(e.target.value)}
-            />
-            <span className="body-small on-surface-variant">
-              {newChapters.split('\n').filter((l) => l.trim()).length} capítulos
-            </span>
-          </label>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <md-text-button onClick={() => setAdding(false)}>Cancelar</md-text-button>
-            <md-filled-button disabled={busy || undefined} onClick={() => void createBook()}>
-              Crear libro
-            </md-filled-button>
-          </div>
+        <div className="admin-card">
+          <h2 className="title-medium serif" style={{ marginBottom: 10 }}>
+            Nuevo libro
+          </h2>
+          <BookForm
+            onCreated={() => {
+              setAdding(false)
+              void load()
+            }}
+            onCancel={() => setAdding(false)}
+          />
         </div>
       )}
 

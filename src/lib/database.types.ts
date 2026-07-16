@@ -34,6 +34,8 @@ export type Book = {
   author_id: string | null
   synopsis: string | null
   buy_url: string | null
+  created_at: string
+  created_by: string | null
 }
 
 export type Author = {
@@ -159,6 +161,8 @@ export type PollOption = {
   book_title: string
   book_author: string
   note: string | null
+  /** libro del catálogo (las votaciones se componen de libros creados) */
+  book_id: string | null
 }
 
 export type PollVote = {
@@ -180,7 +184,11 @@ export type Database = {
     Tables: {
       profiles: TableDef<Profile, 'id' | 'username' | 'display_name', 'created_at'>
       follows: TableDef<Follow, 'follower_id' | 'followed_id', 'created_at'>
-      books: TableDef<Book, 'title' | 'author' | 'total_chapters', 'id'>
+      books: TableDef<
+        Book,
+        'title' | 'author' | 'total_chapters',
+        'id' | 'created_at' | 'created_by'
+      >
       chapters: TableDef<Chapter, 'book_id' | 'number', 'id'>
       reading_progress: TableDef<ReadingProgress, 'user_id' | 'book_id', 'updated_at'>
       discussions: TableDef<
@@ -279,6 +287,10 @@ export type Database = {
       club_kick_member: {
         Args: { club: string; target: string }
         Returns: undefined
+      }
+      captain_books_left: {
+        Args: Record<string, never>
+        Returns: number
       }
       admin_create_club: {
         Args: { club_name: string; club_slug: string; book: string }

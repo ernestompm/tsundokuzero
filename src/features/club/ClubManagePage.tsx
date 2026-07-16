@@ -7,6 +7,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
+import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
 import type { Book, Club } from '../../lib/database.types'
 import './club.css'
@@ -34,12 +35,13 @@ export default function ClubManagePage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
-  // Crear votación
+  // Crear votación: se eligen LIBROS DEL CATÁLOGO (2–5)
   const [pollTitle, setPollTitle] = useState('')
-  const [options, setOptions] = useState([
-    { title: '', author: '' },
-    { title: '', author: '' },
-  ])
+  const [pollBookIds, setPollBookIds] = useState<string[]>([])
+
+  // Cuota de la capitanía (3 libros por mandato)
+  const [booksLeft, setBooksLeft] = useState<number | null>(null)
+  const [addingBook, setAddingBook] = useState(false)
 
   const load = useCallback(async () => {
     if (!session) return
@@ -57,7 +59,7 @@ export default function ClubManagePage() {
     setName(c.name)
     setDescription(c.description ?? '')
 
-    const [{ data: memberRows }, { data: bookRows }, { data: poll }] =
+    const [{ data: memberRows }, { data: bookRows }, { data: poll }, { data: left }] =
       await Promise.all([
         supabase.from('club_members').select('user_id, role').eq('club_id', c.id),
         supabase.from('books').select('*').order('title'),
@@ -68,9 +70,11 @@ export default function ClubManagePage() {
           .eq('status', 'open')
           .limit(1)
           .maybeSingle(),
+        supabase.rpc('captain_books_left'),
       ])
     setBooks(bookRows ?? [])
     setOpenPoll(poll ?? null)
+    setBooksLeft(typeof left === 'number' ? left : 0)
 
     const roleById = new Map((memberRows ?? []).map((m) => [m.user_id, m.role]))
     const ids = (memberRows ?? []).map((m) => m.user_id)
@@ -175,11 +179,11 @@ export default function ClubManagePage() {
 
   const createPoll = async () => {
     const title = pollTitle.trim()
-    const clean = options
-      .map((o) => ({ title: o.title.trim(), author: o.author.trim() }))
-      .filter((o) => o.title && o.author)
-    if (!title || clean.length < 2) {
-      window.alert('Pon un título y al menos dos opciones (libro + autor).')
+    const chosen = books.filter((b) => pollBookIds.includes(b.id))
+    if (!title || chosen.length < 2) {
+      window.alert(
+        'Pon un título y elige al menos 2 libros del catálogo (máx. 5). Si falta un libro, créalo primero.',
+      )
       return
     }
     setBusy(true)
@@ -190,22 +194,30 @@ export default function ClubManagePage() {
       .single()
     if (!error && poll) {
       await supabase.from('poll_options').insert(
-        clean.map((o) => ({
+        chosen.map((b) => ({
           poll_id: poll.id,
-          book_title: o.title,
-          book_author: o.author,
+          book_id: b.id,
+          book_title: b.title,
+          book_author: b.author,
         })),
       )
       setPollTitle('')
-      setOptions([
-        { title: '', author: '' },
-        { title: '', author: '' },
-      ])
+      setPollBookIds([])
     } else if (error) {
       window.alert(error.message)
     }
     await load()
     setBusy(false)
+  }
+
+  const togglePollBook = (id: string) => {
+    setPollBookIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : prev.length >= 5
+          ? prev
+          : [...prev, id],
+    )
   }
 
   const currentBook = books.find((b) => b.id === club.current_book_id)
@@ -315,45 +327,73 @@ export default function ClubManagePage() {
               value={pollTitle}
               onChange={(e) => setPollTitle(e.target.value)}
             />
-            {options.map((o, i) => (
-              <div key={i} className="poll-new-option">
-                <input
-                  className="profile-input body-medium"
-                  placeholder={`Opción ${i + 1} · título`}
-                  value={o.title}
-                  onChange={(e) =>
-                    setOptions((p) =>
-                      p.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
-                    )
-                  }
-                />
-                <input
-                  className="profile-input body-medium"
-                  placeholder="Autor"
-                  value={o.author}
-                  onChange={(e) =>
-                    setOptions((p) =>
-                      p.map((x, j) => (j === i ? { ...x, author: e.target.value } : x)),
-                    )
-                  }
-                />
-              </div>
-            ))}
+            <p className="body-small on-surface-variant">
+              Elige de 2 a 5 libros del catálogo ({pollBookIds.length}{' '}
+              seleccionados). ¿Falta el libro que quieres proponer? Créalo
+              primero en «Libros de tu capitanía».
+            </p>
+            <div className="manage-book-picker">
+              {books
+                .filter((b) => b.id !== club.current_book_id)
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    className={`manage-book${pollBookIds.includes(b.id) ? ' active' : ''}`}
+                    disabled={busy || undefined}
+                    onClick={() => togglePollBook(b.id)}
+                  >
+                    <BookCover
+                      title={b.title}
+                      author={b.author}
+                      coverUrl={b.cover_url}
+                      size="sm"
+                    />
+                    <span className="label-small manage-book__title">
+                      {b.title}
+                    </span>
+                  </button>
+                ))}
+            </div>
             <div className="club-poll__form-actions">
-              {options.length < 5 && (
-                <md-text-button
-                  onClick={() => setOptions((p) => [...p, { title: '', author: '' }])}
-                >
-                  + Añadir opción
-                </md-text-button>
-              )}
               <span style={{ flex: 1 }} />
-              <md-filled-button disabled={busy || undefined} onClick={() => void createPoll()}>
-                Abrir votación
+              <md-filled-button
+                disabled={busy || pollBookIds.length < 2 || undefined}
+                onClick={() => void createPoll()}
+              >
+                Abrir votación ({pollBookIds.length})
               </md-filled-button>
             </div>
           </>
         )}
+      </div>
+
+      {/* Libros de tu capitanía (3 por mandato) */}
+      <div className="manage-card">
+        <h2 className="title-small manage-card__title">
+          Libros de tu capitanía
+        </h2>
+        <p className="body-medium">
+          {booksLeft === null
+            ? '…'
+            : booksLeft > 0
+              ? `Puedes añadir ${booksLeft} de 3 libros en este mandato.`
+              : 'Has agotado los 3 libros de este mandato. Si vuelves a ser capitán más adelante, tendrás 3 nuevos.'}
+        </p>
+        {(booksLeft ?? 0) > 0 &&
+          (addingBook ? (
+            <BookForm
+              onCreated={() => {
+                setAddingBook(false)
+                void load()
+              }}
+              onCancel={() => setAddingBook(false)}
+            />
+          ) : (
+            <md-outlined-button onClick={() => setAddingBook(true)}>
+              <span slot="icon" className="material-symbols-rounded">add</span>
+              Añadir un libro ({booksLeft}/3 disponibles)
+            </md-outlined-button>
+          ))}
       </div>
 
       {/* Miembros */}
