@@ -6,28 +6,16 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
+import { ConsentCheckbox } from '../components/ConsentCheckbox'
+import { TERMS_VERSION } from '../features/legal/legalContent'
 import { useAuth } from './AuthContext'
 import './auth.css'
 
 const GOOGLE_ENABLED = import.meta.env.VITE_AUTH_GOOGLE_ENABLED === 'true'
 const INVITE_CODE = import.meta.env.VITE_INVITE_CODE ?? ''
 
-type Mode = 'login' | 'signup'
-
-function translateError(message: string): string {
-  const map: Record<string, string> = {
-    'Invalid login credentials': 'Correo o contraseña incorrectos.',
-    'Email not confirmed':
-      'Tu correo aún no está verificado. Revisa tu bandeja de entrada.',
-    'User already registered': 'Ya existe una cuenta con ese correo.',
-  }
-  return (
-    map[message] ??
-    (message.includes('Password should be')
-      ? 'La contraseña debe tener al menos 6 caracteres.'
-      : message)
-  )
-}
+type Mode = 'login' | 'signup' | 'forgot'
 
 export default function LoginPage() {
   const { session, profile, loading } = useAuth()
@@ -44,6 +32,12 @@ export default function LoginPage() {
   if (!loading && session)
     return <Navigate to={profile ? '/' : '/onboarding'} replace />
 
+  const switchMode = (next: Mode) => {
+    setMode(next)
+    setError(null)
+    setNotice(null)
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -56,20 +50,45 @@ export default function LoginPage() {
       return
     }
 
+    // Recuperación de contraseña (auditoría C-01)
+    if (mode === 'forgot') {
+      setBusy(true)
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          { redirectTo: `${window.location.origin}/reset-password` },
+        )
+        if (error) {
+          setError(friendlyError(error, 'No se pudo enviar el correo. Inténtalo de nuevo.'))
+        } else {
+          setNotice(
+            'Si existe una cuenta con ese correo, te hemos enviado un enlace para restablecer la contraseña.',
+          )
+        }
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+
     if (mode === 'signup' && invite.trim() !== INVITE_CODE) {
       setError('Código de invitación incorrecto.')
       return
     }
-
-    // El código se re-valida EN SERVIDOR al completar el onboarding
-    // (migr. 020); se guarda para no pedirlo dos veces.
-    if (mode === 'signup') localStorage.setItem('tz-invite', invite.trim())
 
     if (mode === 'signup' && !accepted) {
       setError(
         'Para crear la cuenta debes aceptar los términos y declarar que tienes al menos 14 años.',
       )
       return
+    }
+
+    // El código se re-valida EN SERVIDOR al completar el onboarding
+    // (migr. 020); se guarda para no pedirlo dos veces. Igual con el
+    // consentimiento (auditoría M-03): el onboarding lo precarga.
+    if (mode === 'signup') {
+      localStorage.setItem('tz-invite', invite.trim())
+      localStorage.setItem('tz-consent', String(TERMS_VERSION))
     }
 
     setBusy(true)
@@ -79,7 +98,8 @@ export default function LoginPage() {
           email: email.trim(),
           password,
         })
-        if (error) setError(translateError(error.message))
+        if (error)
+          setError(friendlyError(error, 'No se pudo iniciar sesión. Inténtalo de nuevo.'))
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -87,7 +107,7 @@ export default function LoginPage() {
           options: { emailRedirectTo: window.location.origin },
         })
         if (error) {
-          setError(translateError(error.message))
+          setError(friendlyError(error, 'No se pudo crear la cuenta. Inténtalo de nuevo.'))
         } else if (!data.session) {
           setNotice(
             'Te hemos enviado un correo de verificación. Confírmalo y vuelve a entrar.',
@@ -100,6 +120,7 @@ export default function LoginPage() {
   }
 
   const isSignup = mode === 'signup'
+  const isForgot = mode === 'forgot'
 
   return (
     <main className="auth-page">
@@ -108,7 +129,11 @@ export default function LoginPage() {
           <h1 className="display-small">
             Tsundoku <em>Zero</em>
           </h1>
-          <p className="body-large tagline">Leer acompañado, sin spoilers.</p>
+          <p className="body-large tagline">
+            {isForgot
+              ? 'Recupera el acceso a tu cuenta.'
+              : 'Leer acompañado, sin spoilers.'}
+          </p>
         </div>
 
         {error && <p className="auth-error body-medium">{error}</p>}
@@ -124,16 +149,18 @@ export default function LoginPage() {
             setEmail((e.currentTarget as HTMLInputElement).value)
           }
         />
-        <md-outlined-text-field
-          label="Contraseña"
-          type="password"
-          autocomplete={isSignup ? 'new-password' : 'current-password'}
-          required
-          value={password}
-          onInput={(e) =>
-            setPassword((e.currentTarget as HTMLInputElement).value)
-          }
-        />
+        {!isForgot && (
+          <md-outlined-text-field
+            label="Contraseña"
+            type="password"
+            autocomplete={isSignup ? 'new-password' : 'current-password'}
+            required
+            value={password}
+            onInput={(e) =>
+              setPassword((e.currentTarget as HTMLInputElement).value)
+            }
+          />
+        )}
         {isSignup && (
           <>
             <md-outlined-text-field
@@ -145,35 +172,7 @@ export default function LoginPage() {
                 setInvite((e.currentTarget as HTMLInputElement).value)
               }
             />
-            <button
-              type="button"
-              className={`consent-toggle body-small${accepted ? ' active' : ''}`}
-              aria-pressed={accepted}
-              onClick={() => setAccepted((v) => !v)}
-            >
-              <span className="material-symbols-rounded">
-                {accepted ? 'check_circle' : 'radio_button_unchecked'}
-              </span>
-              <span>
-                He leído y acepto los{' '}
-                <Link
-                  to="/legal/terminos"
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Términos y condiciones
-                </Link>{' '}
-                y la{' '}
-                <Link
-                  to="/legal/privacidad"
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Política de privacidad
-                </Link>
-                , y declaro tener al menos 14 años.
-              </span>
-            </button>
+            <ConsentCheckbox checked={accepted} onChange={setAccepted} />
           </>
         )}
 
@@ -181,24 +180,44 @@ export default function LoginPage() {
           type="submit"
           disabled={busy || (isSignup && !accepted) || undefined}
         >
-          {busy ? 'Un momento…' : isSignup ? 'Crear cuenta' : 'Entrar'}
+          {busy
+            ? 'Un momento…'
+            : isForgot
+              ? 'Enviar enlace de recuperación'
+              : isSignup
+                ? 'Crear cuenta'
+                : 'Entrar'}
         </md-filled-button>
 
-        <p className="auth-switch body-medium">
-          {isSignup ? '¿Ya tienes cuenta?' : '¿Primera vez?'}{' '}
+        {mode === 'login' && (
           <md-text-button
             type="button"
-            onClick={() => {
-              setMode(isSignup ? 'login' : 'signup')
-              setError(null)
-              setNotice(null)
-            }}
+            class="auth-forgot"
+            onClick={() => switchMode('forgot')}
           >
-            {isSignup ? 'Entrar' : 'Crear cuenta'}
+            ¿Has olvidado tu contraseña?
           </md-text-button>
+        )}
+
+        <p className="auth-switch body-medium">
+          {isForgot ? (
+            <md-text-button type="button" onClick={() => switchMode('login')}>
+              Volver a iniciar sesión
+            </md-text-button>
+          ) : (
+            <>
+              {isSignup ? '¿Ya tienes cuenta?' : '¿Primera vez?'}{' '}
+              <md-text-button
+                type="button"
+                onClick={() => switchMode(isSignup ? 'login' : 'signup')}
+              >
+                {isSignup ? 'Entrar' : 'Crear cuenta'}
+              </md-text-button>
+            </>
+          )}
         </p>
 
-        {GOOGLE_ENABLED && (
+        {GOOGLE_ENABLED && !isForgot && (
           <>
             <div className="auth-divider label-medium">o</div>
             <md-outlined-button

@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 import { useAuth } from '../auth/AuthContext'
 import type { DiscussionKind } from '../lib/database.types'
 import ComposeSheet, { type ComposeTarget } from './ComposeSheet'
@@ -100,7 +101,7 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
     }
     setSubmitting(false)
     if (err) {
-      setError('No se pudo publicar. Inténtalo de nuevo. (' + err.message + ')')
+      setError(friendlyError(err, 'No se pudo publicar. Inténtalo de nuevo.'))
     } else {
       setOpen(false)
       setVersion((v) => v + 1)
@@ -115,6 +116,7 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
         targets={targets}
         submitting={submitting}
         error={error}
+        resetToken={version}
         onPublish={publish}
         onClose={() => setOpen(false)}
         onGoToBook={() => {

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
+import { friendlyError } from '../../lib/errors'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { useAuth } from '../../auth/AuthContext'
 import BookView from './BookView'
 import type { BookViewData } from './bookTypes'
@@ -10,9 +12,11 @@ export default function BookPage() {
   const { bookId } = useParams()
   const { session } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [data, setData] = useState<BookViewData | null>(null)
   const [missing, setMissing] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [rateError, setRateError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session || !bookId) return
@@ -125,9 +129,13 @@ export default function BookPage() {
   const setChapter = async (n: number) => {
     if (!session || !data) return
     if (n < data.currentChapter) {
-      const ok = window.confirm(
-        'Si retrocedes, volverás a bloquear las conversaciones de los capítulos por encima de tu nuevo punto. ¿Continuar?',
-      )
+      // auditoría M-04: diálogo propio en lugar de window.confirm
+      const ok = await confirm({
+        title: '¿Retroceder de capítulo?',
+        message:
+          'Si retrocedes, volverás a bloquear las conversaciones de los capítulos por encima de tu nuevo punto.',
+        confirmLabel: 'Retroceder',
+      })
       if (!ok) return
     }
     setBusy(true)
@@ -161,10 +169,11 @@ export default function BookPage() {
     )
   }
 
-  const rate = async (n: number, review: string | null) => {
-    if (!session || !data) return
+  // auditoría A-03: devuelve éxito/fallo para que la vista confirme el guardado
+  const rate = async (n: number, review: string | null): Promise<boolean> => {
+    if (!session || !data) return false
     setBusy(true)
-    await supabase.from('book_ratings').upsert(
+    const { error } = await supabase.from('book_ratings').upsert(
       {
         book_id: data.bookId,
         user_id: session.user.id,
@@ -173,8 +182,15 @@ export default function BookPage() {
       },
       { onConflict: 'book_id,user_id' },
     )
+    if (error) {
+      setRateError(friendlyError(error, 'No se pudo guardar la reseña. Inténtalo de nuevo.'))
+      setBusy(false)
+      return false
+    }
+    setRateError(null)
     await load()
     setBusy(false)
+    return true
   }
 
   const addToShelf = async (status: 'want' | 'reading') => {
@@ -197,6 +213,7 @@ export default function BookPage() {
     <BookView
       data={data}
       busy={busy}
+      rateError={rateError}
       onSetChapter={setChapter}
       onOpenChapter={(n) => navigate(`/book/${data.bookId}/chapter/${n}`)}
       onRate={rate}

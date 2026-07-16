@@ -78,7 +78,6 @@
   background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;
-  outline: none;
 }
 .thread-composer__input:focus {
   border-color: var(--md-sys-color-primary);

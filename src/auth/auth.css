@@ -58,6 +58,12 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
+/* Enlace de recuperación de contraseña (auditoría C-01) */
+.auth-forgot {
+  align-self: center;
+  margin-top: -6px;
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

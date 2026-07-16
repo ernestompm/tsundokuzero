@@ -20,6 +20,17 @@
     <!-- Material Symbols: subconjunto SELF-HOSTED en /fonts (RGPD: sin
          peticiones a Google). Lista de iconos: scripts/icons.txt;
          @font-face en src/index.css; regenerar: npm run fetch:icons -->
+    <!-- Preload del subconjunto de iconos (auditoría M-13): con
+         font-display: block, sin preload los iconos tardan en aparecer -->
+    <link
+      rel="preload"
+      href="/fonts/material-symbols-rounded.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <!-- Tema antes del primer paint (auditoría B-07); externo por CSP -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

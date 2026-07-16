@@ -21,6 +21,23 @@
   --md-sys-motion-duration-short: 200ms;
   --md-sys-motion-duration-medium: 350ms;
 
+  /* Escala de espaciado (auditoría M-14): usar en vez de píxeles sueltos */
+  --tz-space-1: 4px;
+  --tz-space-2: 8px;
+  --tz-space-3: 12px;
+  --tz-space-4: 16px;
+  --tz-space-5: 20px;
+  --tz-space-6: 24px;
+  --tz-space-8: 32px;
+
+  /* Sombras tokenizadas (auditoría M-14): tarjeta en reposo y elevada */
+  --tz-shadow-card:
+    0 1px 2px rgba(35, 35, 30, 0.03),
+    0 6px 20px rgba(35, 35, 30, 0.05);
+  --tz-shadow-raised:
+    0 2px 6px rgba(0, 0, 0, 0.14),
+    0 12px 32px rgba(0, 0, 0, 0.18);
+
   color-scheme: light;
 }
 
@@ -75,6 +92,51 @@ body {
 a {
   color: var(--md-sys-color-primary);
   text-decoration: none;
+}
+
+/* ===== Foco visible (auditoría A-05, WCAG 2.4.11) =====
+   Indicador de foco de teclado uniforme en toda la app. Los inputs de
+   texto además cambian el borde (regla por componente). */
+:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+  border-radius: inherit;
+}
+
+/* ===== Movimiento reducido (auditoría M-11, WCAG 2.3.3) =====
+   Anula animaciones y transiciones de transform/opacity para quien lo
+   pide en el sistema; el shimmer del skeleton queda estático. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== Salto al contenido (auditoría B-08, WCAG 2.4.1) ===== */
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: 12px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-weight: 600;
+}
+.skip-link:focus-visible {
+  top: 12px;
 }
 
 /* ===== Typescale MD3 (clases utilitarias) ===== */
@@ -217,14 +279,21 @@ a {
 .legal-links a {
   color: var(--md-sys-color-on-surface-variant);
   text-decoration: none;
+  /* Target táctil ≥24px sin alterar el ritmo visual (auditoría B-11) */
+  display: inline-block;
+  padding: 5px 2px;
+  margin: -3px 0;
 }
 
 .legal-links a:hover {
   text-decoration: underline;
 }
 
-/* Checkbox de consentimiento (registro, onboarding y TermsGate) */
+/* Checkbox de consentimiento (registro, onboarding y TermsGate).
+   Es un <label> con un checkbox nativo oculto (auditoría B-10): semántica
+   real de casilla, enlaces legales fuera del control interactivo. */
 .consent-toggle {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -235,6 +304,22 @@ a {
   color: var(--md-sys-color-on-surface-variant);
   cursor: pointer;
   text-align: left;
+  /* Texto legalmente sensible: legible (auditoría B-11) */
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.consent-toggle input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.consent-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
 }
 
 .consent-toggle.active {

@@ -235,6 +235,19 @@
   flex-wrap: wrap;
 }
 
+/* Aviso inline (auditoría M-04 / A-01): sustituye a window.alert.
+   Tono neutro por defecto; --error para fallos. */
+.club-banner {
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.club-banner--error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
 .club-sec {
   margin: 10px 2px 0;
   text-transform: uppercase;

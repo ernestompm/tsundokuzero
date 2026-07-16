@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
+import { ConsentCheckbox } from '../components/ConsentCheckbox'
 import { useAuth } from './AuthContext'
 import { TERMS_VERSION } from '../features/legal/legalContent'
 import type { Book, Chapter, Club } from '../lib/database.types'
@@ -29,13 +31,18 @@ export default function OnboardingPage() {
   }, [profile, step])
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
-  // Aceptación registrada aquí (paso común a email y OAuth): RGPD art. 7
-  const [accepted, setAccepted] = useState(false)
+  // Aceptación registrada aquí (paso común a email y OAuth): RGPD art. 7.
+  // Si ya se aceptó en el alta (misma versión), viene precargada para no
+  // pedir el mismo consentimiento dos veces (auditoría M-03).
+  const [accepted, setAccepted] = useState(
+    () => localStorage.getItem('tz-consent') === String(TERMS_VERSION),
+  )
   // Invitación: prefijada desde el alta; editable (OAuth u otro dispositivo)
   const [invite, setInvite] = useState(
     () => localStorage.getItem('tz-invite') ?? '',
   )
   const [club, setClub] = useState<Club | null>(null)
+  const [clubLoading, setClubLoading] = useState(true)
   const [book, setBook] = useState<Book | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [chapter, setChapter] = useState(0)
@@ -86,6 +93,10 @@ export default function OnboardingPage() {
           setChapters(chapterData ?? [])
         }
       })
+      .then(
+        () => setClubLoading(false),
+        () => setClubLoading(false),
+      )
   }, [])
 
   /**
@@ -137,18 +148,20 @@ export default function OnboardingPage() {
           )
         } else if (error.message.includes('terms_not_accepted')) {
           setError('Debes aceptar los términos para continuar.')
-        } else if (error.message.includes('complete_onboarding')) {
-          setError('Falta ejecutar la migración 020 en Supabase.')
         } else {
           setError(
             error.code === '23505'
               ? 'Ese nombre de usuario ya está cogido.'
-              : error.message,
+              : friendlyError(
+                  error,
+                  'No se pudo crear tu identidad. Inténtalo de nuevo en unos segundos.',
+                ),
           )
         }
         return
       }
       localStorage.removeItem('tz-invite')
+      localStorage.removeItem('tz-consent')
       await refreshProfile()
       setStep(2)
     } finally {
@@ -167,7 +180,9 @@ export default function OnboardingPage() {
         .from('club_members')
         .insert({ club_id: club.id, user_id: session.user.id })
       if (joinError && joinError.code !== '23505') {
-        setError(joinError.message)
+        setError(
+          friendlyError(joinError, 'No se pudo completar la unión al club. Inténtalo de nuevo.'),
+        )
         return
       }
 
@@ -180,7 +195,9 @@ export default function OnboardingPage() {
             current_chapter: chapter,
           })
         if (progressError) {
-          setError(progressError.message)
+          setError(
+            friendlyError(progressError, 'No se pudo guardar tu punto de lectura. Inténtalo de nuevo.'),
+          )
           return
         }
       }
@@ -232,35 +249,7 @@ export default function OnboardingPage() {
                 setInvite((e.currentTarget as HTMLInputElement).value)
               }
             />
-            <button
-              type="button"
-              className={`consent-toggle body-small${accepted ? ' active' : ''}`}
-              aria-pressed={accepted}
-              onClick={() => setAccepted((v) => !v)}
-            >
-              <span className="material-symbols-rounded">
-                {accepted ? 'check_circle' : 'radio_button_unchecked'}
-              </span>
-              <span>
-                He leído y acepto los{' '}
-                <Link
-                  to="/legal/terminos"
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Términos y condiciones
-                </Link>{' '}
-                y la{' '}
-                <Link
-                  to="/legal/privacidad"
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Política de privacidad
-                </Link>
-                , y declaro tener al menos 14 años.
-              </span>
-            </button>
+            <ConsentCheckbox checked={accepted} onChange={setAccepted} />
             <md-filled-button
               type="submit"
               disabled={busy || !accepted || undefined}
@@ -270,7 +259,42 @@ export default function OnboardingPage() {
           </form>
         ) : (
           <div className="onboarding-step">
-            {club && book ? (
+            {clubLoading ? (
+              <div style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
+                <md-circular-progress indeterminate aria-label="Cargando" />
+              </div>
+            ) : !club ? (
+              /* Sin club que unirse (auditoría C-04): jamás un spinner
+                 infinito antes de entrar a la app. */
+              <>
+                <p className="body-large" style={{ textAlign: 'center' }}>
+                  Tu identidad está lista, pero todavía no hay ningún club
+                  activo al que unirse.
+                </p>
+                <md-filled-button
+                  type="button"
+                  onClick={() => navigate('/', { replace: true })}
+                >
+                  Entrar en Tsundoku Zero
+                </md-filled-button>
+              </>
+            ) : !book ? (
+              /* Club sin libro del mes (auditoría C-04): unirse igualmente */
+              <>
+                <p className="body-large" style={{ textAlign: 'center' }}>
+                  Te unes al club <b>{club.name}</b>. Todavía no ha elegido
+                  libro del mes: en cuanto lo haga podrás fijar tu punto de
+                  lectura.
+                </p>
+                <md-filled-button
+                  type="button"
+                  disabled={busy || undefined}
+                  onClick={joinAndSetProgress}
+                >
+                  Unirme al club
+                </md-filled-button>
+              </>
+            ) : (
               <>
                 <p className="body-large" style={{ textAlign: 'center' }}>
                   Te unes al club <b>{club.name}</b>, que está leyendo{' '}
@@ -336,10 +360,6 @@ export default function OnboardingPage() {
                   Empezar a leer acompañado
                 </md-filled-button>
               </>
-            ) : (
-              <div style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
-                <md-circular-progress indeterminate />
-              </div>
             )}
           </div>
         )}

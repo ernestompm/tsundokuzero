@@ -3,6 +3,7 @@ import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 import './BookForm.css'
 
 /**
@@ -165,7 +166,8 @@ export default function BookForm({
           (missing.length ? ` Sin datos de: ${missing.join(', ')} — rellénalo a mano.` : '') +
           ' Los capítulos van siempre a mano.' +
           (fSynopsis
-            ? ' ⚠️ La sinopsis importada es texto editorial con copyright: reescríbela con tus palabras antes de crear el libro.'
+            ? // auditoría B-05: sin emoji en el copy
+              ' Atención: la sinopsis importada es texto editorial con copyright; reescríbela con tus palabras antes de crear el libro.'
             : ''),
       )
     } finally {
@@ -205,7 +207,7 @@ export default function BookForm({
       setError(
         bookError?.message.includes('row-level security')
           ? 'No tienes cupo: los capitanes pueden crear 3 libros por capitanía.'
-          : (bookError?.message ?? 'No se pudo crear el libro'),
+          : friendlyError(bookError, 'No se pudo crear el libro.'), // auditoría A-04
       )
       setBusy(false)
       return
@@ -217,7 +219,14 @@ export default function BookForm({
         label,
       })),
     )
-    if (chError) setError(chError.message)
+    if (chError)
+      setError(
+        // auditoría A-04
+        friendlyError(
+          chError,
+          'El libro se creó, pero no se pudieron guardar los capítulos.',
+        ),
+      )
     else {
       setIsbn('')
       setTitle('')
@@ -246,6 +255,7 @@ export default function BookForm({
         <input
           className="bookform__input body-medium"
           placeholder="ISBN — p. ej. 978-84-663-8033-1"
+          aria-label="ISBN del libro" /* auditoría A-08 */
           inputMode="numeric"
           value={isbn}
           onChange={(e) => setIsbn(e.target.value)}
@@ -255,7 +265,7 @@ export default function BookForm({
           disabled={lookupBusy || undefined}
           onClick={() => void lookupIsbn()}
         >
-          <span slot="icon" className="material-symbols-rounded">search</span>
+          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">search</span>
           {lookupBusy ? 'Buscando…' : 'Buscar'}
         </md-outlined-button>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/button/filled-button.js'
@@ -12,15 +12,19 @@ import './book.css'
 interface Props {
   data: BookViewData
   busy?: boolean
+  /** error al guardar la reseña (auditoría A-03) */
+  rateError?: string | null
   onSetChapter: (n: number) => void
   onOpenChapter: (n: number) => void
-  onRate?: (n: number, review: string | null) => void
+  /** puede devolver éxito/fallo; `void` sigue valiendo (previews) */
+  onRate?: (n: number, review: string | null) => Promise<boolean> | void
   onAddToShelf?: (status: 'want' | 'reading') => void
 }
 
 export default function BookView({
   data,
   busy,
+  rateError,
   onSetChapter,
   onOpenChapter,
   onRate,
@@ -29,6 +33,10 @@ export default function BookView({
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [reviewDraft, setReviewDraft] = useState(data.myReview ?? '')
   const [pendingStars, setPendingStars] = useState(data.myRating ?? 0)
+  // auditoría A-03: confirmación inline «Reseña guardada», autodescartable
+  const [justSaved, setJustSaved] = useState(false)
+  const savedTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(savedTimer.current), [])
   const [showAll, setShowAll] = useState(false)
   const { currentChapter, totalChapters } = data
   // Borrador del slider: se confirma con «Guardar», nada de 40 toques.
@@ -91,7 +99,7 @@ export default function BookView({
                 disabled={draft <= 0 || busy || undefined}
                 onClick={() => setDraft((d) => Math.max(0, d - 1))}
               >
-                <span className="material-symbols-rounded">remove</span>
+                <span className="material-symbols-rounded" aria-hidden="true">remove</span>
               </md-icon-button>
               <div className="book-progress__label">
                 <span className="title-medium serif">{draftLabel}</span>
@@ -104,7 +112,7 @@ export default function BookView({
                 disabled={draft >= totalChapters || busy || undefined}
                 onClick={() => setDraft((d) => Math.min(totalChapters, d + 1))}
               >
-                <span className="material-symbols-rounded">add</span>
+                <span className="material-symbols-rounded" aria-hidden="true">add</span>
               </md-icon-button>
             </div>
             <input
@@ -156,7 +164,7 @@ export default function BookView({
               className="book-buy"
             >
               <md-outlined-button>
-                <span slot="icon" className="material-symbols-rounded">
+                <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
                   shopping_bag
                 </span>
                 Comprar el libro
@@ -171,7 +179,7 @@ export default function BookView({
         <div className="book-shelf-actions">
           {data.status == null && (
             <md-outlined-button onClick={() => onAddToShelf('want')}>
-              <span slot="icon" className="material-symbols-rounded">bookmark</span>
+              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">bookmark</span>
               Añadir a «por leer»
             </md-outlined-button>
           )}
@@ -181,7 +189,9 @@ export default function BookView({
         </div>
       )}
 
-      {/* Terminado: reseña + estrellas */}
+      {/* Terminado: reseña + estrellas.
+          auditoría A-03: un solo gesto de guardado — las estrellas solo
+          actualizan el borrador; «Guardar reseña» envía todo junto. */}
       {data.canRate && onRate && (
         <Card tone="default" className="book-review">
           <span className="title-small">
@@ -189,26 +199,53 @@ export default function BookView({
           </span>
           <Stars
             value={pendingStars}
-            onRate={(n) => {
-              setPendingStars(n)
-              onRate(n, reviewDraft.trim() || null)
-            }}
+            onRate={(n) => setPendingStars(n)}
             size={30}
           />
           <textarea
             className="book-review__text body-medium"
             rows={3}
             placeholder="Deja una reseña para el club (opcional)…"
+            aria-label="Tu reseña del libro"
             value={reviewDraft}
             onChange={(e) => setReviewDraft(e.target.value)}
           />
-          {pendingStars > 0 && (
-            <md-filled-button
-              disabled={busy || undefined}
-              onClick={() => onRate(pendingStars, reviewDraft.trim() || null)}
-            >
-              Guardar reseña
-            </md-filled-button>
+          {rateError && (
+            <p className="book-review__error body-small" role="alert">
+              {rateError}
+            </p>
+          )}
+          <md-filled-button
+            disabled={
+              busy ||
+              pendingStars === 0 ||
+              (pendingStars === (data.myRating ?? 0) &&
+                reviewDraft.trim() === (data.myReview ?? '')) ||
+              undefined
+            }
+            onClick={() =>
+              void (async () => {
+                const ok = await onRate(pendingStars, reviewDraft.trim() || null)
+                if (ok !== false) {
+                  window.clearTimeout(savedTimer.current)
+                  setJustSaved(true)
+                  savedTimer.current = window.setTimeout(
+                    () => setJustSaved(false),
+                    3000,
+                  )
+                }
+              })()
+            }
+          >
+            Guardar reseña
+          </md-filled-button>
+          {justSaved && (
+            <span className="book-review__saved label-medium" role="status">
+              <span className="material-symbols-rounded" aria-hidden="true">
+                check_circle
+              </span>
+              Reseña guardada
+            </span>
           )}
         </Card>
       )}
@@ -219,7 +256,7 @@ export default function BookView({
           <h2 className="title-small book-sec__title">Reseñas del club</h2>
           {data.status !== 'finished' && data.hiddenReviews > 0 ? (
             <Card tone="outlined" className="review-locked">
-              <span className="material-symbols-rounded">lock</span>
+              <span className="material-symbols-rounded" aria-hidden="true">lock</span>
               <p className="body-medium">
                 Hay {data.hiddenReviews}{' '}
                 {data.hiddenReviews === 1 ? 'reseña' : 'reseñas'} del club, pero
@@ -245,7 +282,7 @@ export default function BookView({
           className="book-enter"
           onClick={() => onOpenChapter(currentChapter)}
         >
-          <span slot="icon" className="material-symbols-rounded">forum</span>
+          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">forum</span>
           Conversación de tu capítulo
         </md-filled-button>
       )}
@@ -278,7 +315,7 @@ export default function BookView({
                     <span className="chip chip--here label-small">Estás aquí</span>
                   )}
                   <span className="chapter-row__count label-medium">
-                    <span className="material-symbols-rounded">chat_bubble</span>
+                    <span className="material-symbols-rounded" aria-hidden="true">chat_bubble</span>
                     {c.commentCount}
                   </span>
                 </button>
@@ -300,7 +337,7 @@ export default function BookView({
 
         {lockedCount > 0 && (
           <p className="body-small on-surface-variant book-locked-note">
-            <span className="material-symbols-rounded">lock</span>
+            <span className="material-symbols-rounded" aria-hidden="true">lock</span>
             {lockedCount} capítulos por delante se desbloquean según avanzas.
           </p>
         )}

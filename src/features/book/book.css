@@ -114,10 +114,26 @@
   color: inherit;
   font: inherit;
   resize: vertical;
-  outline: none;
 }
 .book-review__text:focus {
   border-color: var(--md-sys-color-primary);
+}
+/* Confirmación y error al guardar la reseña (auditoría A-03) */
+.book-review__saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-sys-color-primary);
+}
+.book-review__saved .material-symbols-rounded {
+  font-size: 18px;
+}
+.book-review__error {
+  width: 100%;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 10px 14px;
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
 }
 .book-others-reviews {
   margin-top: 16px;

@@ -13,12 +13,13 @@ export default function LockedTeaser({
   const fake =
     'La biblioteca guarda este secreto un poco más adelante en el libro. Sigue leyendo y vuelve aquí. '
   return (
-    <div className="locked-teaser" aria-label={label}>
+    // role="note": sin rol, el aria-label sobre un div es inerte (auditoría UX)
+    <div className="locked-teaser" role="note" aria-label={label}>
       <p className="locked-teaser__fake body-medium" aria-hidden>
         {fake.repeat(lines)}
       </p>
       <span className="locked-teaser__label label-medium">
-        <span className="material-symbols-rounded">lock</span>
+        <span className="material-symbols-rounded" aria-hidden="true">lock</span>
         {label}
       </span>
     </div>

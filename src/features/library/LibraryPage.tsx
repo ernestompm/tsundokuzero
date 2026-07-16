@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import '@material/web/progress/circular-progress.js'
+import '@material/web/button/filled-tonal-button.js'
 import { BookCover, Card, ProgressBar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import { supabase } from '../../lib/supabase'
@@ -25,7 +27,8 @@ export default function LibraryPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('reading')
-  const [items, setItems] = useState<LibItem[]>([])
+  // auditoría M-05: null = cargando (evita el falso «Nada por aquí»)
+  const [items, setItems] = useState<LibItem[] | null>(null)
 
   useEffect(() => {
     if (!session) return
@@ -64,7 +67,7 @@ export default function LibraryPage() {
     void load()
   }, [session])
 
-  const visible = items.filter((i) => i.status === tab)
+  const visible = (items ?? []).filter((i) => i.status === tab)
 
   return (
     <section>
@@ -96,11 +99,32 @@ export default function LibraryPage() {
         ))}
       </div>
 
-      {visible.length === 0 ? (
+      {items === null ? (
+        /* auditoría M-05: estado de carga */
+        <div style={{ display: 'grid', placeItems: 'center', padding: 48 }}>
+          <md-circular-progress indeterminate />
+        </div>
+      ) : visible.length === 0 ? (
         <Card tone="outlined">
           <p className="body-medium on-surface-variant">
             Nada por aquí todavía.
           </p>
+          {/* auditoría M-05: CTA en el vacío real */}
+          <Link
+            to="/explore"
+            style={{ display: 'inline-block', marginTop: 12 }}
+          >
+            <md-filled-tonal-button>
+              <span
+                slot="icon"
+                className="material-symbols-rounded"
+                aria-hidden="true"
+              >
+                travel_explore
+              </span>
+              Explora libros
+            </md-filled-tonal-button>
+          </Link>
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

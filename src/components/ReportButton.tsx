@@ -4,6 +4,8 @@ import '@material/web/button/filled-button.js'
 import '@material/web/button/text-button.js'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { friendlyError } from '../lib/errors'
+import { useModalBehavior } from './modal'
 import type { ReportReason, ReportTargetType } from '../lib/database.types'
 import './ReportButton.css'
 
@@ -41,9 +43,6 @@ export default function ReportButton({
   const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle')
   const [error, setError] = useState<string | null>(null)
 
-  // Nunca sobre lo propio; nunca sin sesión (el preview de diseño no lo pinta)
-  if (!session || session.user.id === reportedUserId) return null
-
   const close = () => {
     setOpen(false)
     setReason(null)
@@ -51,6 +50,12 @@ export default function ReportButton({
     setState('idle')
     setError(null)
   }
+
+  // auditoría C-02: Escape cierra, focus trap y restauración de foco
+  const scrimRef = useModalBehavior(open, close)
+
+  // Nunca sobre lo propio; nunca sin sesión (el preview de diseño no lo pinta)
+  if (!session || session.user.id === reportedUserId) return null
 
   const submit = async () => {
     if (!reason) return
@@ -67,11 +72,8 @@ export default function ReportButton({
     })
     if (e) {
       setState('idle')
-      setError(
-        /reports|relation/i.test(e.message)
-          ? 'Falta ejecutar la migración 018 en Supabase.'
-          : e.message,
-      )
+      // auditoría A-04
+      setError(friendlyError(e, 'No se pudo enviar la denuncia. Inténtalo de nuevo.'))
       return
     }
     setState('done')
@@ -86,14 +88,16 @@ export default function ReportButton({
         title="Denunciar"
         onClick={() => setOpen(true)}
       >
-        <span className="material-symbols-rounded">flag</span>
+        {/* auditoría A-06: el botón ya tiene aria-label; el icono es decorativo */}
+        <span className="material-symbols-rounded" aria-hidden="true">flag</span>
       </button>
 
       {open && (
-        <div className="report-scrim" onClick={close}>
+        <div className="report-scrim" ref={scrimRef} onClick={close}>
           <div
             className="report-dialog"
             role="dialog"
+            aria-modal="true" /* auditoría C-02 */
             aria-label="Denunciar contenido"
             onClick={(e) => e.stopPropagation()}
           >
@@ -120,7 +124,7 @@ export default function ReportButton({
                       className={`report-reason label-medium${reason === key ? ' active' : ''}`}
                       onClick={() => setReason(key)}
                     >
-                      <span className="material-symbols-rounded">
+                      <span className="material-symbols-rounded" aria-hidden="true">
                         {reason === key ? 'check_circle' : 'radio_button_unchecked'}
                       </span>
                       {label}
@@ -132,6 +136,7 @@ export default function ReportButton({
                   rows={2}
                   maxLength={2000}
                   placeholder="Detalles (opcional)"
+                  aria-label="Detalles de la denuncia (opcional)" /* auditoría A-08 */
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                 />

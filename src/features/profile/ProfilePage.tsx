@@ -8,6 +8,8 @@ import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
+import { friendlyError } from '../../lib/errors'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { timeAgo } from '../../lib/time'
 import './profile.css'
 
@@ -31,6 +33,7 @@ interface PostRow {
 export default function ProfilePage() {
   const { session, profile, isSuperAdmin, refreshProfile, signOut } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
   const [ideasCount, setIdeasCount] = useState(0)
@@ -51,6 +54,12 @@ export default function ProfilePage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleteText, setDeleteText] = useState('')
   const [exporting, setExporting] = useState(false)
+  // Cambio de contraseña (auditoría C-01b)
+  const [newPass, setNewPass] = useState('')
+  const [newPass2, setNewPass2] = useState('')
+  const [passError, setPassError] = useState<string | null>(null)
+  const [passMsg, setPassMsg] = useState<string | null>(null)
+  const [passBusy, setPassBusy] = useState(false)
 
   /** Sube la foto de perfil: recorte cuadrado a 512px → Storage → perfil. */
   const changePhoto = async (file: File) => {
@@ -96,18 +105,18 @@ export default function ProfilePage() {
       const { error: upErr } = await supabase.storage
         .from('avatars')
         .upload(path, blob, { contentType: 'image/jpeg' })
+      // auditoría A-04: nunca mensajes técnicos ni de migraciones al usuario
       if (upErr)
-        throw new Error(
-          /bucket/i.test(upErr.message)
-            ? 'Falta ejecutar la migración 016 (bucket de avatares) en Supabase.'
-            : upErr.message,
-        )
+        throw new Error(friendlyError(upErr, 'No se pudo subir la imagen.'))
       const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
       const { error: dbErr } = await supabase
         .from('profiles')
         .update({ avatar_url: pub.publicUrl })
         .eq('id', session.user.id)
-      if (dbErr) throw new Error(dbErr.message)
+      if (dbErr)
+        throw new Error(
+          friendlyError(dbErr, 'No se pudo guardar la foto de perfil.'), // auditoría A-04
+        )
 
       // Minimización: la foto anterior se elimina, no se acumula
       const { data: existing } = await supabase.storage
@@ -212,11 +221,8 @@ export default function ProfilePage() {
       .update({ show_ahead_replies: !profile.show_ahead_replies })
       .eq('id', session.user.id)
     if (e) {
-      setError(
-        /show_ahead_replies|column/i.test(e.message)
-          ? 'Falta ejecutar la migración 017 en Supabase para activar este ajuste.'
-          : e.message,
-      )
+      // auditoría A-04
+      setError(friendlyError(e, 'No se pudo guardar el ajuste. Inténtalo de nuevo.'))
       return
     }
     await refreshProfile()
@@ -243,7 +249,7 @@ export default function ProfilePage() {
     })
     setBusy(false)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error, 'No se pudo publicar la entrada.')) // auditoría A-04
       return
     }
     setPostTitle('')
@@ -253,9 +259,40 @@ export default function ProfilePage() {
   }
 
   const deletePost = async (id: string) => {
-    if (!window.confirm('¿Eliminar esta entrada de tu muro?')) return
+    // auditoría M-04: diálogo propio en lugar de window.confirm
+    const ok = await confirm({
+      title: 'Eliminar esta entrada',
+      message: 'La entrada desaparecerá de tu muro. No se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     await supabase.from('posts').delete().eq('id', id)
     await load()
+  }
+
+  /** Cambiar contraseña (auditoría C-01b). */
+  const changePassword = async () => {
+    setPassError(null)
+    setPassMsg(null)
+    if (newPass.length < 6) {
+      setPassError('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
+    if (newPass !== newPass2) {
+      setPassError('Las contraseñas no coinciden.')
+      return
+    }
+    setPassBusy(true)
+    const { error: e } = await supabase.auth.updateUser({ password: newPass })
+    setPassBusy(false)
+    if (e) {
+      setPassError(friendlyError(e, 'No se pudo cambiar la contraseña.'))
+      return
+    }
+    setNewPass('')
+    setNewPass2('')
+    setPassMsg('Contraseña cambiada.')
   }
 
   /** Portabilidad (RGPD art. 20): descarga JSON con todos tus datos. */
@@ -265,11 +302,8 @@ export default function ProfilePage() {
     const { data, error: e } = await supabase.rpc('export_my_data')
     setExporting(false)
     if (e) {
-      setError(
-        /export_my_data|function/i.test(e.message)
-          ? 'Falta ejecutar la migración 018 en Supabase para activar la exportación.'
-          : e.message,
-      )
+      // auditoría A-04
+      setError(friendlyError(e, 'No se pudo preparar la descarga de tus datos.'))
       return
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -291,11 +325,8 @@ export default function ProfilePage() {
     const { error: e } = await supabase.rpc('delete_own_account')
     if (e) {
       setBusy(false)
-      setError(
-        /delete_own_account|function/i.test(e.message)
-          ? 'Falta ejecutar la migración 018 en Supabase para activar el borrado de cuenta.'
-          : e.message,
-      )
+      // auditoría A-04
+      setError(friendlyError(e, 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'))
       return
     }
     // La cuenta ya no existe: cerrar sesión local e ir al login
@@ -317,7 +348,7 @@ export default function ProfilePage() {
       .eq('id', session.user.id)
     setBusy(false)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error, 'No se pudo guardar el perfil.')) // auditoría A-04
       return
     }
     await refreshProfile()
@@ -360,6 +391,7 @@ export default function ProfilePage() {
             <input
               className="profile-input body-large"
               placeholder="Nombre visible"
+              aria-label="Nombre visible" /* auditoría A-08 */
               value={nameDraft}
               maxLength={50}
               onChange={(e) => setNameDraft(e.target.value)}
@@ -367,6 +399,7 @@ export default function ProfilePage() {
             <textarea
               className="profile-input body-medium"
               placeholder="Bio: cuéntanos qué clase de lector eres…"
+              aria-label="Bio" /* auditoría A-08 */
               rows={2}
               maxLength={200}
               value={bioDraft}
@@ -422,7 +455,7 @@ export default function ProfilePage() {
             </span>
             <span className="body-small on-surface-variant">
               Desbloquea las respuestas escritas desde capítulos que aún no has
-              alcanzado, para que la conversación fluya. ⚠️ Pueden contener
+              alcanzado, para que la conversación fluya. Pueden contener
               spoilers. Las ideas de capítulos futuros siguen selladas.
             </span>
           </span>
@@ -440,6 +473,7 @@ export default function ProfilePage() {
           <input
             className="profile-input body-large"
             placeholder="Título (opcional)"
+            aria-label="Título de la entrada (opcional)" /* auditoría A-08 */
             maxLength={120}
             value={postTitle}
             onChange={(e) => setPostTitle(e.target.value)}
@@ -447,6 +481,7 @@ export default function ProfilePage() {
           <textarea
             className="profile-input body-medium"
             placeholder="Escribe tu entrada: reseñas, ensayos, tu pila de lectura…"
+            aria-label="Texto de la entrada" /* auditoría A-08 */
             rows={5}
             value={postBody}
             onChange={(e) => setPostBody(e.target.value)}
@@ -457,7 +492,7 @@ export default function ProfilePage() {
               className={`club-toggle label-medium${postToClub ? ' active' : ''}`}
               onClick={() => setPostToClub((v) => !v)}
             >
-              <span className="material-symbols-rounded">
+              <span className="material-symbols-rounded" aria-hidden="true">
                 {postToClub ? 'check_circle' : 'radio_button_unchecked'}
               </span>
               Compartir con el club
@@ -476,7 +511,7 @@ export default function ProfilePage() {
         </div>
       ) : (
         <md-outlined-button onClick={() => setWriting(true)}>
-          <span slot="icon" className="material-symbols-rounded">edit</span>
+          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">edit</span>
           Nueva entrada
         </md-outlined-button>
       )}
@@ -496,7 +531,7 @@ export default function ProfilePage() {
                   className="feed-action feed-action--danger"
                   onClick={() => void deletePost(p.id)}
                 >
-                  <span className="material-symbols-rounded">delete</span>
+                  <span className="material-symbols-rounded" aria-hidden="true">delete</span>
                   Eliminar
                 </button>
               </span>
@@ -532,14 +567,14 @@ export default function ProfilePage() {
       <div className="profile-actions">
         <Link to="/club" style={{ display: 'block' }}>
           <md-filled-tonal-button style={{ width: '100%' }}>
-            <span slot="icon" className="material-symbols-rounded">group</span>
+            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">group</span>
             Mi club
           </md-filled-tonal-button>
         </Link>
         {isSuperAdmin && (
           <Link to="/admin" style={{ display: 'block' }}>
             <md-filled-tonal-button style={{ width: '100%' }}>
-              <span slot="icon" className="material-symbols-rounded">
+              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
                 admin_panel_settings
               </span>
               Administración
@@ -551,6 +586,47 @@ export default function ProfilePage() {
         </md-outlined-button>
       </div>
 
+      {/* ===== Cambiar contraseña (auditoría C-01b) ===== */}
+      <h2 className="title-small profile-sec">Cambiar contraseña</h2>
+      <div className="profile-password">
+        <input
+          type="password"
+          className="profile-input body-medium"
+          placeholder="Nueva contraseña"
+          aria-label="Nueva contraseña"
+          autoComplete="new-password"
+          value={newPass}
+          onChange={(e) => setNewPass(e.target.value)}
+        />
+        <input
+          type="password"
+          className="profile-input body-medium"
+          placeholder="Repite la nueva contraseña"
+          aria-label="Repite la nueva contraseña"
+          autoComplete="new-password"
+          value={newPass2}
+          onChange={(e) => setNewPass2(e.target.value)}
+        />
+        {passError && (
+          <p className="profile-error body-small" style={{ margin: 0 }}>
+            {passError}
+          </p>
+        )}
+        {passMsg && (
+          <p className="body-small" role="status" style={{ margin: 0 }}>
+            {passMsg}
+          </p>
+        )}
+        <div className="profile-edit__actions" style={{ justifyContent: 'flex-end' }}>
+          <md-outlined-button
+            disabled={passBusy || !newPass || !newPass2 || undefined}
+            onClick={() => void changePassword()}
+          >
+            {passBusy ? 'Cambiando…' : 'Cambiar contraseña'}
+          </md-outlined-button>
+        </div>
+      </div>
+
       {/* ===== Tus datos (RGPD arts. 17 y 20) ===== */}
       <h2 className="title-small profile-sec">Tus datos</h2>
       <div className="profile-data">
@@ -559,7 +635,7 @@ export default function ProfilePage() {
           disabled={exporting}
           onClick={() => void exportData()}
         >
-          <span className="material-symbols-rounded">download</span>
+          <span className="material-symbols-rounded" aria-hidden="true">download</span>
           <span className="profile-data__text">
             <span className="body-medium">
               {exporting ? 'Preparando…' : 'Descargar mis datos'}
@@ -581,6 +657,7 @@ export default function ProfilePage() {
             <input
               className="profile-input body-medium"
               placeholder={profile?.username ?? ''}
+              aria-label="Escribe tu nombre de usuario para confirmar el borrado" /* auditoría A-08 */
               value={deleteText}
               onChange={(e) => setDeleteText(e.target.value)}
             />
@@ -609,7 +686,7 @@ export default function ProfilePage() {
             className="profile-data__row profile-data__row--danger"
             onClick={() => setConfirmingDelete(true)}
           >
-            <span className="material-symbols-rounded">delete_forever</span>
+            <span className="material-symbols-rounded" aria-hidden="true">delete_forever</span>
             <span className="profile-data__text">
               <span className="body-medium">Eliminar mi cuenta</span>
               <span className="body-small on-surface-variant">

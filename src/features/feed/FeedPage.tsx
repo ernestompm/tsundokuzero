@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { useCompose } from '../../components/ComposeProvider'
 import { fetchBlockedIds } from '../../lib/blocks'
+import { friendlyError } from '../../lib/errors'
 import { timeAgo } from '../../lib/time'
 import HomeView, { HomeSkeleton } from './HomeView'
 import type {
@@ -16,6 +17,8 @@ export default function FeedPage() {
   const { session, profile } = useAuth()
   const { version } = useCompose()
   const [data, setData] = useState<HomeData | null>(null)
+  // auditoría A-01: error de la última acción (reaccionar/responder/eliminar)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session || !profile) return
@@ -402,39 +405,64 @@ export default function FeedPage() {
     void load()
   }, [load, version])
 
+  // auditoría A-01: cada acción comprueba el error; si falla se avisa
+  // con un banner y NO se recarga (así no desaparece nada de la pantalla)
   const deleteItem = async (id: string, type: 'idea' | 'post') => {
-    await supabase
+    const { error } = await supabase
       .from(type === 'idea' ? 'discussions' : 'posts')
       .delete()
       .eq('id', id)
+    if (error) {
+      setActionError(
+        friendlyError(error, 'No se pudo eliminar la publicación. Inténtalo de nuevo.'),
+      )
+      return
+    }
+    setActionError(null)
     await load()
   }
 
   const react = async (discussionId: string, emoji: string | null) => {
     if (!session) return
-    if (emoji === null) {
-      await supabase
-        .from('reactions')
-        .delete()
-        .eq('discussion_id', discussionId)
-        .eq('user_id', session.user.id)
-    } else {
-      await supabase
-        .from('reactions')
-        .upsert(
-          { discussion_id: discussionId, user_id: session.user.id, emoji },
-          { onConflict: 'discussion_id,user_id' },
-        )
+    const { error } =
+      emoji === null
+        ? await supabase
+            .from('reactions')
+            .delete()
+            .eq('discussion_id', discussionId)
+            .eq('user_id', session.user.id)
+        : await supabase
+            .from('reactions')
+            .upsert(
+              { discussion_id: discussionId, user_id: session.user.id, emoji },
+              { onConflict: 'discussion_id,user_id' },
+            )
+    if (error) {
+      setActionError(
+        friendlyError(error, 'No se pudo completar la acción. Inténtalo de nuevo.'),
+      )
+      return
     }
+    setActionError(null)
     await load()
   }
 
-  const reply = async (discussionId: string, body: string) => {
-    if (!session) return
-    await supabase
+  // Devuelve true si la respuesta llegó a publicarse: HomeView solo
+  // limpia el input en ese caso (el texto no se pierde si algo falla)
+  const reply = async (discussionId: string, body: string): Promise<boolean> => {
+    if (!session) return false
+    const { error } = await supabase
       .from('discussion_comments')
       .insert({ discussion_id: discussionId, author_id: session.user.id, body })
+    if (error) {
+      setActionError(
+        friendlyError(error, 'No se pudo publicar tu respuesta. Inténtalo de nuevo.'),
+      )
+      return false
+    }
+    setActionError(null)
     await load()
+    return true
   }
 
   if (!data) return <HomeSkeleton />
@@ -442,6 +470,7 @@ export default function FeedPage() {
   return (
     <HomeView
       data={data}
+      actionError={actionError}
       onDeleteItem={deleteItem}
       onReact={react}
       onReply={reply}

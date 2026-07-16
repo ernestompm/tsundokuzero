@@ -122,12 +122,62 @@ export function AvatarStack({
 
 /* ===================== Barra de progreso ===================== */
 
-export function ProgressBar({ percent }: { percent: number }) {
+export function ProgressBar({
+  percent,
+  label,
+}: {
+  percent: number
+  label?: string
+}) {
   const p = Math.max(0, Math.min(100, Math.round(percent)))
   return (
-    <div className="progress" role="progressbar" aria-valuenow={p}>
+    <div
+      className="progress"
+      role="progressbar"
+      aria-valuenow={p}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label ?? 'Progreso de lectura'}
+    >
       <div className="progress__fill" style={{ width: `${p}%` }} />
     </div>
+  )
+}
+
+/* ===================== Chip seleccionable ===================== */
+
+/**
+ * Píldora seleccionable compartida (auditoría UX M-09): un solo estado
+ * activo y una sola anatomía para filtros, destinos del composer, tipos
+ * de idea, motivos de denuncia, etc.
+ */
+export function Chip({
+  active = false,
+  onClick,
+  icon,
+  children,
+  className = '',
+}: {
+  active?: boolean
+  onClick?: () => void
+  icon?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      className={`tz-chip label-large${active ? ' tz-chip--active' : ''}${className ? ` ${className}` : ''}`}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      {icon && (
+        <span className="material-symbols-rounded" aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      <span>{children}</span>
+    </button>
   )
 }
 

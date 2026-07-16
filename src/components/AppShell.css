@@ -39,6 +39,16 @@
 .sidebar {
   display: none;
 }
+.sidebar__compose {
+  display: none;
+}
+
+/* Cabecera del drawer: botón de cierre accesible (auditoría C-02) */
+.drawer__top {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px -6px 0 0;
+}
 
 /* ===================== Top bar ===================== */
 .top-bar {
@@ -96,7 +106,8 @@
   min-width: 0;
   border: none;
   background: none;
-  outline: none;
+  /* auditoría A-05: sin outline:none — el :focus-visible global da el foco
+     (y el contenedor ya marca :focus-within con el borde primario) */
   color: var(--md-sys-color-on-surface);
   font: inherit;
 }
@@ -344,6 +355,26 @@
   }
   .sidebar__foot {
     margin-top: auto;
+  }
+  /* Botón de composición global en escritorio (auditoría M-02) */
+  .sidebar__compose {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 18px 8px 0;
+    padding: 14px 20px;
+    border: none;
+    border-radius: var(--md-sys-shape-corner-large);
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: var(--tz-shadow-card);
+  }
+  .sidebar__compose .material-symbols-rounded {
+    font-size: 20px;
   }
   .side-item {
     position: relative;

@@ -107,9 +107,7 @@
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-  box-shadow:
-    0 1px 2px rgba(35, 35, 30, 0.03),
-    0 6px 20px rgba(35, 35, 30, 0.05);
+  box-shadow: var(--tz-shadow-card);
 }
 .card--soft {
   background: var(--md-sys-color-surface-container);
@@ -117,4 +115,84 @@
 .card--outlined {
   background: transparent;
   border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* ===================== Chip seleccionable (tz-chip) ===================== */
+.tz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  min-height: 34px;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.tz-chip .material-symbols-rounded {
+  font-size: 18px;
+}
+.tz-chip--active {
+  background: var(--md-sys-color-secondary-container);
+  border-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+/* ===================== Input de texto compartido (tz-input) ==============
+   Base común de todos los campos nativos de las features (auditoría M-09):
+   borde, foco y tipografía en un solo sitio. Las features solo añaden
+   dimensiones y ajustes propios. */
+.tz-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 15px;
+}
+.tz-input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.tz-input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+
+/* ===================== Diálogo de confirmación ===================== */
+.tz-dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 40%, transparent);
+}
+.tz-dialog {
+  width: min(420px, 100%);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  background: var(--md-sys-color-surface-container-high);
+  padding: 24px;
+  box-shadow: var(--tz-shadow-raised);
+}
+.tz-dialog h2 {
+  margin: 0 0 8px;
+}
+.tz-dialog p {
+  margin: 0;
+}
+.tz-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.tz-dialog__danger {
+  --md-sys-color-primary: var(--md-sys-color-error);
+  --md-sys-color-on-primary: var(--md-sys-color-on-error);
 }

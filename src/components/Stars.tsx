@@ -30,12 +30,14 @@ export default function Stars({
           >
             <span
               className={`material-symbols-rounded${n <= Math.round(value) ? ' filled' : ''}`}
+              aria-hidden="true"
               style={{
                 fontSize: size,
+                // auditoría M-10: on-surface-variant cumple contraste 3:1 (WCAG 1.4.11)
                 color:
                   n <= Math.round(value)
                     ? 'var(--md-sys-color-tertiary)'
-                    : 'var(--md-sys-color-outline)',
+                    : 'var(--md-sys-color-on-surface-variant)',
               }}
             >
               star
@@ -45,12 +47,14 @@ export default function Stars({
           <span
             key={n}
             className={`material-symbols-rounded${n <= Math.round(value) ? ' filled' : ''}`}
+            aria-hidden="true"
             style={{
               fontSize: size,
+              // auditoría M-10: on-surface-variant cumple contraste 3:1 (WCAG 1.4.11)
               color:
                 n <= Math.round(value)
                   ? 'var(--md-sys-color-tertiary)'
-                  : 'var(--md-sys-color-outline)',
+                  : 'var(--md-sys-color-on-surface-variant)',
             }}
           >
             star

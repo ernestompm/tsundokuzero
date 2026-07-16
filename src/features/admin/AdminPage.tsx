@@ -10,6 +10,8 @@ import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
 import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
+import { friendlyError } from '../../lib/errors'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { timeAgo } from '../../lib/time'
 import { KIND_LABEL } from '../book/chapterTypes'
 import {
@@ -80,7 +82,8 @@ function SummaryTab() {
 
   useEffect(() => {
     supabase.rpc('admin_stats').then(({ data, error }) => {
-      if (error) setError(error.message)
+      if (error)
+        setError(friendlyError(error, 'No se pudieron cargar las estadísticas.')) // auditoría A-04
       else setStats(((data as AdminStats[] | null) ?? [])[0] ?? null)
     })
   }, [])
@@ -98,7 +101,10 @@ function SummaryTab() {
     <div className="admin-tiles">
       {tiles.map((t) => (
         <div key={t.label} className="admin-tile">
-          <span className="material-symbols-rounded admin-tile__icon">
+          <span
+            className="material-symbols-rounded admin-tile__icon"
+            aria-hidden="true" /* auditoría A-06 */
+          >
             {t.icon}
           </span>
           <span className="headline-medium admin-tile__value">{t.value}</span>
@@ -126,6 +132,7 @@ interface AdminUser {
 
 function UsersTab() {
   const { session } = useAuth()
+  const confirm = useConfirm()
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -137,7 +144,8 @@ function UsersTab() {
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_users')
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo cargar la lista de usuarios.')) // auditoría A-04
     else setUsers((data as AdminUser[] | null) ?? [])
 
     const { data: code, error: codeError } = await supabase.rpc(
@@ -147,13 +155,13 @@ function UsersTab() {
       setInviteMsg(
         /admin_get_invite_code|function/i.test(codeError.message)
           ? 'Falta ejecutar la migración 020 (invitación en servidor).'
-          : codeError.message,
+          : friendlyError(codeError, 'No se pudo cargar el código de invitación.'), // auditoría A-04
       )
     } else {
       setInviteCode((code as string | null) ?? '')
       if (!code)
         setInviteMsg(
-          '⚠️ Sin código configurado: nadie nuevo puede completar el registro.',
+          'Sin código configurado: nadie nuevo puede completar el registro.',
         )
     }
   }, [])
@@ -171,10 +179,10 @@ function UsersTab() {
     setInviteBusy(false)
     setInviteMsg(
       error
-        ? error.message
+        ? friendlyError(error, 'No se pudo guardar el código de invitación.') // auditoría A-04
         : inviteCode.trim()
-          ? '✅ Código guardado. Recuerda actualizar VITE_INVITE_CODE en Vercel para que el formulario de alta pida el mismo.'
-          : '⚠️ Código vacío: el registro queda cerrado.',
+          ? 'Código guardado. Recuerda actualizar VITE_INVITE_CODE en Vercel para que el formulario de alta pida el mismo.'
+          : 'Código vacío: el registro queda cerrado.',
     )
   }
 
@@ -184,21 +192,25 @@ function UsersTab() {
       target: u.id,
       value: !u.is_super_admin,
     })
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo cambiar el permiso de administración.')) // auditoría A-04
     else await load()
     setSavingId(null)
   }
 
   const expel = async (u: AdminUser) => {
-    if (
-      !window.confirm(
-        `¿Expulsar a ${u.display_name} (@${u.username})? Se borra su cuenta y TODO su contenido. No se puede deshacer.`,
-      )
-    )
-      return
+    // auditoría M-04: diálogo propio en lugar de window.confirm
+    const ok = await confirm({
+      title: `Expulsar a ${u.display_name}`,
+      message: `Se borra la cuenta de @${u.username} y TODO su contenido. No se puede deshacer.`,
+      confirmLabel: 'Expulsar',
+      danger: true,
+    })
+    if (!ok) return
     setSavingId(u.id)
     const { error } = await supabase.rpc('admin_delete_user', { target: u.id })
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo expulsar a esta persona.')) // auditoría A-04
     else await load()
     setSavingId(null)
   }
@@ -230,6 +242,7 @@ function UsersTab() {
           <input
             className="admin-input body-medium"
             placeholder="p. ej. tsundoku-2026"
+            aria-label="Código de invitación" /* auditoría A-08 */
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
@@ -246,6 +259,7 @@ function UsersTab() {
       <input
         className="admin-search body-medium"
         placeholder="Buscar por nombre, @usuario o email…"
+        aria-label="Buscar usuarios por nombre, usuario o email" /* auditoría A-08 */
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -281,9 +295,11 @@ function UsersTab() {
             <button
               className="admin-danger"
               disabled={savingId === u.id}
+              aria-label={`Expulsar a ${u.display_name}`} /* auditoría A-06 */
+              title="Expulsar"
               onClick={() => void expel(u)}
             >
-              <span className="material-symbols-rounded">person_remove</span>
+              <span className="material-symbols-rounded" aria-hidden="true">person_remove</span>
             </button>
           )}
         </div>
@@ -308,6 +324,7 @@ interface ModItem {
 }
 
 function ContentTab() {
+  const confirm = useConfirm()
   const [items, setItems] = useState<ModItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -316,7 +333,8 @@ function ContentTab() {
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_discussions')
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo cargar el contenido.')) // auditoría A-04
     else setItems((data as ModItem[] | null) ?? [])
   }, [])
 
@@ -329,22 +347,26 @@ function ContentTab() {
       target: id,
       new_body: draft.trim(),
     })
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo guardar la edición.')) // auditoría A-04
     setEditingId(null)
     await load()
   }
 
   const remove = async (item: ModItem) => {
-    if (
-      !window.confirm(
-        `¿Eliminar esta publicación de ${item.author_name} y sus ${item.comment_count} respuestas?`,
-      )
-    )
-      return
+    // auditoría M-04: diálogo propio en lugar de window.confirm
+    const ok = await confirm({
+      title: 'Eliminar publicación',
+      message: `Se elimina esta publicación de ${item.author_name} y sus ${item.comment_count} respuestas.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     const { error } = await supabase.rpc('admin_delete_discussion', {
       target: item.id,
     })
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo eliminar la publicación.')) // auditoría A-04
     await load()
   }
 
@@ -370,6 +392,7 @@ function ContentTab() {
       <input
         className="admin-search body-medium"
         placeholder="Buscar por texto, autor o libro…"
+        aria-label="Buscar publicaciones por texto, autor o libro" /* auditoría A-08 */
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -386,6 +409,7 @@ function ContentTab() {
               <textarea
                 className="admin-edit body-medium"
                 rows={3}
+                aria-label="Texto de la publicación" /* auditoría A-08 */
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
               />
@@ -450,6 +474,7 @@ interface ReportRow extends Report {
 }
 
 function ReportsTab() {
+  const confirm = useConfirm()
   const [items, setItems] = useState<ReportRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -466,7 +491,7 @@ function ReportsTab() {
       setError(
         /reports|relation/i.test(error.message)
           ? 'Falta ejecutar la migración 018 en Supabase (tabla de denuncias).'
-          : error.message,
+          : friendlyError(error, 'No se pudieron cargar las denuncias.'), // auditoría A-04
       )
       return
     }
@@ -500,12 +525,14 @@ function ReportsTab() {
   /** Retira el contenido denunciado y resuelve con motivo (DSA art. 17). */
   const actionReport = async (r: ReportRow) => {
     const note = (notes[r.id] ?? '').trim()
-    if (
-      !window.confirm(
-        `¿Retirar esta ${TARGET_LABEL[r.target_type]} de ${r.reportedName}? El autor recibirá el motivo.`,
-      )
-    )
-      return
+    // auditoría M-04: diálogo propio en lugar de window.confirm
+    const ok = await confirm({
+      title: `Retirar esta ${TARGET_LABEL[r.target_type]}`,
+      message: `Se retira esta ${TARGET_LABEL[r.target_type]} de ${r.reportedName}. El autor recibirá el motivo.`,
+      confirmLabel: 'Retirar',
+      danger: true,
+    })
+    if (!ok) return
     setBusyId(r.id)
     setError(null)
     let e: { message: string } | null = null
@@ -521,7 +548,7 @@ function ReportsTab() {
     }
     // 'profile': no hay contenido que borrar; gestionar en la pestaña Usuarios
     if (e) {
-      setError(e.message)
+      setError(friendlyError(e, 'No se pudo retirar el contenido.')) // auditoría A-04
       setBusyId(null)
       return
     }
@@ -530,7 +557,8 @@ function ReportsTab() {
       new_status: 'actioned',
       note: note || null,
     })
-    if (e2) setError(e2.message)
+    if (e2)
+      setError(friendlyError(e2, 'No se pudo resolver la denuncia.')) // auditoría A-04
     setBusyId(null)
     await load()
   }
@@ -543,7 +571,8 @@ function ReportsTab() {
       new_status: 'dismissed',
       note: (notes[r.id] ?? '').trim() || null,
     })
-    if (e) setError(e.message)
+    if (e)
+      setError(friendlyError(e, 'No se pudo resolver la denuncia.')) // auditoría A-04
     setBusyId(null)
     await load()
   }
@@ -606,6 +635,7 @@ function ReportsTab() {
                 className="admin-edit body-small"
                 rows={2}
                 placeholder="Motivo para el autor (obligatorio si retiras; DSA art. 17)…"
+                aria-label="Motivo para el autor" /* auditoría A-08 */
                 value={notes[r.id] ?? ''}
                 onChange={(e) =>
                   setNotes((n) => ({ ...n, [r.id]: e.target.value }))
@@ -691,7 +721,7 @@ function LegalTab() {
           setError(
             /app_settings|relation/i.test(error.message)
               ? 'Falta ejecutar la migración 019 en Supabase (tabla app_settings).'
-              : error.message,
+              : friendlyError(error, 'No se pudieron cargar los datos legales.'), // auditoría A-04
           )
         } else {
           const byKey = new Map((data ?? []).map((r) => [r.key, r.value]))
@@ -732,7 +762,7 @@ function LegalTab() {
       setError(
         /app_settings|relation/i.test(e.message)
           ? 'Falta ejecutar la migración 019 en Supabase (tabla app_settings).'
-          : e.message,
+          : friendlyError(e, 'No se pudieron guardar los datos legales.'), // auditoría A-04
       )
       return
     }
@@ -800,7 +830,8 @@ function BooksTab() {
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from('books').select('*').order('title')
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo cargar el catálogo.')) // auditoría A-04
     setBooks(data ?? [])
   }, [])
 
@@ -816,7 +847,8 @@ function BooksTab() {
       book: bookId,
       title,
     })
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo añadir el capítulo.')) // auditoría A-04
     setChapterDrafts((d) => ({ ...d, [bookId]: '' }))
     setBusy(false)
     await load()
@@ -835,7 +867,8 @@ function BooksTab() {
         .from('clubs')
         .update({ current_book_id: bookId })
         .eq('id', club.id)
-      if (error) setError(error.message)
+      if (error)
+        setError(friendlyError(error, 'No se pudo cambiar el libro del club.')) // auditoría A-04
     }
     setBusy(false)
     await load()
@@ -847,7 +880,8 @@ function BooksTab() {
   ) => {
     setBusy(true)
     const { error } = await supabase.from('books').update(patch).eq('id', bookId)
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo guardar el cambio.')) // auditoría A-04
     setBusy(false)
     await load()
   }
@@ -867,7 +901,7 @@ function BooksTab() {
         .select('id')
         .single()
       if (error) {
-        setError(error.message)
+        setError(friendlyError(error, 'No se pudo crear la ficha del autor.')) // auditoría A-04
         setBusy(false)
         return
       }
@@ -877,7 +911,8 @@ function BooksTab() {
       .from('books')
       .update({ author: name, author_id: author.id })
       .eq('id', bookId)
-    if (error) setError(error.message)
+    if (error)
+      setError(friendlyError(error, 'No se pudo cambiar el autor.')) // auditoría A-04
     setBusy(false)
     await load()
   }
@@ -891,7 +926,7 @@ function BooksTab() {
       {/* ---- Alta de libro (guiada, compartida con la capitanía) ---- */}
       {!adding ? (
         <md-filled-button onClick={() => setAdding(true)}>
-          <span slot="icon" className="material-symbols-rounded">add</span>
+          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">add</span>
           Añadir un libro nuevo
         </md-filled-button>
       ) : (
@@ -925,6 +960,7 @@ function BooksTab() {
               <input
                 className="admin-input body-small"
                 placeholder="URL de portada (https://…)"
+                aria-label={`URL de portada de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.cover_url ?? ''}
                 onBlur={(e) => {
                   if (e.target.value !== (b.cover_url ?? ''))
@@ -936,6 +972,7 @@ function BooksTab() {
               <input
                 className="admin-input body-small"
                 placeholder="Enlace de compra (Amazon…)"
+                aria-label={`Enlace de compra de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.buy_url ?? ''}
                 onBlur={(e) => {
                   if (e.target.value !== (b.buy_url ?? ''))
@@ -947,6 +984,7 @@ function BooksTab() {
               <input
                 className="admin-input body-small"
                 placeholder="Autor (crea su página si no existe)"
+                aria-label={`Autor de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.author}
                 onBlur={(e) => {
                   if (e.target.value.trim() && e.target.value.trim() !== b.author)
@@ -958,6 +996,7 @@ function BooksTab() {
               className="admin-edit body-small"
               rows={3}
               placeholder="Sinopsis (se muestra en la ficha del libro)"
+              aria-label={`Sinopsis de ${b.title}`} /* auditoría A-08 */
               defaultValue={b.synopsis ?? ''}
               onBlur={(e) => {
                 if (e.target.value !== (b.synopsis ?? ''))
@@ -968,6 +1007,7 @@ function BooksTab() {
               <input
                 className="admin-input body-small"
                 placeholder="Añadir capítulo por título…"
+                aria-label={`Añadir capítulo a ${b.title}`} /* auditoría A-08 */
                 value={chapterDrafts[b.id] ?? ''}
                 onChange={(e) =>
                   setChapterDrafts((d) => ({ ...d, [b.id]: e.target.value }))

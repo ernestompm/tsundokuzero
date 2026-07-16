@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/text-button.js'
+import '@material/web/progress/circular-progress.js'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
+import { ConsentCheckbox } from '../components/ConsentCheckbox'
 import { useAuth } from './AuthContext'
 import { TERMS_VERSION } from '../features/legal/legalContent'
 import './auth.css'
@@ -57,7 +60,17 @@ export default function TermsGate() {
   // Sin sesión/perfil decide RequireAuth; aquí solo cubrimos el gate.
   if (!session || !profile || state === 'ok') return <Outlet />
 
-  if (state === 'checking') return null
+  // Loader mientras se comprueba el consentimiento (auditoría M-07):
+  // nunca una pantalla en blanco entre el spinner de sesión y la app.
+  if (state === 'checking')
+    return (
+      <main
+        className="auth-page"
+        style={{ display: 'grid', placeItems: 'center' }}
+      >
+        <md-circular-progress indeterminate aria-label="Cargando" />
+      </main>
+    )
 
   const accept = async () => {
     if (!session) return
@@ -70,7 +83,9 @@ export default function TermsGate() {
     })
     setBusy(false)
     if (e && e.code !== '23505') {
-      setError(e.message)
+      setError(
+        friendlyError(e, 'No se pudo registrar la aceptación. Inténtalo de nuevo.'),
+      )
       return
     }
     setState('ok')
@@ -91,27 +106,7 @@ export default function TermsGate() {
 
         {error && <p className="auth-error body-medium">{error}</p>}
 
-        <button
-          type="button"
-          className={`consent-toggle body-medium${accepted ? ' active' : ''}`}
-          aria-pressed={accepted}
-          onClick={() => setAccepted((v) => !v)}
-        >
-          <span className="material-symbols-rounded">
-            {accepted ? 'check_circle' : 'radio_button_unchecked'}
-          </span>
-          <span>
-            He leído y acepto los{' '}
-            <Link to="/legal/terminos" target="_blank">
-              Términos y condiciones
-            </Link>{' '}
-            y la{' '}
-            <Link to="/legal/privacidad" target="_blank">
-              Política de privacidad
-            </Link>
-            , y declaro tener al menos 14 años.
-          </span>
-        </button>
+        <ConsentCheckbox checked={accepted} onChange={setAccepted} />
 
         <md-filled-button
           disabled={!accepted || busy || undefined}

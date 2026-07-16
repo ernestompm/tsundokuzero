@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import {
@@ -9,6 +10,7 @@ import {
   SectionHeader,
 } from '../../components/ui'
 import { useCompose } from '../../components/ComposeProvider'
+import { useConfirm } from '../../components/ConfirmProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
@@ -28,22 +30,38 @@ const FEED_FILTERS: { key: FeedFilter; label: string }[] = [
   { key: 'finished', label: 'Ya leídos' },
 ]
 
+// auditoría B-04: el filtro es en cliente sobre lo ya cargado, así que los
+// vacíos de club/leídos solo pueden hablar de «lo más reciente»
 const FILTER_EMPTY: Record<FeedFilter, string> = {
   all: 'Aún no hay ideas en tu punto de lectura.',
-  club: 'Tu club todavía no ha publicado nada.',
+  club: 'Tu club no ha publicado nada entre lo más reciente.',
   reading: 'Nadie ha comentado aún los libros que estás leyendo.',
-  finished: 'No hay conversación sobre tus libros terminados.',
+  finished: 'No hay conversación sobre tus libros terminados entre lo más reciente.',
+}
+
+/** Enter y Espacio activan la acción, como en un botón real (auditoría A-07) */
+function pressKeys(action: () => void) {
+  return (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === ' ') e.preventDefault()
+      action()
+    }
+  }
 }
 
 interface Props {
   data: HomeData
+  /** auditoría A-01: error de la última acción, mostrado junto al feed */
+  actionError?: string | null
   onDeleteItem?: (id: string, type: 'idea' | 'post') => void
   onReact?: (discussionId: string, emoji: string | null) => void
-  onReply?: (discussionId: string, body: string) => void
+  /** true = publicada (los stubs de preview pueden seguir devolviendo void) */
+  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
 }
 
 export default function HomeView({
   data,
+  actionError,
   onDeleteItem,
   onReact,
   onReply,
@@ -75,7 +93,7 @@ export default function HomeView({
         <h1 className="home-today__title serif">Hoy</h1>
       </header>
 
-      {/* ===== Hero (escritorio): lectura actual + reto personal ===== */}
+      {/* ===== Hero (escritorio): lectura actual + tu actividad ===== */}
       <div className="home-hero">
         <div className="hero-card">
           <span className="label-medium hero-card__kicker">
@@ -129,7 +147,8 @@ export default function HomeView({
         </div>
 
         <div className="stats-card">
-          <span className="label-medium hero-card__kicker">Reto personal</span>
+          {/* auditoría B-03: la tarjeta no contiene ningún reto, es un resumen */}
+          <span className="label-medium hero-card__kicker">Tu actividad</span>
           <StatRow icon="local_fire_department" value={stats.ideas} label="ideas compartidas" />
           <hr className="stats-card__sep" />
           <StatRow icon="chat_bubble" value={stats.replies} label="respuestas" />
@@ -154,7 +173,7 @@ export default function HomeView({
           <span className="reading-strip__info title-small">
             Empieza el libro del club
           </span>
-          <span className="material-symbols-rounded reading-strip__chev">
+          <span className="material-symbols-rounded reading-strip__chev" aria-hidden="true">
             chevron_right
           </span>
         </button>
@@ -164,7 +183,7 @@ export default function HomeView({
       {data.openPoll && (
         <button className="poll-banner" onClick={() => navigate('/club')}>
           <span className="poll-banner__icon">
-            <span className="material-symbols-rounded">how_to_vote</span>
+            <span className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
           </span>
           <span className="poll-banner__text">
             <span className="label-small poll-banner__kicker">
@@ -172,7 +191,7 @@ export default function HomeView({
             </span>
             <span className="label-large">{data.openPoll.title}</span>
           </span>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span className="material-symbols-rounded" aria-hidden="true">chevron_right</span>
         </button>
       )}
 
@@ -182,7 +201,9 @@ export default function HomeView({
         <span className="composer-entry__hint body-medium">
           Comparte una idea…
         </span>
-        <span className="composer-entry__plus material-symbols-rounded">add</span>
+        <span className="composer-entry__plus material-symbols-rounded" aria-hidden="true">
+          add
+        </span>
       </button>
 
       {/* ===== Conversaciones activas ===== */}
@@ -212,7 +233,9 @@ export default function HomeView({
                   <span className="conv-card__foot">
                     <AvatarStack people={c.avatars} extra={c.extra} />
                     <span className="label-medium on-surface-variant conv-card__count">
-                      <span className="material-symbols-rounded">chat_bubble</span>
+                      <span className="material-symbols-rounded" aria-hidden="true">
+                        chat_bubble
+                      </span>
                       {c.count}
                     </span>
                   </span>
@@ -225,12 +248,12 @@ export default function HomeView({
 
       {/* ===== Últimas ideas (el feed) ===== */}
       <SectionHeader title="Últimas ideas" />
-      <div className="feed-filter" role="tablist" aria-label="Filtrar el feed">
+      {/* auditoría B-09: grupo de botones con aria-pressed (no es un tablist real) */}
+      <div className="feed-filter" role="group" aria-label="Filtrar el feed">
         {FEED_FILTERS.map(({ key, label }) => (
           <button
             key={key}
-            role="tab"
-            aria-selected={filter === key}
+            aria-pressed={filter === key}
             className={`feed-filter__chip label-large${filter === key ? ' active' : ''}`}
             onClick={() => setFilter(key)}
           >
@@ -238,9 +261,16 @@ export default function HomeView({
           </button>
         ))}
       </div>
+      {actionError && (
+        <div className="feed-error body-medium" role="alert">
+          {actionError}
+        </div>
+      )}
       {visibleFeed.length === 0 ? (
         <div className="feed-empty">
-          <span className="material-symbols-rounded feed-empty__icon">forum</span>
+          <span className="material-symbols-rounded feed-empty__icon" aria-hidden="true">
+            forum
+          </span>
           <p className="body-large">{FILTER_EMPTY[filter]}</p>
           <p className="body-medium on-surface-variant">
             Sé el primero: comparte una teoría o una pregunta sobre lo que llevas
@@ -321,7 +351,7 @@ function ReadingStrip({
           </span>
         </span>
       </div>
-      <span className="material-symbols-rounded reading-strip__chev">
+      <span className="material-symbols-rounded reading-strip__chev" aria-hidden="true">
         chevron_right
       </span>
     </button>
@@ -374,7 +404,9 @@ function StatRow({
         <div className="headline-medium stat-row__value">{value}</div>
         <div className="body-small on-surface-variant">{label}</div>
       </div>
-      <span className="material-symbols-rounded stat-row__icon">{icon}</span>
+      <span className="material-symbols-rounded stat-row__icon" aria-hidden="true">
+        {icon}
+      </span>
     </div>
   )
 }
@@ -392,12 +424,18 @@ function FeedReplyRow({
       <div className="feed-reply__content">
         {reply.body == null ? (
           <span className="feed-reply__locked body-small">
-            <span className="material-symbols-rounded">lock</span>
+            <span className="material-symbols-rounded" aria-hidden="true">lock</span>
             Desbloquearás esta respuesta al llegar al capítulo{' '}
             {reply.unlockChapter}
           </span>
         ) : (
-          <p className="body-small feed-reply__body" onClick={onOpen}>
+          <p
+            className="body-small feed-reply__body"
+            role="button"
+            tabIndex={0}
+            onClick={onOpen}
+            onKeyDown={pressKeys(onOpen)}
+          >
             <span className="feed-reply__who">{reply.authorName}</span>{' '}
             {reply.body}
           </p>
@@ -418,9 +456,10 @@ function FeedCard({
   mine: boolean
   onDelete?: (id: string, type: 'idea' | 'post') => void
   onReact?: (discussionId: string, emoji: string | null) => void
-  onReply?: (discussionId: string, body: string) => void
+  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
 }) {
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState('')
   const isIdea = item.type === 'idea'
@@ -455,12 +494,16 @@ function FeedCard({
       ? 'Respuesta'
       : 'Entrada'
 
-  const sendReply = () => {
+  // auditoría A-01: el input solo se limpia si la respuesta llegó a
+  // publicarse (los stubs que devuelven void cuentan como éxito)
+  const sendReply = async () => {
     const text = replyText.trim()
     if (!text || !onReply) return
-    onReply(threadId, text)
-    setReplyText('')
-    setReplying(false)
+    const ok = await onReply(threadId, text)
+    if (ok !== false) {
+      setReplyText('')
+      setReplying(false)
+    }
   }
 
   const meta = (
@@ -489,7 +532,7 @@ function FeedCard({
           </span>
           {item.parent.body == null ? (
             <span className="feed-quote__locked body-small">
-              <span className="material-symbols-rounded">lock</span>
+              <span className="material-symbols-rounded" aria-hidden="true">lock</span>
               Mensaje aún por delante de tu progreso
             </span>
           ) : (
@@ -528,13 +571,25 @@ function FeedCard({
               label={`Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`}
             />
           </div>
-        ) : (
-          <div className="feed-card__body body-large" onClick={go}>
+        ) : isPost ? (
+          // auditoría B-02: en entradas de muro el cuerpo no navega; al
+          // perfil se llega por avatar/nombre, como en el resto de tarjetas
+          <div className="feed-card__body feed-card__body--static body-large">
             {item.postTitle && (
               <div className="title-medium serif" style={{ marginBottom: 4 }}>
                 {item.postTitle}
               </div>
             )}
+            {item.body}
+          </div>
+        ) : (
+          <div
+            className="feed-card__body body-large"
+            role="button"
+            tabIndex={0}
+            onClick={go}
+            onKeyDown={pressKeys(go)}
+          >
             {item.body}
           </div>
         ))}
@@ -569,18 +624,19 @@ function FeedCard({
         <div className="feed-reply-box">
           <input
             className="feed-reply-box__input body-medium"
+            aria-label="Escribe tu respuesta"
             placeholder="Escribe tu respuesta…"
             autoFocus
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendReply()}
+            onKeyDown={(e) => e.key === 'Enter' && void sendReply()}
           />
           <button
             className="feed-reply-box__send"
             aria-label="Enviar respuesta"
-            onClick={sendReply}
+            onClick={() => void sendReply()}
           >
-            <span className="material-symbols-rounded">send</span>
+            <span className="material-symbols-rounded" aria-hidden="true">send</span>
           </button>
         </div>
       )}
@@ -588,7 +644,7 @@ function FeedCard({
       <footer className="feed-card__foot">
         {(isIdea ? unlocked : isReply) && onReply && (
           <button className="feed-action" onClick={() => setReplying((v) => !v)}>
-            <span className="material-symbols-rounded">chat_bubble</span>
+            <span className="material-symbols-rounded" aria-hidden="true">chat_bubble</span>
             {isIdea && (item.commentCount ?? 0) > 0
               ? item.commentCount
               : 'Responder'}
@@ -596,19 +652,26 @@ function FeedCard({
         )}
         {(isIdea || isReply) && (
           <button className="feed-action" onClick={go}>
-            <span className="material-symbols-rounded">forum</span>
+            <span className="material-symbols-rounded" aria-hidden="true">forum</span>
             Ver hilo
           </button>
         )}
         {mine && !isReply && onDelete && (
           <button
             className="feed-action feed-action--danger"
-            onClick={() => {
-              if (window.confirm('¿Eliminar esta publicación definitivamente?'))
-                onDelete(item.id, isPost ? 'post' : 'idea')
-            }}
+            onClick={() =>
+              // auditoría M-04: diálogo propio en lugar de window.confirm
+              void confirm({
+                title: 'Eliminar publicación',
+                message: '¿Eliminar esta publicación definitivamente? Esta acción no se puede deshacer.',
+                confirmLabel: 'Eliminar',
+                danger: true,
+              }).then((ok) => {
+                if (ok) onDelete(item.id, isPost ? 'post' : 'idea')
+              })
+            }
           >
-            <span className="material-symbols-rounded">delete</span>
+            <span className="material-symbols-rounded" aria-hidden="true">delete</span>
             Eliminar
           </button>
         )}

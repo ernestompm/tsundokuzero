@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
+import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
 import { fetchBlockedIds } from '../../lib/blocks'
 import { timeAgo } from '../../lib/time'
@@ -15,6 +16,7 @@ export default function ThreadPage() {
   const [data, setData] = useState<ThreadViewData | null>(null)
   const [missing, setMissing] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session || !discussionId) return
@@ -120,11 +122,22 @@ export default function ThreadPage() {
     void load()
   }, [load])
 
-  const run = async (op: PromiseLike<unknown>) => {
+  // auditoría A-01: comprueba el error; en fallo avisa (banner) y devuelve
+  // false para que la vista NO borre el texto del usuario.
+  const run = async (op: PromiseLike<{ error: unknown }>): Promise<boolean> => {
     setBusy(true)
-    await op
+    const { error } = await op
+    if (error) {
+      setActionError(
+        friendlyError(error, 'No se pudo completar la acción. Inténtalo de nuevo.'),
+      )
+      setBusy(false)
+      return false
+    }
+    setActionError(null)
     await load()
     setBusy(false)
+    return true
   }
 
   if (missing) {
@@ -150,17 +163,18 @@ export default function ThreadPage() {
     <ThreadView
       data={data}
       busy={busy}
+      actionError={actionError}
       currentUserId={session?.user.id}
-      onReply={(body) =>
-        session &&
-        void run(
+      onReply={(body) => {
+        if (!session) return
+        return run(
           supabase.from('discussion_comments').insert({
             discussion_id: data.discussionId,
             author_id: session.user.id,
             body,
           }),
         )
-      }
+      }}
       onReact={(emoji) =>
         session &&
         void run(
@@ -185,7 +199,15 @@ export default function ThreadPage() {
       }
       onDeleteDiscussion={() =>
         void (async () => {
-          await supabase.from('discussions').delete().eq('id', data.discussionId)
+          // auditoría A-01: si el borrado falla, avisa y no navega
+          const { error } = await supabase
+            .from('discussions')
+            .delete()
+            .eq('id', data.discussionId)
+          if (error) {
+            setActionError(friendlyError(error, 'No se pudo eliminar el hilo.'))
+            return
+          }
           navigate(`/book/${data.bookId}/chapter/${data.chapterNumber}`, {
             replace: true,
           })

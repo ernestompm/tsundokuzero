@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
 import ReportButton from '../../components/ReportButton'
+import { friendlyError } from '../../lib/errors'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { timeAgo } from '../../lib/time'
 import type { Profile } from '../../lib/database.types'
 import './profile.css'
@@ -31,7 +33,9 @@ export default function UserProfilePage() {
   const { username } = useParams()
   const { session, profile: me } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [person, setPerson] = useState<Profile | null | 'missing'>(null)
+  const [error, setError] = useState<string | null>(null)
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
   const [amFollowing, setAmFollowing] = useState(false)
@@ -180,18 +184,30 @@ export default function UserProfilePage() {
   /** Bloquear/desbloquear (P2-13): el RPC rompe los follows en ambos sentidos. */
   const toggleBlock = async () => {
     if (!session) return
+    setError(null)
     if (amBlocking) {
-      await supabase.rpc('unblock_user', { target: person.id })
-    } else {
-      if (
-        !window.confirm(
-          `¿Bloquear a ${person.display_name}? Dejaréis de seguiros y no verás su contenido ni sus avisos. Puedes deshacerlo cuando quieras.`,
-        )
-      )
+      const { error: e } = await supabase.rpc('unblock_user', {
+        target: person.id,
+      })
+      if (e) {
+        // auditoría A-04
+        setError(friendlyError(e, 'No se pudo desbloquear a esta persona.'))
         return
-      const { error } = await supabase.rpc('block_user', { target: person.id })
-      if (error && /block_user|function/i.test(error.message)) {
-        window.alert('Falta ejecutar la migración 020 en Supabase.')
+      }
+    } else {
+      // auditoría M-04: diálogo propio en lugar de window.confirm
+      const ok = await confirm({
+        title: `Bloquear a ${person.display_name}`,
+        message:
+          'Dejaréis de seguiros y no verás su contenido ni sus avisos. Puedes deshacerlo cuando quieras.',
+        confirmLabel: 'Bloquear',
+        danger: true,
+      })
+      if (!ok) return
+      const { error: e } = await supabase.rpc('block_user', { target: person.id })
+      if (e) {
+        // auditoría A-04: nada de avisos de migraciones ni window.alert
+        setError(friendlyError(e, 'No se pudo bloquear a esta persona.'))
         return
       }
     }
@@ -200,6 +216,7 @@ export default function UserProfilePage() {
 
   return (
     <section className="profile">
+      {error && <p className="profile-error body-medium">{error}</p>}
       <div className="profile-head">
         <Avatar name={person.display_name} url={person.avatar_url} size={72} />
         <h1 className="headline-small serif">{person.display_name}</h1>
@@ -243,7 +260,7 @@ export default function UserProfilePage() {
               title="Bloquear"
               onClick={() => void toggleBlock()}
             >
-              <span className="material-symbols-rounded">person_remove</span>
+              <span className="material-symbols-rounded" aria-hidden="true">person_remove</span>
             </button>
           )}
         </span>

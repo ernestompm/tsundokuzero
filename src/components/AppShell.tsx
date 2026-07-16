@@ -6,21 +6,29 @@ import { supabase } from '../lib/supabase'
 import { Avatar } from './ui'
 import { useAuth } from '../auth/AuthContext'
 import { useCompose } from './ComposeProvider'
+import { useModalBehavior } from './modal'
 import { isDarkActive, setThemeMode } from '../theme/theme'
 import './AppShell.css'
 
-const DESTINATIONS = [
+/* Nombres canónicos de navegación (auditoría M-08): un solo nombre por
+   destino en toda la app — Club, Notificaciones, Administración. */
+
+/** Barra inferior móvil (auditoría M-01): el Club — corazón del producto —
+ * va en primer nivel; la Biblioteca queda en el drawer y la sidebar. */
+const MOBILE_DESTINATIONS = [
   { to: '/', icon: 'home', label: 'Inicio' },
   { to: '/explore', icon: 'travel_explore', label: 'Explorar' },
-  { to: '/library', icon: 'auto_stories', label: 'Biblioteca' },
+  { to: '/club', icon: 'group', label: 'Club' },
   { to: '/me', icon: 'account_circle', label: 'Perfil' },
 ]
 
-/** En escritorio hay sitio: el Club también va en la barra lateral. */
+/** En escritorio hay sitio: todos los destinos en la barra lateral. */
 const SIDEBAR_DESTINATIONS = [
-  ...DESTINATIONS.slice(0, 3),
+  { to: '/', icon: 'home', label: 'Inicio' },
+  { to: '/explore', icon: 'travel_explore', label: 'Explorar' },
+  { to: '/library', icon: 'auto_stories', label: 'Biblioteca' },
   { to: '/club', icon: 'group', label: 'Club' },
-  DESTINATIONS[3],
+  { to: '/me', icon: 'account_circle', label: 'Perfil' },
 ]
 
 function Logo() {
@@ -54,7 +62,7 @@ const DRAWER_LINKS = [
   { to: '/', icon: 'home', label: 'Inicio' },
   { to: '/explore', icon: 'travel_explore', label: 'Explorar' },
   { to: '/library', icon: 'auto_stories', label: 'Biblioteca' },
-  { to: '/club', icon: 'group', label: 'Mi club' },
+  { to: '/club', icon: 'group', label: 'Club' },
   { to: '/notifications', icon: 'notifications', label: 'Notificaciones' },
   { to: '/me', icon: 'account_circle', label: 'Perfil' },
 ]
@@ -68,6 +76,8 @@ export default function AppShell() {
   const [unread, setUnread] = useState(0)
   const [drawer, setDrawer] = useState(false)
   const [topQuery, setTopQuery] = useState('')
+  // Drawer accesible (auditoría C-02): Escape, focus trap y restauración
+  const drawerRef = useModalBehavior(drawer, () => setDrawer(false))
 
   // Cierra el drawer al cambiar de ruta
   useEffect(() => {
@@ -108,7 +118,9 @@ export default function AppShell() {
         aria-label={`Notificaciones${unread ? ` (${unread} sin leer)` : ''}`}
         onClick={() => navigate('/notifications')}
       >
-        <span className="material-symbols-rounded">notifications</span>
+        <span className="material-symbols-rounded" aria-hidden="true">
+          notifications
+        </span>
       </md-icon-button>
       {unread > 0 && (
         <span className="bell__badge">{unread > 9 ? '9+' : unread}</span>
@@ -117,11 +129,15 @@ export default function AppShell() {
   )
 
   // Barra móvil: 5 ranuras con el FAB en el centro.
-  const mobileLeft = DESTINATIONS.slice(0, 2)
-  const mobileRight = DESTINATIONS.slice(2)
+  const mobileLeft = MOBILE_DESTINATIONS.slice(0, 2)
+  const mobileRight = MOBILE_DESTINATIONS.slice(2)
 
   return (
     <div className="shell">
+      {/* Salto al contenido (auditoría B-08, WCAG 2.4.1) */}
+      <a className="skip-link label-large" href="#main-content">
+        Saltar al contenido
+      </a>
       {/* ---- Barra lateral (escritorio) ---- */}
       <aside className="sidebar">
         <div className="sidebar__logo">
@@ -142,6 +158,7 @@ export default function AppShell() {
                   <md-ripple />
                   <span
                     className={`material-symbols-rounded${isActive ? ' filled' : ''}`}
+                    aria-hidden="true"
                   >
                     {icon}
                   </span>
@@ -157,9 +174,11 @@ export default function AppShell() {
             }
           >
             <md-ripple />
-            <span className="material-symbols-rounded">notifications</span>
+            <span className="material-symbols-rounded" aria-hidden="true">
+              notifications
+            </span>
             <span className="label-large">
-              Avisos{unread > 0 ? ` (${unread})` : ''}
+              Notificaciones{unread > 0 ? ` (${unread})` : ''}
             </span>
           </NavLink>
           {isSuperAdmin && (
@@ -170,16 +189,29 @@ export default function AppShell() {
               }
             >
               <md-ripple />
-              <span className="material-symbols-rounded">
+              <span className="material-symbols-rounded" aria-hidden="true">
                 admin_panel_settings
               </span>
-              <span className="label-large">Admin</span>
+              <span className="label-large">Administración</span>
             </NavLink>
           )}
         </nav>
+
+        {/* Composición global en escritorio (auditoría M-02) */}
+        <button
+          className="sidebar__compose title-small"
+          type="button"
+          onClick={() => void openCompose()}
+        >
+          <md-ripple />
+          <span className="material-symbols-rounded" aria-hidden="true">
+            add
+          </span>
+          Compartir una idea
+        </button>
         <div className="sidebar__foot">
           <button className="side-item" onClick={toggleTheme} type="button">
-            <span className="material-symbols-rounded">
+            <span className="material-symbols-rounded" aria-hidden="true">
               {dark ? 'light_mode' : 'dark_mode'}
             </span>
             <span className="label-large">{dark ? 'Tema claro' : 'Tema oscuro'}</span>
@@ -193,12 +225,28 @@ export default function AppShell() {
 
       {/* ---- Drawer (móvil) ---- */}
       {drawer && (
-        <div className="drawer-scrim" onClick={() => setDrawer(false)}>
+        <div
+          className="drawer-scrim"
+          ref={drawerRef}
+          onClick={() => setDrawer(false)}
+        >
           <nav
             className="drawer"
+            role="dialog"
+            aria-modal="true"
             aria-label="Menú"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="drawer__top">
+              <md-icon-button
+                aria-label="Cerrar menú"
+                onClick={() => setDrawer(false)}
+              >
+                <span className="material-symbols-rounded" aria-hidden="true">
+                  close
+                </span>
+              </md-icon-button>
+            </div>
             <button
               className="drawer__profile"
               onClick={() => navigate('/me')}
@@ -226,7 +274,9 @@ export default function AppShell() {
                     `drawer__link${isActive ? ' active' : ''}`
                   }
                 >
-                  <span className="material-symbols-rounded">{icon}</span>
+                  <span className="material-symbols-rounded" aria-hidden="true">
+                    {icon}
+                  </span>
                   <span className="label-large">{label}</span>
                   {to === '/notifications' && unread > 0 && (
                     <span className="drawer__badge label-small">{unread}</span>
@@ -240,7 +290,7 @@ export default function AppShell() {
                     `drawer__link${isActive ? ' active' : ''}`
                   }
                 >
-                  <span className="material-symbols-rounded">
+                  <span className="material-symbols-rounded" aria-hidden="true">
                     admin_panel_settings
                   </span>
                   <span className="label-large">Administración</span>
@@ -250,7 +300,7 @@ export default function AppShell() {
 
             <div className="drawer__foot">
               <button className="drawer__link" onClick={toggleTheme}>
-                <span className="material-symbols-rounded">
+                <span className="material-symbols-rounded" aria-hidden="true">
                   {dark ? 'light_mode' : 'dark_mode'}
                 </span>
                 <span className="label-large">
@@ -261,7 +311,9 @@ export default function AppShell() {
                 className="drawer__link"
                 onClick={() => void signOut()}
               >
-                <span className="material-symbols-rounded">logout</span>
+                <span className="material-symbols-rounded" aria-hidden="true">
+                  logout
+                </span>
                 <span className="label-large">Cerrar sesión</span>
               </button>
               <span className="shell-version label-small">
@@ -282,7 +334,9 @@ export default function AppShell() {
               aria-label="Abrir menú"
               onClick={() => setDrawer(true)}
             >
-              <span className="material-symbols-rounded">menu</span>
+              <span className="material-symbols-rounded" aria-hidden="true">
+                menu
+              </span>
             </md-icon-button>
             <Logo />
           </span>
@@ -316,7 +370,9 @@ export default function AppShell() {
               aria-label="Buscar"
               onClick={() => navigate('/explore')}
             >
-              <span className="material-symbols-rounded">search</span>
+              <span className="material-symbols-rounded" aria-hidden="true">
+                search
+              </span>
             </md-icon-button>
             {bell}
             <button
@@ -333,7 +389,7 @@ export default function AppShell() {
           </span>
         </header>
 
-        <main className="content">
+        <main className="content" id="main-content">
           <Outlet />
         </main>
       </div>
@@ -350,7 +406,9 @@ export default function AppShell() {
           onClick={() => void openCompose()}
         >
           <md-ripple />
-          <span className="material-symbols-rounded">add</span>
+          <span className="material-symbols-rounded" aria-hidden="true">
+            add
+          </span>
         </button>
         {mobileRight.map(({ to, icon, label }) => (
           <NavItem key={to} to={to} icon={icon} label={label} />
@@ -371,7 +429,10 @@ function NavItem({ to, icon, label }: { to: string; icon: string; label: string 
         <>
           {/* Sin ripple: en móvil el feedback es el tinte + escala, como iOS */}
           <span className="nav-icon-pill">
-            <span className={`material-symbols-rounded${isActive ? ' filled' : ''}`}>
+            <span
+              className={`material-symbols-rounded${isActive ? ' filled' : ''}`}
+              aria-hidden="true"
+            >
               {icon}
             </span>
           </span>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
+import '@material/web/button/text-button.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { fetchBlockedIds } from '../../lib/blocks'
@@ -94,18 +95,37 @@ export default function NotificationsPage() {
       }),
     )
 
-    // Al abrir la bandeja, todo queda leído
+    // auditoría M-06: abrir la bandeja ya NO marca nada como leído;
+    // cada aviso se marca al tocarlo, o todos con el botón de la cabecera.
+  }, [session])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  /** auditoría M-06: marca un aviso como leído al tocarlo y navega. */
+  const openNoti = async (n: NotiRow) => {
+    if (!n.read) {
+      setItems((list) =>
+        (list ?? []).map((x) => (x.id === n.id ? { ...x, read: true } : x)),
+      )
+      await supabase.from('notifications').update({ read: true }).eq('id', n.id)
+      window.dispatchEvent(new Event('tz-notifications-read'))
+    }
+    navigate(n.to)
+  }
+
+  /** auditoría M-06: botón «Marcar todo como leído». */
+  const markAllRead = async () => {
+    if (!session) return
+    setItems((list) => (list ?? []).map((n) => ({ ...n, read: true })))
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('user_id', session.user.id)
       .eq('read', false)
     window.dispatchEvent(new Event('tz-notifications-read'))
-  }, [session])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  }
 
   if (!items) {
     return (
@@ -118,6 +138,23 @@ export default function NotificationsPage() {
   return (
     <section>
       <PageHeader title="Notificaciones" sub="Respuestas, seguidores y votaciones" />
+      {/* auditoría M-06: marcar todo como leído, a demanda */}
+      {items.some((n) => !n.read) && (
+        <div
+          style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}
+        >
+          <md-text-button onClick={() => void markAllRead()}>
+            <span
+              slot="icon"
+              className="material-symbols-rounded"
+              aria-hidden="true"
+            >
+              check_circle
+            </span>
+            Marcar todo como leído
+          </md-text-button>
+        </div>
+      )}
       {items.length === 0 ? (
         <p className="body-medium on-surface-variant">
           Nada nuevo por aquí. Cuando alguien te responda o te siga, lo verás
@@ -146,10 +183,13 @@ export default function NotificationsPage() {
               <button
                 key={n.id}
                 className={`noti-row${n.read ? '' : ' unread'}`}
-                onClick={() => navigate(n.to)}
+                onClick={() => void openNoti(n)} /* auditoría M-06 */
               >
                 {systemMsg ? (
-                  <span className="noti-row__sysicon material-symbols-rounded">
+                  <span
+                    className="noti-row__sysicon material-symbols-rounded"
+                    aria-hidden="true" /* auditoría A-06 */
+                  >
                     {icon}
                   </span>
                 ) : (
@@ -170,7 +210,10 @@ export default function NotificationsPage() {
                   </span>
                 </span>
                 {!systemMsg && (
-                  <span className="material-symbols-rounded noti-row__icon">
+                  <span
+                    className="material-symbols-rounded noti-row__icon"
+                    aria-hidden="true" /* auditoría A-06 */
+                  >
                     {icon}
                   </span>
                 )}

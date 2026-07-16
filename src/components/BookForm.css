@@ -42,7 +42,7 @@
   color: var(--md-sys-color-on-surface);
   font: inherit;
   resize: vertical;
-  outline: none;
+  /* auditoría: outline eliminado — rige la regla global :focus-visible */
 }
 .bookform__input:focus {
   border-color: var(--md-sys-color-primary);

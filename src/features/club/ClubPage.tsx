@@ -5,7 +5,9 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
+import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, AvatarStack, BookCover } from '../../components/ui'
 import type { Book, Club, Poll, PollOption } from '../../lib/database.types'
 import './club.css'
@@ -41,11 +43,16 @@ function voterNames(voters: { name: string }[]): string {
 export default function ClubPage() {
   const { session } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [club, setClub] = useState<Club | null>(null)
   const [book, setBook] = useState<Book | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [pollState, setPollState] = useState<PollState | null>(null)
   const [busy, setBusy] = useState(false)
+  // Estado de carga explícito (auditoría C-03): sin él, «no hay club»
+  // dejaba el spinner girando para siempre.
+  const [loading, setLoading] = useState(true)
+  const [voteError, setVoteError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session) return
@@ -55,7 +62,11 @@ export default function ClubPage() {
       .order('created_at')
       .limit(1)
       .maybeSingle()
-    if (!clubData) return
+    if (!clubData) {
+      // Sin club: se sale del estado de carga para mostrar el aviso (C-03)
+      setLoading(false)
+      return
+    }
     setClub(clubData)
 
     const [{ data: bookData }, { data: memberRows }, { data: poll }] =
@@ -143,17 +154,36 @@ export default function ClubPage() {
     } else {
       setPollState(null)
     }
+    setLoading(false)
   }, [session])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  if (!club) {
+  if (loading) {
     return (
       <div style={{ display: 'grid', placeItems: 'center', padding: 48 }}>
         <md-circular-progress indeterminate />
       </div>
+    )
+  }
+
+  // Sin club activo (auditoría C-03): mensaje amable + vuelta al inicio
+  if (!club) {
+    return (
+      <section style={{ textAlign: 'center', padding: 48 }}>
+        <p className="body-large">Todavía no hay ningún club activo.</p>
+        <p className="body-medium on-surface-variant">
+          Cuando se cree el club de lectura, aparecerá aquí.
+        </p>
+        <md-filled-button
+          style={{ marginTop: 16 }}
+          onClick={() => navigate('/')}
+        >
+          Volver al inicio
+        </md-filled-button>
+      </section>
     )
   }
 
@@ -163,7 +193,9 @@ export default function ClubPage() {
   const vote = async (optionId: string) => {
     if (!session || !pollState) return
     setBusy(true)
-    await supabase.from('poll_votes').upsert(
+    setVoteError(null)
+    // Auditoría A-01: el voto puede fallar (red, RLS…) y hay que decirlo
+    const { error } = await supabase.from('poll_votes').upsert(
       {
         poll_id: pollState.poll.id,
         option_id: optionId,
@@ -171,16 +203,26 @@ export default function ClubPage() {
       },
       { onConflict: 'poll_id,user_id' },
     )
-    await load()
+    if (error) {
+      setVoteError(
+        friendlyError(error, 'No se pudo registrar tu voto. Inténtalo de nuevo.'),
+      )
+    } else {
+      await load()
+    }
     setBusy(false)
   }
 
   const closePoll = async () => {
     if (!pollState) return
+    // Auditoría M-04: diálogo propio en lugar de window.confirm
     if (
-      !window.confirm(
-        'Cerrar la votación: la opción más votada quedará como ganadora. ¿Continuar?',
-      )
+      !(await confirm({
+        title: 'Cerrar votación',
+        message:
+          'La opción más votada quedará como ganadora. ¿Continuar?',
+        confirmLabel: 'Cerrar votación',
+      }))
     )
       return
     setBusy(true)
@@ -225,7 +267,7 @@ export default function ClubPage() {
             className="club-manage-btn"
             onClick={() => navigate('/club/manage')}
           >
-            <span slot="icon" className="material-symbols-rounded">settings</span>
+            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">settings</span>
             Gestionar club
           </md-outlined-button>
         )}
@@ -244,7 +286,7 @@ export default function ClubPage() {
             <span className="title-medium serif">{book.title}</span>
             <span className="body-small on-surface-variant">{book.author}</span>
           </span>
-          <span className="material-symbols-rounded on-surface-variant">
+          <span className="material-symbols-rounded on-surface-variant" aria-hidden="true">
             chevron_right
           </span>
         </button>
@@ -253,7 +295,7 @@ export default function ClubPage() {
       {/* Insights: tu avance frente al grupo */}
       {book && members.length > 1 && (
         <div className="club-insights">
-          <span className="material-symbols-rounded club-insights__icon">
+          <span className="material-symbols-rounded club-insights__icon" aria-hidden="true">
             trending_up
           </span>
           <div>
@@ -296,7 +338,15 @@ export default function ClubPage() {
 
           {winner && (
             <p className="club-poll__winner body-medium">
-              🏆 Ganadora: <b>{winner.book_title}</b> de {winner.book_author}
+              {/* Auditoría B-05: sin emoji en el copy */}
+              Ganadora: <b>{winner.book_title}</b> de {winner.book_author}
+            </p>
+          )}
+
+          {/* Auditoría A-01: aviso inline si el voto no se pudo guardar */}
+          {voteError && (
+            <p className="club-banner club-banner--error body-small" role="alert">
+              {voteError}
             </p>
           )}
 
@@ -357,7 +407,7 @@ export default function ClubPage() {
                       onClick={() => navigate(`/book/${o.book_id}`)}
                     >
                       Ver sinopsis y ficha
-                      <span className="material-symbols-rounded">
+                      <span className="material-symbols-rounded" aria-hidden="true">
                         chevron_right
                       </span>
                     </button>
@@ -380,7 +430,7 @@ export default function ClubPage() {
           className="club-manage-btn"
           onClick={() => navigate('/club/manage')}
         >
-          <span slot="icon" className="material-symbols-rounded">how_to_vote</span>
+          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
           Proponer nueva votación
         </md-outlined-button>
       )}

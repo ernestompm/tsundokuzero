@@ -108,7 +108,7 @@
   background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;
-  outline: none;
+  /* auditoría: outline eliminado — rige la regla global :focus-visible */
 }
 .admin-search:focus,
 .admin-input:focus,
@@ -141,7 +141,7 @@
   color: inherit;
   font: inherit;
   resize: vertical;
-  outline: none;
+  /* auditoría: outline eliminado — rige la regla global :focus-visible */
 }
 
 .admin-book {

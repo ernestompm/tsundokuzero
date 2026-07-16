@@ -70,8 +70,24 @@
   color: inherit;
   font: inherit;
   resize: none;
-  outline: none;
   line-height: 1.5;
+  /* El foco visible lo da la regla global :focus-visible (auditoría A-05) */
+}
+
+/* Los chips (destino, tipo, club) son ahora el <Chip> compartido de
+   ui.tsx (auditoría M-09). Sobre el fondo de la sheet
+   (surface-container-high) el texto secundario se queda en 4.39:1, así
+   que aquí sube un paso (auditoría M-10). */
+.sheet .tz-chip:not(.tz-chip--active) {
+  color: var(--md-sys-color-on-surface);
+}
+.sheet__targets .tz-chip {
+  max-width: 220px;
+}
+.sheet__targets .tz-chip > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sheet__targets {
@@ -80,67 +96,11 @@
   gap: 8px;
   margin: 4px 0 12px;
 }
-.target-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 220px;
-  padding: 8px 13px;
-  border-radius: var(--md-sys-shape-corner-full);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: none;
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.target-chip.active {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border-color: transparent;
-}
-.target-chip .material-symbols-rounded {
-  font-size: 16px;
-  flex: none;
-}
 
 .sheet__kinds {
   display: flex;
   gap: 8px;
   margin: 12px 0;
-}
-.kind-chip {
-  padding: 8px 14px;
-  border-radius: var(--md-sys-shape-corner-full);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: none;
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-}
-.kind-chip.active {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-  border-color: transparent;
-}
-
-.club-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: var(--md-sys-shape-corner-full);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: none;
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-}
-.club-toggle.active {
-  color: var(--md-sys-color-primary);
-  border-color: var(--md-sys-color-primary);
-}
-.club-toggle .material-symbols-rounded {
-  font-size: 19px;
 }
 
 .sheet__error {

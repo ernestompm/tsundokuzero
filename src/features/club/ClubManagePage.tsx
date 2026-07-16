@@ -5,7 +5,9 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
+import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, BookCover } from '../../components/ui'
 import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
@@ -23,6 +25,7 @@ interface Member {
 export default function ClubManagePage() {
   const { session, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [club, setClub] = useState<Club | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [books, setBooks] = useState<Book[]>([])
@@ -31,6 +34,11 @@ export default function ClubManagePage() {
   )
   const [allowed, setAllowed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
+  // Aviso inline en lugar de window.alert (auditoría M-04)
+  const [banner, setBanner] = useState<{
+    kind: 'error' | 'info'
+    text: string
+  } | null>(null)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -125,7 +133,16 @@ export default function ClubManagePage() {
   }
 
   const makeCaptain = async (userId: string, name: string) => {
-    if (!window.confirm(`¿Nombrar capitán a ${name}? Dejarás de serlo tú.`)) return
+    // Auditoría M-04: diálogo propio en lugar de window.confirm
+    if (
+      !(await confirm({
+        title: 'Transferir capitanía',
+        message: `¿Nombrar capitán a ${name}? Dejarás de serlo tú.`,
+        confirmLabel: 'Nombrar capitán',
+      }))
+    )
+      return
+    setBanner(null)
     setBusy(true)
     await supabase.rpc('transfer_captaincy', { club: club.id, new_captain: userId })
     await load()
@@ -133,46 +150,80 @@ export default function ClubManagePage() {
   }
 
   const kick = async (userId: string, name: string) => {
-    if (!window.confirm(`¿Expulsar a ${name} del club?`)) return
+    // Auditoría M-04: diálogo propio en lugar de window.confirm
+    if (
+      !(await confirm({
+        title: 'Expulsar del club',
+        message: `¿Expulsar a ${name} del club?`,
+        confirmLabel: 'Expulsar',
+        danger: true,
+      }))
+    )
+      return
+    setBanner(null)
     setBusy(true)
     const { error } = await supabase.rpc('club_kick_member', {
       club: club.id,
       target: userId,
     })
-    if (error) window.alert(error.message)
+    // Auditoría A-04: nada de error.message crudo al usuario
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo expulsar al miembro. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
 
   const discardPoll = async () => {
     if (!openPoll) return
+    // Auditoría M-04: diálogo propio en lugar de window.confirm
     if (
-      !window.confirm(
-        `¿Descartar la votación «${openPoll.title}»? Se borra sin aplicar ninguna ganadora ni cambiar el libro. Podrás crear una nueva.`,
-      )
+      !(await confirm({
+        title: 'Descartar votación',
+        message: `«${openPoll.title}» se borra sin aplicar ninguna ganadora ni cambiar el libro. Podrás crear una nueva.`,
+        confirmLabel: 'Descartar',
+        danger: true,
+      }))
     )
       return
+    setBanner(null)
     setBusy(true)
     const { error } = await supabase.from('polls').delete().eq('id', openPoll.id)
-    if (error) window.alert(error.message)
+    // Auditoría A-04
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo descartar la votación. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
 
   const closePollWithWinner = async () => {
     if (!openPoll) return
+    // Auditoría M-04: diálogo propio en lugar de window.confirm
     if (
-      !window.confirm(
-        'Cerrar la votación: la opción más votada quedará como ganadora. ¿Continuar?',
-      )
+      !(await confirm({
+        title: 'Cerrar votación',
+        message: 'La opción más votada quedará como ganadora. ¿Continuar?',
+        confirmLabel: 'Cerrar votación',
+      }))
     )
       return
+    setBanner(null)
     setBusy(true)
     const { error } = await supabase
       .from('polls')
       .update({ status: 'closed' })
       .eq('id', openPoll.id)
-    if (error) window.alert(error.message)
+    // Auditoría A-04
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo cerrar la votación. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
@@ -181,11 +232,14 @@ export default function ClubManagePage() {
     const title = pollTitle.trim()
     const chosen = books.filter((b) => pollBookIds.includes(b.id))
     if (!title || chosen.length < 2) {
-      window.alert(
-        'Pon un título y elige al menos 2 libros del catálogo (máx. 5). Si falta un libro, créalo primero.',
-      )
+      // Auditoría M-04: aviso inline (tono neutro) en lugar de window.alert
+      setBanner({
+        kind: 'info',
+        text: 'Pon un título y elige al menos 2 libros del catálogo (máx. 5). Si falta un libro, créalo primero.',
+      })
       return
     }
+    setBanner(null)
     setBusy(true)
     const { data: poll, error } = await supabase
       .from('polls')
@@ -204,7 +258,11 @@ export default function ClubManagePage() {
       setPollTitle('')
       setPollBookIds([])
     } else if (error) {
-      window.alert(error.message)
+      // Auditoría A-04
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo crear la votación. Inténtalo de nuevo.'),
+      })
     }
     await load()
     setBusy(false)
@@ -232,12 +290,26 @@ export default function ClubManagePage() {
         }
       />
 
+      {/* Aviso inline (auditoría M-04): sustituye a window.alert */}
+      {banner && (
+        <p
+          className={`club-banner body-medium${
+            banner.kind === 'error' ? ' club-banner--error' : ''
+          }`}
+          role={banner.kind === 'error' ? 'alert' : 'status'}
+        >
+          {banner.text}
+        </p>
+      )}
+
       {/* Datos del club */}
       <div className="manage-card">
         <h2 className="title-small manage-card__title">Datos del club</h2>
+        {/* Auditoría A-08: inputs con etiqueta accesible */}
         <input
           className="profile-input body-medium"
           placeholder="Nombre del club"
+          aria-label="Nombre del club"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -245,6 +317,7 @@ export default function ClubManagePage() {
           className="profile-input body-medium"
           rows={2}
           placeholder="Descripción"
+          aria-label="Descripción del club"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
@@ -308,7 +381,7 @@ export default function ClubManagePage() {
                 disabled={busy || undefined}
                 onClick={() => void discardPoll()}
               >
-                <span slot="icon" className="material-symbols-rounded">delete</span>
+                <span slot="icon" className="material-symbols-rounded" aria-hidden="true">delete</span>
                 Descartar (sin efecto)
               </md-outlined-button>
               <md-filled-button
@@ -321,9 +394,11 @@ export default function ClubManagePage() {
           </>
         ) : (
           <>
+            {/* Auditoría A-08: input con etiqueta accesible */}
             <input
               className="profile-input body-medium"
               placeholder="Título — p. ej. «Libro de septiembre»"
+              aria-label="Título de la votación"
               value={pollTitle}
               onChange={(e) => setPollTitle(e.target.value)}
             />
@@ -390,7 +465,7 @@ export default function ClubManagePage() {
             />
           ) : (
             <md-outlined-button onClick={() => setAddingBook(true)}>
-              <span slot="icon" className="material-symbols-rounded">add</span>
+              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">add</span>
               Añadir un libro ({booksLeft}/3 disponibles)
             </md-outlined-button>
           ))}
@@ -433,7 +508,7 @@ export default function ClubManagePage() {
                     disabled={busy}
                     onClick={() => void kick(m.id, m.display_name)}
                   >
-                    <span className="material-symbols-rounded">person_remove</span>
+                    <span className="material-symbols-rounded" aria-hidden="true">person_remove</span>
                   </button>
                 </div>
               )}

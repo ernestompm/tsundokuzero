@@ -305,6 +305,15 @@
   font-weight: 600;
 }
 
+/* auditoría A-01: aviso inline cuando una acción del feed falla */
+.feed-error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
 .feed-list {
   display: flex;
   flex-direction: column;
@@ -412,6 +421,10 @@
   margin: 12px 0 4px;
   line-height: 1.55;
   cursor: pointer;
+}
+/* auditoría B-02: el cuerpo de las entradas de muro no es clicable */
+.feed-card__body--static {
+  cursor: default;
 }
 /* ---- Hilo de respuestas dentro de la publicación ---- */
 .feed-thread {
@@ -534,7 +547,7 @@
   background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;
-  outline: none;
+  /* auditoría A-05: sin outline:none — el :focus-visible global da el foco */
 }
 .feed-reply-box__input:focus {
   border-color: var(--md-sys-color-primary);

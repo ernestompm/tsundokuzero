@@ -7,14 +7,18 @@ import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
 import LockedTeaser from '../../components/LockedTeaser'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { KIND_LABEL, type ThreadViewData } from './chapterTypes'
 import './thread.css'
 
 interface Props {
   data: ThreadViewData
   busy?: boolean
+  /** error de la última acción, para el banner inline (auditoría A-01) */
+  actionError?: string | null
   currentUserId?: string
-  onReply?: (body: string) => void
+  /** puede devolver éxito/fallo (auditoría A-01); `void` vale (previews) */
+  onReply?: (body: string) => Promise<boolean> | void
   onReact?: (emoji: string | null) => void
   onDeleteComment?: (id: string) => void
   onDeleteDiscussion?: () => void
@@ -23,6 +27,7 @@ interface Props {
 export default function ThreadView({
   data,
   busy,
+  actionError,
   currentUserId,
   onReply,
   onReact,
@@ -30,13 +35,15 @@ export default function ThreadView({
   onDeleteDiscussion,
 }: Props) {
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [reply, setReply] = useState('')
 
-  const send = () => {
+  // auditoría A-01: el texto solo se limpia si la operación fue bien
+  const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    onReply(text)
-    setReply('')
+    const ok = await onReply(text)
+    if (ok !== false) setReply('')
   }
 
   const mine = currentUserId != null && data.authorId === currentUserId
@@ -51,7 +58,7 @@ export default function ThreadView({
           aria-label="Volver"
           onClick={() => navigate(`/book/${data.bookId}/chapter/${data.chapterNumber}`)}
         >
-          <span className="material-symbols-rounded">arrow_back</span>
+          <span className="material-symbols-rounded" aria-hidden="true">arrow_back</span>
         </md-icon-button>
         <div>
           <div className="title-medium">Hilo</div>
@@ -60,6 +67,13 @@ export default function ThreadView({
           </div>
         </div>
       </div>
+
+      {/* auditoría A-01: aviso inline si una acción falló (el texto no se pierde) */}
+      {actionError && (
+        <p className="chapter__error body-medium" role="alert">
+          {actionError}
+        </p>
+      )}
 
       {/* ===== Mensaje principal ===== */}
       <Card tone="default" className="thread-parent">
@@ -97,12 +111,20 @@ export default function ThreadView({
           {mine && onDeleteDiscussion && (
             <md-icon-button
               aria-label="Eliminar"
-              onClick={() => {
-                if (window.confirm('¿Eliminar este hilo y todas sus respuestas?'))
-                  onDeleteDiscussion()
-              }}
+              onClick={() =>
+                // auditoría M-04: diálogo propio en lugar de window.confirm
+                void (async () => {
+                  const ok = await confirm({
+                    title: '¿Eliminar este hilo?',
+                    message: 'Se eliminarán también todas sus respuestas.',
+                    confirmLabel: 'Eliminar',
+                    danger: true,
+                  })
+                  if (ok) onDeleteDiscussion()
+                })()
+              }
             >
-              <span className="material-symbols-rounded">delete</span>
+              <span className="material-symbols-rounded" aria-hidden="true">delete</span>
             </md-icon-button>
           )}
         </div>
@@ -144,7 +166,7 @@ export default function ThreadView({
             <div className="thread-reply__content">
               {c.body == null ? (
                 <p className="body-medium disc__comment-locked">
-                  <span className="material-symbols-rounded">lock</span>
+                  <span className="material-symbols-rounded" aria-hidden="true">lock</span>
                   <span>
                     <b>{c.authorName}</b> respondió más adelante —
                     desbloquearás su respuesta al llegar al capítulo{' '}
@@ -168,12 +190,19 @@ export default function ThreadView({
                       <button
                         className="thread-reply__del"
                         aria-label="Eliminar respuesta"
-                        onClick={() => {
-                          if (window.confirm('¿Eliminar esta respuesta?'))
-                            onDeleteComment(c.id)
-                        }}
+                        onClick={() =>
+                          // auditoría M-04: diálogo propio en lugar de window.confirm
+                          void (async () => {
+                            const ok = await confirm({
+                              title: '¿Eliminar esta respuesta?',
+                              confirmLabel: 'Eliminar',
+                              danger: true,
+                            })
+                            if (ok) onDeleteComment(c.id)
+                          })()
+                        }
                       >
-                        <span className="material-symbols-rounded">delete</span>
+                        <span className="material-symbols-rounded" aria-hidden="true">delete</span>
                       </button>
                     )}
                   </div>
@@ -191,11 +220,15 @@ export default function ThreadView({
           <input
             className="thread-composer__input body-medium"
             placeholder="Escribe tu respuesta…"
+            aria-label="Tu respuesta al hilo"
             value={reply}
             onChange={(e) => setReply(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
+            onKeyDown={(e) => e.key === 'Enter' && void send()}
           />
-          <md-filled-button disabled={!reply.trim() || busy || undefined} onClick={send}>
+          <md-filled-button
+            disabled={!reply.trim() || busy || undefined}
+            onClick={() => void send()}
+          >
             Responder
           </md-filled-button>
         </div>

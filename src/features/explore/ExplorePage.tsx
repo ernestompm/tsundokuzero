@@ -124,6 +124,7 @@ export default function ExplorePage() {
       <input
         className="explore-search body-large"
         placeholder="Busca libros, autores o personas…"
+        aria-label="Buscar libros, autores o personas" /* auditoría A-08 */
         value={q}
         onChange={(e) => setQ(e.target.value)}
         autoFocus
@@ -135,10 +136,13 @@ export default function ExplorePage() {
         </div>
       ) : (
         <>
-          <SectionHeader title={q ? 'Libros' : 'En la estantería'} />
+          <SectionHeader title={q.trim() ? 'Libros' : 'En la estantería'} />
           {books.length === 0 ? (
             <p className="body-medium on-surface-variant">
-              Ningún libro coincide con «{q}».
+              {/* auditoría B-01: sin consulta no hay «ningún resultado» */}
+              {q.trim()
+                ? `Ningún libro coincide con «${q.trim()}».`
+                : 'Busca por título, autor o lector.'}
             </p>
           ) : (
             <div className="explore-books">
@@ -162,10 +166,13 @@ export default function ExplorePage() {
             </div>
           )}
 
-          <SectionHeader title={q ? 'Personas' : 'Lectores del club'} />
+          <SectionHeader title={q.trim() ? 'Personas' : 'Lectores del club'} />
           {people.length === 0 ? (
             <p className="body-medium on-surface-variant">
-              Nadie coincide con «{q}».
+              {/* auditoría B-01 */}
+              {q.trim()
+                ? `Nadie coincide con «${q.trim()}».`
+                : 'Busca lectores por su nombre o @usuario.'}
             </p>
           ) : (
             <div className="explore-people">

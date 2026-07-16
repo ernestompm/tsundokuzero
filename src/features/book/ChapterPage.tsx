@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
+import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
 import { fetchBlockedIds } from '../../lib/blocks'
 import { timeAgo } from '../../lib/time'
@@ -16,6 +17,7 @@ export default function ChapterPage() {
   const [data, setData] = useState<ChapterViewData | null>(null)
   const [clubId, setClubId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session || !bookId || !Number.isFinite(chapterNumber)) return
@@ -147,16 +149,27 @@ export default function ChapterPage() {
     void load()
   }, [load])
 
-  const run = async (op: PromiseLike<unknown>) => {
+  // auditoría A-01: comprueba el error; en fallo avisa (banner) y devuelve
+  // false para que la vista NO borre el texto del usuario.
+  const run = async (op: PromiseLike<{ error: unknown }>): Promise<boolean> => {
     setBusy(true)
-    await op
+    const { error } = await op
+    if (error) {
+      setActionError(
+        friendlyError(error, 'No se pudo completar la acción. Inténtalo de nuevo.'),
+      )
+      setBusy(false)
+      return false
+    }
+    setActionError(null)
     await load()
     setBusy(false)
+    return true
   }
 
   const publish = (kind: DiscussionKind, body: string, toClub: boolean) => {
     if (!session || !bookId) return
-    void run(
+    return run(
       supabase.from('discussions').insert({
         book_id: bookId,
         chapter_number: chapterNumber,
@@ -180,21 +193,22 @@ export default function ChapterPage() {
     <ChapterView
       data={data}
       busy={busy}
+      actionError={actionError}
       currentUserId={session?.user.id}
       clubAvailable={clubId != null}
       onPublish={publish}
-      onReply={(discussionId, body) =>
-        session &&
-        void run(
+      onReply={(discussionId, body) => {
+        if (!session) return
+        return run(
           supabase.from('discussion_comments').insert({
             discussion_id: discussionId,
             author_id: session.user.id,
             body,
           }),
         )
-      }
+      }}
       onEditDiscussion={(id, body) =>
-        void run(supabase.from('discussions').update({ body }).eq('id', id))
+        run(supabase.from('discussions').update({ body }).eq('id', id))
       }
       onDeleteDiscussion={(id) =>
         void run(supabase.from('discussions').delete().eq('id', id))

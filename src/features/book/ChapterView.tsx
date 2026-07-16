@@ -6,6 +6,7 @@ import '@material/web/iconbutton/icon-button.js'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
+import { useConfirm } from '../../components/ConfirmProvider'
 import type { DiscussionKind } from '../../lib/database.types'
 import {
   KIND_LABEL,
@@ -17,13 +18,22 @@ import './chapter.css'
 interface Props {
   data: ChapterViewData
   busy?: boolean
+  /** error de la última acción, para el banner inline (auditoría A-01) */
+  actionError?: string | null
   /** id del usuario conectado: habilita editar/eliminar lo propio */
   currentUserId?: string
   /** si el libro pertenece a un club, se puede etiquetar como «del club» */
   clubAvailable?: boolean
-  onPublish?: (kind: DiscussionKind, body: string, toClub: boolean) => void
-  onReply?: (discussionId: string, body: string) => void
-  onEditDiscussion?: (id: string, body: string) => void
+  /* Los callbacks pueden devolver éxito/fallo (auditoría A-01): el texto
+     del usuario solo se limpia si la operación fue bien. `void` sigue
+     valiendo para los stubs de las previews. */
+  onPublish?: (
+    kind: DiscussionKind,
+    body: string,
+    toClub: boolean,
+  ) => Promise<boolean> | void
+  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  onEditDiscussion?: (id: string, body: string) => Promise<boolean> | void
   onDeleteDiscussion?: (id: string) => void
   onDeleteComment?: (id: string) => void
   onReact?: (discussionId: string, emoji: string | null) => void
@@ -34,6 +44,7 @@ const KINDS: DiscussionKind[] = ['comment', 'theory', 'question']
 export default function ChapterView({
   data,
   busy,
+  actionError,
   currentUserId,
   clubAvailable = true,
   onPublish,
@@ -48,12 +59,15 @@ export default function ChapterView({
   const [body, setBody] = useState('')
   const [toClub, setToClub] = useState(true)
 
-  const publish = () => {
+  const publish = async () => {
     const text = body.trim()
     if (!text || !onPublish) return
-    onPublish(kind, text, clubAvailable && toClub)
-    setBody('')
-    setKind('comment')
+    // auditoría A-01: solo se limpia el texto si la operación fue bien
+    const ok = await onPublish(kind, text, clubAvailable && toClub)
+    if (ok !== false) {
+      setBody('')
+      setKind('comment')
+    }
   }
 
   return (
@@ -63,7 +77,7 @@ export default function ChapterView({
           aria-label="Volver al libro"
           onClick={() => navigate(`/book/${data.bookId}`)}
         >
-          <span className="material-symbols-rounded">arrow_back</span>
+          <span className="material-symbols-rounded" aria-hidden="true">arrow_back</span>
         </md-icon-button>
         <div>
           <div className="title-medium">
@@ -73,6 +87,13 @@ export default function ChapterView({
           <div className="body-small on-surface-variant">{data.bookTitle}</div>
         </div>
       </div>
+
+      {/* auditoría A-01: aviso inline si una acción falló (el texto no se pierde) */}
+      {actionError && (
+        <p className="chapter__error body-medium" role="alert">
+          {actionError}
+        </p>
+      )}
 
       {data.discussions.length === 0 ? (
         <Card tone="outlined" className="chapter__empty">
@@ -101,7 +122,7 @@ export default function ChapterView({
 
       {!data.canWrite && (
         <Card tone="outlined" className="chapter__gate-note">
-          <span className="material-symbols-rounded">lock</span>
+          <span className="material-symbols-rounded" aria-hidden="true">lock</span>
           <div>
             <p className="body-medium">
               Este capítulo está por delante de tu progreso
@@ -125,6 +146,7 @@ export default function ChapterView({
           <textarea
             className="composer__input body-medium"
             placeholder="Comparte lo que estás pensando…"
+            aria-label={`Tu publicación para el capítulo ${data.chapterNumber}`}
             value={body}
             rows={3}
             onChange={(e) => setBody(e.target.value)}
@@ -148,7 +170,7 @@ export default function ChapterView({
                 className={`club-toggle label-small${toClub ? ' active' : ''}`}
                 onClick={() => setToClub((v) => !v)}
               >
-                <span className="material-symbols-rounded">
+                <span className="material-symbols-rounded" aria-hidden="true">
                   {toClub ? 'check_circle' : 'radio_button_unchecked'}
                 </span>
                 Club
@@ -158,7 +180,7 @@ export default function ChapterView({
           <md-filled-button
             className="composer__send"
             disabled={!body.trim() || busy || undefined}
-            onClick={publish}
+            onClick={() => void publish()}
           >
             Publicar
           </md-filled-button>
@@ -181,36 +203,46 @@ function DiscussionCard({
   d: ThreadDiscussion
   mine: boolean
   currentUserId?: string
-  onReply?: (discussionId: string, body: string) => void
-  onEdit?: (id: string, body: string) => void
+  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  onEdit?: (id: string, body: string) => Promise<boolean> | void
   onDelete?: (id: string) => void
   onDeleteComment?: (id: string) => void
   onReact?: (discussionId: string, emoji: string | null) => void
 }) {
+  const confirm = useConfirm()
   const [replying, setReplying] = useState(false)
   const [reply, setReply] = useState('')
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(d.body)
 
-  const send = () => {
+  // auditoría A-01: el texto solo se limpia si la operación fue bien
+  const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    onReply(d.id, text)
-    setReply('')
-    setReplying(false)
+    const ok = await onReply(d.id, text)
+    if (ok !== false) {
+      setReply('')
+      setReplying(false)
+    }
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const text = draft.trim()
     if (!text || !onEdit) return
-    onEdit(d.id, text)
-    setEditing(false)
+    const ok = await onEdit(d.id, text)
+    if (ok !== false) setEditing(false)
   }
 
-  const remove = () => {
+  // auditoría M-04: diálogo propio en lugar de window.confirm
+  const remove = async () => {
     if (!onDelete) return
-    if (window.confirm('¿Eliminar esta publicación y sus respuestas?'))
-      onDelete(d.id)
+    const ok = await confirm({
+      title: '¿Eliminar esta publicación?',
+      message: 'Se eliminarán también todas sus respuestas.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (ok) onDelete(d.id)
   }
 
   return (
@@ -251,10 +283,10 @@ function DiscussionCard({
                 setEditing(true)
               }}
             >
-              <span className="material-symbols-rounded">edit</span>
+              <span className="material-symbols-rounded" aria-hidden="true">edit</span>
             </md-icon-button>
-            <md-icon-button aria-label="Eliminar" onClick={remove}>
-              <span className="material-symbols-rounded">delete</span>
+            <md-icon-button aria-label="Eliminar" onClick={() => void remove()}>
+              <span className="material-symbols-rounded" aria-hidden="true">delete</span>
             </md-icon-button>
           </span>
         )}
@@ -271,6 +303,7 @@ function DiscussionCard({
           <textarea
             className="composer__input body-medium"
             rows={3}
+            aria-label="Edita tu publicación"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
@@ -278,7 +311,10 @@ function DiscussionCard({
             <md-text-button onClick={() => setEditing(false)}>
               Cancelar
             </md-text-button>
-            <md-filled-button disabled={!draft.trim() || undefined} onClick={saveEdit}>
+            <md-filled-button
+              disabled={!draft.trim() || undefined}
+              onClick={() => void saveEdit()}
+            >
               Guardar
             </md-filled-button>
           </div>
@@ -304,7 +340,7 @@ function DiscussionCard({
               <Avatar name={c.authorName} url={c.authorAvatar} size={26} />
               {c.body == null ? (
                 <p className="body-small disc__comment-locked" style={{ flex: 1 }}>
-                  <span className="material-symbols-rounded">lock</span>
+                  <span className="material-symbols-rounded" aria-hidden="true">lock</span>
                   <span>
                     <span className="who">{c.authorName}</span> respondió más
                     adelante — desbloquearás este comentario cuando llegues al
@@ -328,12 +364,19 @@ function DiscussionCard({
                 <button
                   className="disc__comment-del"
                   aria-label="Eliminar respuesta"
-                  onClick={() => {
-                    if (window.confirm('¿Eliminar esta respuesta?'))
-                      onDeleteComment(c.id)
-                  }}
+                  onClick={() =>
+                    // auditoría M-04: diálogo propio en lugar de window.confirm
+                    void (async () => {
+                      const ok = await confirm({
+                        title: '¿Eliminar esta respuesta?',
+                        confirmLabel: 'Eliminar',
+                        danger: true,
+                      })
+                      if (ok) onDeleteComment(c.id)
+                    })()
+                  }
                 >
-                  <span className="material-symbols-rounded">delete</span>
+                  <span className="material-symbols-rounded" aria-hidden="true">delete</span>
                 </button>
               )}
             </div>
@@ -347,13 +390,14 @@ function DiscussionCard({
             <input
               className="disc__reply-input body-medium"
               placeholder="Escribe tu respuesta…"
+              aria-label="Tu respuesta a esta publicación"
               value={reply}
               autoFocus
               onChange={(e) => setReply(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send()}
+              onKeyDown={(e) => e.key === 'Enter' && void send()}
             />
-            <md-icon-button aria-label="Enviar" onClick={send}>
-              <span className="material-symbols-rounded">send</span>
+            <md-icon-button aria-label="Enviar" onClick={() => void send()}>
+              <span className="material-symbols-rounded" aria-hidden="true">send</span>
             </md-icon-button>
           </div>
         ) : (
