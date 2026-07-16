@@ -73,6 +73,18 @@ function describe(
         body: '¡El club ha terminado el libro! Deja tu reseña ⭐',
         url: n.book_id ? `/book/${n.book_id}` : '/club',
       }
+    case 'reaction':
+      return {
+        title: 'Tsundoku Zero',
+        body: `${who} reaccionó a tu idea 🔥`,
+        url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
+      }
+    case 'new_idea':
+      return {
+        title: 'Tsundoku Zero',
+        body: `${who} compartió un pensamiento nuevo 💭`,
+        url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
+      }
     default:
       return {
         title: 'Tsundoku Zero',

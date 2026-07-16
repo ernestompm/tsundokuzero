@@ -38,6 +38,8 @@ type NotifPrefs = {
   poll: boolean
   unlock: boolean
   book_done: boolean
+  reaction: boolean
+  new_idea: boolean
 }
 
 const NOTIF_DEFAULTS: NotifPrefs = {
@@ -46,6 +48,8 @@ const NOTIF_DEFAULTS: NotifPrefs = {
   poll: true,
   unlock: true,
   book_done: true,
+  reaction: true,
+  new_idea: true,
 }
 
 const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = [
@@ -53,6 +57,16 @@ const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = 
     key: 'reply',
     label: 'Respuestas a tus mensajes',
     hint: 'Cuando alguien responde a una idea o comentario tuyo.',
+  },
+  {
+    key: 'reaction',
+    label: 'Reacciones a tus ideas',
+    hint: 'Cuando alguien reacciona ❤️🔥😮💡 a algo que has escrito.',
+  },
+  {
+    key: 'new_idea',
+    label: 'Ideas de gente que sigues',
+    hint: 'Cuando alguien a quien sigues comparte un pensamiento nuevo.',
   },
   {
     key: 'unlock',
@@ -161,6 +175,9 @@ export default function ProfilePage() {
             poll: data.poll,
             unlock: data.unlock,
             book_done: data.book_done,
+            // ?? true: la fila puede ser anterior a la migración 024
+            reaction: data.reaction ?? true,
+            new_idea: data.new_idea ?? true,
           })
         }
       })

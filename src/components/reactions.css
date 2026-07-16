@@ -38,3 +38,83 @@
 .reaction.mine .reaction__count {
   color: var(--md-sys-color-on-secondary-container);
 }
+.reactions__who .material-symbols-rounded {
+  font-size: 16px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ===== Hoja «quién ha reaccionado» ===== */
+.reactions-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 40%, transparent);
+  animation: sheet-fade 160ms ease;
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+.reactions-sheet {
+  width: min(440px, 100%);
+  max-height: 70dvh;
+  overflow-y: auto;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  animation: sheet-up 220ms var(--md-sys-motion-easing-emphasized);
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.reactions-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--md-sys-color-outline-variant);
+  margin: 4px auto 12px;
+}
+.reactions-sheet h2 {
+  margin: 0 0 12px;
+}
+.reactions-sheet__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reactions-sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+}
+.reactions-sheet__names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.reactions-sheet__emoji {
+  flex: none;
+  font-size: 22px;
+}
+
+/* En escritorio, diálogo centrado en vez de hoja inferior */
+@media (min-width: 720px) {
+  .reactions-sheet-scrim {
+    align-items: center;
+    padding: 24px;
+  }
+  .reactions-sheet {
+    border-radius: 24px;
+    max-height: 60vh;
+  }
+}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
@@ -7,8 +8,8 @@ import './landing.css'
 
 /**
  * Landing pública: el escaparate de Tsundoku Zero para quien llega sin
- * sesión. Toda la información de la app y un único destino: /login.
- * Con sesión iniciada redirige al feed (el marketing no molesta dentro).
+ * sesión. Su pieza central es la DEMO del candado: mueves tu progreso
+ * y ves desbloquearse la conversación. Con sesión redirige al feed.
  */
 
 const FEATURES = [
@@ -59,9 +60,112 @@ const STEPS = [
   },
 ]
 
+const MARQUEE_BOOKS = [
+  { title: 'La Biblioteca de la Medianoche', author: 'Matt Haig' },
+  { title: 'Stoner', author: 'John Williams' },
+  { title: 'El extranjero', author: 'Albert Camus' },
+  { title: 'La muerte de Iván Ilich', author: 'Lev Tolstói' },
+  { title: 'Los detectives salvajes', author: 'Roberto Bolaño' },
+  { title: 'Piranesi', author: 'Susanna Clarke' },
+]
+
+/* ============ Demo interactiva del candado ============ */
+
+const DEMO_MESSAGES = [
+  {
+    cap: 2,
+    who: 'Marina',
+    text: 'El prólogo ya me ha roto un poquito. 🥺',
+  },
+  {
+    cap: 5,
+    who: 'Carlos',
+    text: 'Teoría: la biblioteca es un multiverso y cada libro es una vida. 💡',
+  },
+  {
+    cap: 8,
+    who: 'Pau',
+    text: 'LO DEL CAPÍTULO 8 NO ME LO ESPERABA. Necesito hablarlo YA. 😱',
+  },
+]
+
+function GateDemo() {
+  const [chapter, setChapter] = useState(3)
+  return (
+    <div className="landing-demo" data-reveal>
+      <span className="label-medium landing-kicker">Pruébalo ahora mismo</span>
+      <h2 className="landing-demo__title serif">
+        Mueve tu progreso y mira qué pasa
+      </h2>
+      <div className="landing-demo__slider">
+        <span className="label-large landing-demo__cap serif">
+          Cap. {chapter}
+        </span>
+        <input
+          type="range"
+          className="progress-slider"
+          min={1}
+          max={10}
+          value={chapter}
+          aria-label="Tu capítulo actual (demo)"
+          onChange={(e) => setChapter(Number(e.target.value))}
+        />
+      </div>
+      <div className="landing-demo__feed">
+        {DEMO_MESSAGES.map((m) =>
+          chapter >= m.cap ? (
+            <div key={m.cap} className="landing-demo__msg">
+              <span className="landing-demo__who serif">{m.who}</span>
+              <span className="landing-demo__capchip label-small">
+                cap. {m.cap}
+              </span>
+              <p className="body-medium">{m.text}</p>
+            </div>
+          ) : (
+            <div key={m.cap} className="landing-demo__msg locked" aria-hidden>
+              <span className="landing-demo__who serif">{m.who}</span>
+              <span className="landing-demo__capchip label-small">
+                cap. {m.cap}
+              </span>
+              <p className="body-medium landing-demo__blur">{m.text}</p>
+              <span className="landing-demo__lock body-small">
+                <span className="material-symbols-rounded">lock</span>
+                Se desbloquea en el cap. {m.cap}
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+      <p className="body-small on-surface-variant landing-demo__note">
+        Y esto es solo la demo: en la app real el texto bloqueado{' '}
+        <b>ni siquiera viaja a tu dispositivo</b>. Lo garantiza el servidor,
+        no un efecto visual.
+      </p>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const { session, loading } = useAuth()
   const navigate = useNavigate()
+
+  // Aparición suave de las secciones al hacer scroll
+  useEffect(() => {
+    const els = document.querySelectorAll('.landing [data-reveal]')
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('in')
+            io.unobserve(e.target)
+          }
+        }
+      },
+      { threshold: 0.12 },
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [])
 
   // Con sesión, el escaparate sobra: directo al feed
   if (!loading && session) return <Navigate to="/" replace />
@@ -92,12 +196,14 @@ export default function LandingPage() {
             Tu club de lectura, sin spoilers
           </span>
           <h1 className="landing-hero__title serif">
-            Leer acompañado, otra vez un placer.
+            Leer acompañado,
+            <br />
+            <em>sin que nadie te destripe el final.</em>
           </h1>
           <p className="body-large landing-hero__sub">
-            Tsundoku Zero es la red social donde tu club comenta cada libro
-            capítulo a capítulo — y donde es <b>imposible</b> que te destripen
-            el final, porque cada conversación se desbloquea a tu ritmo.
+            La red social donde tu club comenta cada libro capítulo a
+            capítulo. Cada conversación se desbloquea a <b>tu</b> ritmo:
+            escribir sin miedo, leer sin sustos.
           </p>
           <div className="landing-hero__cta">
             <md-filled-button onClick={() => navigate('/login')}>
@@ -134,8 +240,27 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== Cifras de la casa ===== */}
+      <div className="landing-stats" data-reveal>
+        <div className="landing-stat">
+          <span className="landing-stat__num serif">0</span>
+          <span className="label-medium">spoilers posibles</span>
+        </div>
+        <div className="landing-stat">
+          <span className="landing-stat__num serif">100%</span>
+          <span className="label-medium">a tu ritmo</span>
+        </div>
+        <div className="landing-stat">
+          <span className="landing-stat__num serif">∞</span>
+          <span className="label-medium">teorías locas</span>
+        </div>
+      </div>
+
+      {/* ===== Demo interactiva ===== */}
+      <GateDemo />
+
       {/* ===== Manifiesto ===== */}
-      <p className="landing-manifesto serif">
+      <p className="landing-manifesto serif" data-reveal>
         Los libros se disfrutan más cuando se comparten —
         <br />y se estropean cuando alguien se adelanta.
         <br />
@@ -143,7 +268,7 @@ export default function LandingPage() {
       </p>
 
       {/* ===== Qué hay dentro ===== */}
-      <section className="landing-section">
+      <section className="landing-section" data-reveal>
         <h2 className="landing-section__title serif">Qué hay dentro</h2>
         <div className="landing-grid">
           {FEATURES.map((f) => (
@@ -158,8 +283,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== Cinta de portadas ===== */}
+      <div className="landing-marquee" aria-hidden>
+        <div className="landing-marquee__track">
+          {[...MARQUEE_BOOKS, ...MARQUEE_BOOKS].map((b, i) => (
+            <div key={i} className="landing-marquee__item">
+              <BookCover title={b.title} author={b.author} size="lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ===== Cómo funciona ===== */}
-      <section className="landing-section">
+      <section className="landing-section" data-reveal>
         <h2 className="landing-section__title serif">Cómo funciona</h2>
         <ol className="landing-steps">
           {STEPS.map((s, i) => (
@@ -175,10 +311,8 @@ export default function LandingPage() {
       </section>
 
       {/* ===== CTA final ===== */}
-      <section className="landing-final">
-        <h2 className="landing-final__title serif">
-          El libro no avanza solo.
-        </h2>
+      <section className="landing-final" data-reveal>
+        <h2 className="landing-final__title serif">El libro no avanza solo.</h2>
         <md-filled-button onClick={() => navigate('/login')}>
           Entrar en Tsundoku Zero
         </md-filled-button>

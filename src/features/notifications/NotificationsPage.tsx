@@ -77,6 +77,12 @@ export default function NotificationsPage() {
         } else if (n.type === 'follow') {
           to = actor?.username ? `/u/${actor.username}` : '/'
           detail = 'empezó a seguirte'
+        } else if (n.type === 'reaction') {
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
+          detail = 'reaccionó a tu idea'
+        } else if (n.type === 'new_idea') {
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
+          detail = 'compartió un pensamiento nuevo'
         } else {
           to = '/club'
           detail = 'abrió una votación en el club'
@@ -189,7 +195,11 @@ export default function NotificationsPage() {
                       ? 'menu_book'
                       : n.type === 'moderation'
                         ? 'flag'
-                        : 'how_to_vote'
+                        : n.type === 'reaction'
+                          ? 'local_fire_department'
+                          : n.type === 'new_idea'
+                            ? 'forum'
+                            : 'how_to_vote'
             return (
               <button
                 key={n.id}

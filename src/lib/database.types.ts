@@ -79,6 +79,8 @@ export type NotificationType =
   | 'unlock'
   | 'book_done'
   | 'moderation'
+  | 'reaction'
+  | 'new_idea'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -89,7 +91,7 @@ export type PushSubscriptionRow = {
   created_at: string
 }
 
-/** Preferencias del centro de avisos (migr. 018) */
+/** Preferencias del centro de avisos (migr. 018 y 024) */
 export type NotificationPrefsRow = {
   user_id: string
   reply: boolean
@@ -97,6 +99,8 @@ export type NotificationPrefsRow = {
   poll: boolean
   unlock: boolean
   book_done: boolean
+  reaction: boolean
+  new_idea: boolean
 }
 
 export type Notification = {

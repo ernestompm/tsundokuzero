@@ -147,7 +147,12 @@ export default function ThreadView({
 
         {onReact && data.body != null && (
           <div className="thread-parent__reactions">
-            <Reactions counts={data.reactions} mine={data.myReaction} onReact={onReact} />
+            <Reactions
+              counts={data.reactions}
+              mine={data.myReaction}
+              onReact={onReact}
+              discussionId={data.discussionId}
+            />
           </div>
         )}
       </Card>

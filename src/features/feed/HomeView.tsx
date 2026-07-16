@@ -13,6 +13,7 @@ import {
 import { useCompose } from '../../components/ComposeProvider'
 import { useConfirm } from '../../components/ConfirmProvider'
 import LockedTeaser from '../../components/LockedTeaser'
+import PushNudge from '../../components/PushNudge'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
 import type {
@@ -207,6 +208,9 @@ export default function HomeView({
           <span className="material-symbols-rounded" aria-hidden="true">chevron_right</span>
         </button>
       )}
+
+      {/* ===== Invitación a activar push (un toque; descartable) ===== */}
+      <PushNudge />
 
       {/* ===== Composer ===== */}
       <button className="composer-entry" onClick={() => void openCompose()}>
@@ -614,6 +618,7 @@ function FeedCard({
             counts={item.reactions ?? {}}
             mine={item.myReaction ?? null}
             onReact={(emoji) => onReact(item.id, emoji)}
+            discussionId={item.id}
           />
         </div>
       )}

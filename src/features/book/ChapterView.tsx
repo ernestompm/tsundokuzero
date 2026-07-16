@@ -329,6 +329,7 @@ function DiscussionCard({
             counts={d.reactions}
             mine={d.myReaction}
             onReact={(emoji) => onReact(d.id, emoji)}
+            discussionId={d.id}
           />
         </div>
       )}
