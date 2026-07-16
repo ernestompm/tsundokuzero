@@ -44,12 +44,42 @@ mismo commit.
 
 | # | Severidad | Hallazgo | Estado |
 |---|-----------|----------|--------|
+| **H0** | **ALTA** | `add_book_chapter()` (SECURITY DEFINER) usa `if auth.uid() is not null and …`: un llamante **anónimo** (uid null) evita la comprobación y puede **insertar capítulos en cualquier libro y alterar `total_chapters` sin autenticarse**, saltándose el RLS. | ✅ Corregido |
 | H1 | **Media** | Sin cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options…). Clickjacking posible; sin mitigación de inyección de contenido. | ✅ Corregido |
 | H2 | **Media-baja** | `grant execute on all functions … to anon` (migr. 005/006) rehacía los `revoke` puntuales: `anon` podía *invocar* funciones de administración. El guard interno lo frenaba (`forbidden`), pero viola mínimo privilegio. | ✅ Corregido |
 | H3 | **Baja** | Bucket público `avatars` sin límite de tipo MIME ni de tamaño: permitía subir cualquier archivo (HTML/SVG con script) a un bucket servido públicamente. | ✅ Corregido |
 | H4 | **Baja** | `is_super_admin()` sin `set search_path`. | ✅ Corregido |
 | H5 | **Informativo** | El gate de invitación en cliente (`VITE_INVITE_CODE`, incrustado en el bundle) diverge del código real en `private_settings`. No es un agujero (el servidor es autoritativo), pero es código muerto que confunde. | Recomendación |
 | H6 | **Informativo** | Contraseña mínima de 6 caracteres (default de Supabase Auth). | Recomendación |
+
+### H0 — Escritura sin autenticar por bypass de `auth.uid()` null · migración `022`
+
+**El hallazgo más grave de la auditoría.** `add_book_chapter()` (definida en la
+migración 004 y redefinida en la 015) protegía con
+`if auth.uid() is not null and not is_super_admin() and not <creador> then raise`.
+La intención era dejar pasar al rol de servicio en el SQL Editor (donde
+`auth.uid()` es null), pero **un llamante anónimo vía PostgREST también tiene
+`auth.uid()` null**, por lo que la condición cortocircuita a falso y la
+excepción nunca se lanza: el `INSERT` se ejecuta. Al ser SECURITY DEFINER,
+además ignora el RLS de `chapters`. Y `anon` conservaba `EXECUTE` por las
+concesiones masivas a PUBLIC de 005/006.
+
+Un atacante **sin cuenta** podía inyectar capítulos falsos en cualquier libro,
+inflar `total_chapters` y distorsionar el índice público y el spoiler gate.
+
+Corregido en `supabase/migrations/20260716000022_fix_anon_write_bypass.sql`:
+la guarda pasa a **denegar explícitamente `auth.uid() is null`**, y se revoca
+`EXECUTE` de `anon`/`PUBLIC` en las RPC privilegiadas o de escritura
+(`add_book_chapter`, `captain_books_left`, `club_kick_member`,
+`transfer_captaincy`, `admin_create_club`, `admin_stats`). El sembrado desde el
+SQL Editor se hace con `INSERT` directo (el rol de servicio ya salta el RLS).
+
+> Se auditó el resto de funciones SECURITY DEFINER: `add_book_chapter` era la
+> **única** con guarda explotable. Las demás usan `if not is_super_admin()` /
+> `if not is_club_captain()`, que devuelven correctamente *forbidden* para anon.
+> Las vistas con `security_invoker = false` (`feed_discussions`,
+> `thread_comments`, `book_reviews`) **re-implementan el gate y enmascaran el
+> cuerpo**: exponen metadatos/teaser pero nunca el contenido bloqueado. Correcto.
 
 ### H1 — Cabeceras de seguridad HTTP · `vercel.json`
 
@@ -90,7 +120,9 @@ Se añade una batería de cabeceras a todas las respuestas:
 
 ## Acción requerida del titular
 
-1. **Ejecutar la migración `021`** en el SQL Editor de Supabase (idempotente,
+1. **⚠️ URGENTE — ejecutar la migración `022`** en el SQL Editor de Supabase:
+   cierra la escritura sin autenticar (H0). Es lo primero.
+2. **Ejecutar la migración `021`** en el SQL Editor de Supabase (idempotente,
    re-ejecutable sin efectos secundarios).
 2. **Desplegar** para que Vercel aplique las cabeceras y **verificar la
    consola** (ver aviso de H1).
