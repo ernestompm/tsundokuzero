@@ -80,6 +80,16 @@ export type NotificationType =
   | 'book_done'
   | 'moderation'
 
+/** Preferencias del centro de avisos (migr. 018) */
+export type NotificationPrefsRow = {
+  user_id: string
+  reply: boolean
+  follow: boolean
+  poll: boolean
+  unlock: boolean
+  book_done: boolean
+}
+
 export type Notification = {
   id: string
   user_id: string
@@ -281,6 +291,7 @@ export type Database = {
         'user_id' | 'type',
         'id' | 'created_at'
       >
+      notification_prefs: TableDef<NotificationPrefsRow, 'user_id', never>
       consents: TableDef<Consent, 'user_id' | 'doc' | 'doc_version', 'accepted_at'>
       reports: TableDef<
         Report,

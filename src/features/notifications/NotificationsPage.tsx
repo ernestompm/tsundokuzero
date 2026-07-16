@@ -138,11 +138,22 @@ export default function NotificationsPage() {
   return (
     <section>
       <PageHeader title="Notificaciones" sub="Respuestas, seguidores y votaciones" />
-      {/* auditoría M-06: marcar todo como leído, a demanda */}
-      {items.some((n) => !n.read) && (
-        <div
-          style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}
-        >
+      <div
+        style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, marginBottom: 8 }}
+      >
+        {/* Centro de avisos: elegir qué notificaciones llegan (migr. 018) */}
+        <md-text-button onClick={() => navigate('/me')}>
+          <span
+            slot="icon"
+            className="material-symbols-rounded"
+            aria-hidden="true"
+          >
+            settings
+          </span>
+          Elegir qué te avisa
+        </md-text-button>
+        {/* auditoría M-06: marcar todo como leído, a demanda */}
+        {items.some((n) => !n.read) && (
           <md-text-button onClick={() => void markAllRead()}>
             <span
               slot="icon"
@@ -153,8 +164,8 @@ export default function NotificationsPage() {
             </span>
             Marcar todo como leído
           </md-text-button>
-        </div>
-      )}
+        )}
+      </div>
       {items.length === 0 ? (
         <p className="body-medium on-surface-variant">
           Nada nuevo por aquí. Cuando alguien te responda o te siga, lo verás

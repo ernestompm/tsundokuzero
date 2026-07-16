@@ -24,7 +24,8 @@ export default function RequireAuth() {
     )
   }
 
-  if (!session) return <Navigate to="/login" replace />
+  // Sin sesión, la puerta de entrada es el escaparate público
+  if (!session) return <Navigate to="/welcome" replace />
 
   if (!profile && location.pathname !== '/onboarding')
     return <Navigate to="/onboarding" replace />

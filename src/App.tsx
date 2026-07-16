@@ -31,6 +31,7 @@ const AdminPage = lazy(() => import('./features/admin/AdminPage'))
 const LegalPage = lazy(() => import('./features/legal/LegalPage'))
 const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage'))
 const PreviewRoutes = lazy(() => import('./features/preview/PreviewRoutes'))
+const LandingPage = lazy(() => import('./features/landing/LandingPage'))
 
 function RouteFallback() {
   return (
@@ -48,6 +49,9 @@ export default function App() {
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+
+              {/* Escaparate público: toda la info de la app → /login */}
+              <Route path="/welcome" element={<LandingPage />} />
 
               {/* Textos legales: PÚBLICOS, sin login (LSSI art. 10, RGPD 12-13) */}
               <Route path="/legal/:doc" element={<LegalPage />} />
