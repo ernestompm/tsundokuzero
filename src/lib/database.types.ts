@@ -80,6 +80,15 @@ export type NotificationType =
   | 'book_done'
   | 'moderation'
 
+/** Dispositivo suscrito a Web Push (migr. 023) */
+export type PushSubscriptionRow = {
+  endpoint: string
+  user_id: string
+  p256dh: string
+  auth: string
+  created_at: string
+}
+
 /** Preferencias del centro de avisos (migr. 018) */
 export type NotificationPrefsRow = {
   user_id: string
@@ -292,6 +301,11 @@ export type Database = {
         'id' | 'created_at'
       >
       notification_prefs: TableDef<NotificationPrefsRow, 'user_id', never>
+      push_subscriptions: TableDef<
+        PushSubscriptionRow,
+        'endpoint' | 'user_id' | 'p256dh' | 'auth',
+        'created_at'
+      >
       consents: TableDef<Consent, 'user_id' | 'doc' | 'doc_version', 'accepted_at'>
       reports: TableDef<
         Report,

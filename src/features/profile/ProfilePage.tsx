@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
 import { friendlyError } from '../../lib/errors'
+import { disablePush, enablePush, pushEnabled, pushSupported } from '../../lib/push'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { timeAgo } from '../../lib/time'
 import './profile.css'
@@ -107,6 +108,42 @@ export default function ProfilePage() {
   const [passBusy, setPassBusy] = useState(false)
   // Centro de avisos (migr. 018): sin fila guardada, todo activado
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(NOTIF_DEFAULTS)
+  // Web Push en ESTE dispositivo (migr. 023)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushMsg, setPushMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    void pushEnabled().then(setPushOn)
+  }, [])
+
+  const togglePush = async () => {
+    if (!session) return
+    setPushBusy(true)
+    setPushMsg(null)
+    if (pushOn) {
+      await disablePush()
+      setPushOn(false)
+      setPushMsg('Push desactivado en este dispositivo.')
+    } else {
+      const result = await enablePush(session.user.id)
+      if (result === 'ok') {
+        setPushOn(true)
+        setPushMsg('Listo: este dispositivo recibirá avisos push.')
+      } else if (result === 'denied') {
+        setPushMsg(
+          'Has denegado el permiso de notificaciones. Actívalo en los ajustes del navegador y vuelve a intentarlo.',
+        )
+      } else if (result === 'unsupported') {
+        setPushMsg(
+          'Este navegador no soporta push. En iPhone: instala la app en tu pantalla de inicio (Compartir → Añadir a pantalla de inicio) y actívalo desde ahí.',
+        )
+      } else {
+        setPushMsg('No se pudo activar el push. Inténtalo de nuevo.')
+      }
+    }
+    setPushBusy(false)
+  }
 
   useEffect(() => {
     if (!session) return
@@ -551,6 +588,30 @@ export default function ProfilePage() {
             aria-label="Ver respuestas de personas más adelantadas"
             selected={profile?.show_ahead_replies || undefined}
             onChange={() => void toggleAheadReplies()}
+          />
+        </label>
+
+        {/* ===== Push en este dispositivo (migr. 023) ===== */}
+        <div className="profile-setting__divider" role="presentation" />
+        <label className="profile-setting">
+          <span className="profile-setting__text">
+            <span className="body-medium">
+              Notificaciones push en este dispositivo
+            </span>
+            <span className="body-small on-surface-variant">
+              Recibe los avisos aunque la app esté cerrada.
+              {!pushSupported() &&
+                ' En iPhone, primero instala la app en tu pantalla de inicio.'}
+            </span>
+            {pushMsg && (
+              <span className="body-small profile-setting__msg">{pushMsg}</span>
+            )}
+          </span>
+          <md-switch
+            aria-label="Notificaciones push en este dispositivo"
+            selected={pushOn || undefined}
+            disabled={pushBusy || undefined}
+            onChange={() => void togglePush()}
           />
         </label>
 

@@ -111,6 +111,10 @@
   letter-spacing: 0.08em;
   color: var(--md-sys-color-on-surface-variant);
 }
+.profile-setting__msg {
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+}
 
 .profile-ideas {
   display: flex;

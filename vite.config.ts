@@ -16,6 +16,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // SW propio (src/sw.ts): precache + navegación SPA + Web Push
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
@@ -38,10 +42,10 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      // Con injectManifest, el globPatterns alimenta self.__WB_MANIFEST;
+      // la ruta de navegación (con su denylist) vive en src/sw.ts.
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // Nunca interceptar la API ni el auth de Supabase
-        navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//],
       },
     }),
   ],
