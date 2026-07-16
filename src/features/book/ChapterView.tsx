@@ -217,7 +217,7 @@ function DiscussionCard({
       <div className="disc__head">
         {d.authorUsername ? (
           <Link to={`/u/${d.authorUsername}`} className="disc__author">
-            <Avatar name={d.authorName} size={38} />
+            <Avatar name={d.authorName} url={d.authorAvatar} size={38} />
             <span>
               <span className="who title-small">{d.authorName}</span>
               <span className="meta body-small on-surface-variant" style={{ display: 'block' }}>
@@ -227,7 +227,7 @@ function DiscussionCard({
           </Link>
         ) : (
           <>
-            <Avatar name={d.authorName} size={38} />
+            <Avatar name={d.authorName} url={d.authorAvatar} size={38} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="who title-small">{d.authorName}</div>
               <div className="meta body-small on-surface-variant">{d.createdAt}</div>
@@ -294,7 +294,7 @@ function DiscussionCard({
         <div className="disc__comments">
           {d.comments.map((c) => (
             <div key={c.id} className="disc__comment">
-              <Avatar name={c.authorName} size={26} />
+              <Avatar name={c.authorName} url={c.authorAvatar} size={26} />
               {c.body == null ? (
                 <p className="body-small disc__comment-locked" style={{ flex: 1 }}>
                   <span className="material-symbols-rounded">lock</span>

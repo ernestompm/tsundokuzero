@@ -86,7 +86,7 @@ export default function ChapterPage() {
     const { data: profiles } = authorIds.size
       ? await supabase
           .from('profiles')
-          .select('id, display_name, username')
+          .select('id, display_name, username, avatar_url')
           .in('id', [...authorIds])
       : { data: [] }
     const nameById = new Map(
@@ -95,11 +95,15 @@ export default function ChapterPage() {
     const usernameById = new Map(
       (profiles ?? []).map((p) => [p.id, p.username]),
     )
+    const avatarById = new Map(
+      (profiles ?? []).map((p) => [p.id, p.avatar_url]),
+    )
 
     const threads: ThreadDiscussion[] = list.map((d) => ({
       id: d.id,
       authorId: d.author_id,
       authorName: nameById.get(d.author_id) ?? '·',
+      authorAvatar: avatarById.get(d.author_id),
       authorUsername: usernameById.get(d.author_id),
       kind: d.kind,
       body: d.body,
@@ -113,6 +117,7 @@ export default function ChapterPage() {
           id: c.id,
           authorId: c.author_id,
           authorName: nameById.get(c.author_id) ?? '·',
+          authorAvatar: avatarById.get(c.author_id),
           body: c.unlocked ? c.body : null,
           unlockChapter: c.author_chapter,
           createdAt: timeAgo(c.created_at),

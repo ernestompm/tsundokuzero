@@ -66,7 +66,7 @@ export default function ThreadPage() {
     ]
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, display_name, username')
+      .select('id, display_name, username, avatar_url')
       .in('id', authorIds)
     const byId = new Map((profiles ?? []).map((p) => [p.id, p]))
 
@@ -87,6 +87,7 @@ export default function ThreadPage() {
       chapterLabel: chapter?.label ?? null,
       authorId: disc.author_id,
       authorName: byId.get(disc.author_id)?.display_name ?? '·',
+      authorAvatar: byId.get(disc.author_id)?.avatar_url,
       authorUsername: byId.get(disc.author_id)?.username,
       kind: disc.kind,
       body: disc.unlocked ? disc.body : null,
@@ -100,6 +101,7 @@ export default function ThreadPage() {
         id: c.id,
         authorId: c.author_id,
         authorName: byId.get(c.author_id)?.display_name ?? '·',
+        authorAvatar: byId.get(c.author_id)?.avatar_url,
         body: c.unlocked ? c.body : null,
         unlockChapter: c.author_chapter,
         createdAt: timeAgo(c.created_at),

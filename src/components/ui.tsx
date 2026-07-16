@@ -101,12 +101,18 @@ export function Avatar({
   )
 }
 
-export function AvatarStack({ names, extra }: { names: string[]; extra?: number }) {
+export function AvatarStack({
+  people,
+  extra,
+}: {
+  people: { name: string; url?: string | null }[]
+  extra?: number
+}) {
   return (
     <span className="avatar-stack">
-      {names.map((n, i) => (
+      {people.map((p, i) => (
         <span key={i} className="avatar-stack__item">
-          <Avatar name={n} size={26} />
+          <Avatar name={p.name} url={p.url} size={26} />
         </span>
       ))}
       {extra ? <span className="avatar-stack__extra label-small">+{extra}</span> : null}

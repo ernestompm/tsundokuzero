@@ -3,6 +3,7 @@ import type { DiscussionKind } from '../../lib/database.types'
 export interface ThreadComment {
   id: string
   authorName: string
+  authorAvatar?: string | null
   authorId: string
   /** null = bloqueada: su autor iba más adelante que tú */
   body: string | null
@@ -13,6 +14,7 @@ export interface ThreadComment {
 export interface ThreadDiscussion {
   id: string
   authorName: string
+  authorAvatar?: string | null
   authorUsername?: string
   authorId: string
   kind: DiscussionKind
@@ -43,6 +45,7 @@ export interface ThreadViewData {
   chapterNumber: number
   chapterLabel: string | null
   authorName: string
+  authorAvatar?: string | null
   authorUsername?: string
   authorId: string
   kind: DiscussionKind

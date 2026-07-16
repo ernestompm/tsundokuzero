@@ -65,7 +65,7 @@ export default function ThreadView({
         <div className="disc__head">
           {data.authorUsername ? (
             <Link to={`/u/${data.authorUsername}`} className="disc__author">
-              <Avatar name={data.authorName} size={44} />
+              <Avatar name={data.authorName} url={data.authorAvatar} size={44} />
               <span>
                 <span className="who title-medium">{data.authorName}</span>
                 <span className="meta body-small on-surface-variant" style={{ display: 'block' }}>
@@ -75,7 +75,7 @@ export default function ThreadView({
             </Link>
           ) : (
             <>
-              <Avatar name={data.authorName} size={44} />
+              <Avatar name={data.authorName} url={data.authorAvatar} size={44} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="who title-medium">{data.authorName}</div>
                 <div className="meta body-small on-surface-variant">
@@ -131,7 +131,7 @@ export default function ThreadView({
       <div className="thread-replies">
         {data.comments.map((c) => (
           <div key={c.id} className="thread-reply">
-            <Avatar name={c.authorName} size={34} />
+            <Avatar name={c.authorName} url={c.authorAvatar} size={34} />
             <div className="thread-reply__content">
               {c.body == null ? (
                 <p className="body-medium disc__comment-locked">

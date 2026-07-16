@@ -4,6 +4,7 @@ import type { DiscussionKind } from '../../lib/database.types'
 export interface FeedParent {
   discussionId: string
   authorName: string
+  authorAvatar?: string | null
   authorUsername?: string
   /** null = el padre está por delante de tu progreso */
   body: string | null
@@ -18,6 +19,7 @@ export interface FeedReply {
   id: string
   authorId: string
   authorName: string
+  authorAvatar?: string | null
   authorUsername?: string
   /** null = bloqueada (su autor iba por delante de ti) */
   body: string | null
@@ -30,6 +32,7 @@ export interface FeedItem {
   /** idea = publicación anclada · reply = respuesta (con padre citado) · post = muro */
   type: 'idea' | 'reply' | 'post'
   authorName: string
+  authorAvatar?: string | null
   authorUsername?: string
   authorId: string
   createdAt: string
@@ -76,7 +79,7 @@ export interface BookConvo {
   coverUrl?: string | null
   upTo: number
   count: number
-  avatars: string[]
+  avatars: { name: string; url?: string | null }[]
   extra: number
 }
 
@@ -98,6 +101,7 @@ export type FeedFilter = 'all' | 'club' | 'reading' | 'finished'
 export interface HomeData {
   displayName: string
   myId?: string
+  myAvatar?: string | null
   /** TODAS las lecturas en curso (la primera es la más reciente) */
   readings: HomeReading[]
   /** ids de libro para los filtros del feed */

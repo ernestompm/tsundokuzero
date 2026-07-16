@@ -178,7 +178,7 @@ export default function HomeView({
 
       {/* ===== Composer ===== */}
       <button className="composer-entry" onClick={() => void openCompose()}>
-        <Avatar name={data.displayName} size={38} />
+        <Avatar name={data.displayName} url={data.myAvatar} size={38} />
         <span className="composer-entry__hint body-medium">
           Comparte una idea…
         </span>
@@ -210,7 +210,7 @@ export default function HomeView({
                     Capítulos 1 – {c.upTo}
                   </span>
                   <span className="conv-card__foot">
-                    <AvatarStack names={c.avatars} extra={c.extra} />
+                    <AvatarStack people={c.avatars} extra={c.extra} />
                     <span className="label-medium on-surface-variant conv-card__count">
                       <span className="material-symbols-rounded">chat_bubble</span>
                       {c.count}
@@ -388,7 +388,7 @@ function FeedReplyRow({
 }) {
   return (
     <div className="feed-reply">
-      <Avatar name={reply.authorName} size={26} />
+      <Avatar name={reply.authorName} url={reply.authorAvatar} size={26} />
       <div className="feed-reply__content">
         {reply.body == null ? (
           <span className="feed-reply__locked body-small">
@@ -476,7 +476,11 @@ function FeedCard({
       {isReply && item.parent && (
         <button className="feed-quote" onClick={go}>
           <span className="feed-quote__head">
-            <Avatar name={item.parent.authorName} size={22} />
+            <Avatar
+              name={item.parent.authorName}
+              url={item.parent.authorAvatar}
+              size={22}
+            />
             <span className="title-small">{item.parent.authorName}</span>
             <span className="body-small on-surface-variant feed-quote__meta">
               · {item.parent.bookTitle} · Cap. {item.parent.chapterNumber}
@@ -501,12 +505,12 @@ function FeedCard({
         <header className="feed-card__head">
           {item.authorUsername ? (
             <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
-              <Avatar name={item.authorName} size={40} />
+              <Avatar name={item.authorName} url={item.authorAvatar} size={40} />
               {meta}
             </Link>
           ) : (
             <div className="feed-card__author">
-              <Avatar name={item.authorName} size={40} />
+              <Avatar name={item.authorName} url={item.authorAvatar} size={40} />
               {meta}
             </div>
           )}

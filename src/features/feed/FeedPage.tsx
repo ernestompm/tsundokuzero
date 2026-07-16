@@ -195,7 +195,7 @@ export default function FeedPage() {
         await Promise.all([
           supabase
             .from('profiles')
-            .select('id, display_name, username')
+            .select('id, display_name, username, avatar_url')
             .in('id', authorIds),
           bookIds.length
             ? supabase
@@ -213,6 +213,7 @@ export default function FeedPage() {
 
       const nameById = new Map((authors ?? []).map((a) => [a.id, a.display_name]))
       const usernameById = new Map((authors ?? []).map((a) => [a.id, a.username]))
+      const avatarById = new Map((authors ?? []).map((a) => [a.id, a.avatar_url]))
       const bookById = new Map((books ?? []).map((b) => [b.id, b]))
       const labelByKey = new Map(
         (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
@@ -244,6 +245,7 @@ export default function FeedPage() {
         id: r.id,
         authorId: r.author_id,
         authorName: nameById.get(r.author_id) ?? '·',
+        authorAvatar: avatarById.get(r.author_id),
         authorUsername: usernameById.get(r.author_id),
         body: r.unlocked ? r.body : null,
         unlockChapter: r.author_chapter,
@@ -257,6 +259,7 @@ export default function FeedPage() {
           type: 'idea',
           authorId: d.author_id,
           authorName: nameById.get(d.author_id) ?? '·',
+          authorAvatar: avatarById.get(d.author_id),
           authorUsername: usernameById.get(d.author_id),
           bookId: d.book_id,
           bookTitle: bookById.get(d.book_id)?.title ?? '',
@@ -292,6 +295,7 @@ export default function FeedPage() {
                 type: 'reply',
                 authorId: latest.author_id,
                 authorName: nameById.get(latest.author_id) ?? '·',
+                authorAvatar: avatarById.get(latest.author_id),
                 authorUsername: usernameById.get(latest.author_id),
                 body: null,
                 isClub: false,
@@ -299,6 +303,7 @@ export default function FeedPage() {
                 parent: {
                   discussionId: p.id,
                   authorName: nameById.get(p.author_id) ?? '·',
+                  authorAvatar: avatarById.get(p.author_id),
                   authorUsername: usernameById.get(p.author_id),
                   body: p.unlocked ? p.body : null,
                   chapterNumber: p.chapter_number,
@@ -320,6 +325,7 @@ export default function FeedPage() {
           type: 'post',
           authorId: p.author_id,
           authorName: nameById.get(p.author_id) ?? '·',
+          authorAvatar: avatarById.get(p.author_id),
           authorUsername: usernameById.get(p.author_id),
           kind: null,
           postTitle: p.title,
@@ -345,9 +351,12 @@ export default function FeedPage() {
       for (const [bookId, items] of byBook) {
         const book = bookById.get(bookId)
         if (!book) continue
-        const names = [
-          ...new Set(items.map((d) => nameById.get(d.author_id) ?? '·')),
-        ]
+        const people = [...new Set(items.map((d) => d.author_id))].map(
+          (id) => ({
+            name: nameById.get(id) ?? '·',
+            url: avatarById.get(id),
+          }),
+        )
         conversations.push({
           bookId,
           bookTitle: book.title,
@@ -355,8 +364,8 @@ export default function FeedPage() {
           coverUrl: book.cover_url,
           upTo: Math.max(...items.map((d) => d.chapter_number)),
           count: items.length,
-          avatars: names.slice(0, 3),
-          extra: Math.max(0, names.length - 3),
+          avatars: people.slice(0, 3),
+          extra: Math.max(0, people.length - 3),
         })
       }
       conversations.sort((a, b) => b.count - a.count)
@@ -365,6 +374,7 @@ export default function FeedPage() {
     setData({
       displayName: profile.display_name,
       myId,
+      myAvatar: profile.avatar_url,
       readings,
       readingBookIds: readingRows.map((p) => p.book_id),
       finishedBookIds,

@@ -15,6 +15,7 @@ interface NotiRow {
   read: boolean
   createdAt: string
   actorName: string
+  actorAvatar: string | null
   actorUsername: string | null
   /** destino al tocar */
   to: string
@@ -40,7 +41,7 @@ export default function NotificationsPage() {
     const { data: actors } = actorIds.length
       ? await supabase
           .from('profiles')
-          .select('id, display_name, username')
+          .select('id, display_name, username, avatar_url')
           .in('id', actorIds)
       : { data: [] }
     const actorById = new Map((actors ?? []).map((a) => [a.id, a]))
@@ -72,6 +73,7 @@ export default function NotificationsPage() {
           read: n.read,
           createdAt: timeAgo(n.created_at),
           actorName: actor?.display_name ?? 'Alguien',
+          actorAvatar: actor?.avatar_url ?? null,
           actorUsername: actor?.username ?? null,
           to,
           detail,
@@ -133,7 +135,7 @@ export default function NotificationsPage() {
                     {icon}
                   </span>
                 ) : (
-                  <Avatar name={n.actorName} size={40} />
+                  <Avatar name={n.actorName} url={n.actorAvatar} size={40} />
                 )}
                 <span className="noti-row__text">
                   <span className="body-medium">

@@ -37,7 +37,11 @@ export const SAMPLE_HOME: HomeData = {
       author: 'Matt Haig',
       upTo: 18,
       count: 12,
-      avatars: ['Marina Ruiz', 'Carla Vega', 'Ola Prieto'],
+      avatars: [
+        { name: 'Marina Ruiz' },
+        { name: 'Carla Vega' },
+        { name: 'Ola Prieto' },
+      ],
       extra: 8,
     },
   ],
