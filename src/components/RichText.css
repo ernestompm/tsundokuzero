@@ -1,0 +1,95 @@
+/* Texto rico editorial (biografías, fichas largas) */
+
+.richtext {
+  line-height: 1.68;
+  color: var(--md-sys-color-on-surface);
+}
+
+.richtext p {
+  margin: 0 0 14px;
+}
+
+.richtext h2 {
+  margin: 28px 0 10px;
+  font-size: 23px;
+  line-height: 30px;
+  font-weight: 540;
+  letter-spacing: -0.2px;
+}
+.richtext h3 {
+  margin: 22px 0 8px;
+  font-size: 17.5px;
+  line-height: 24px;
+  font-weight: 560;
+}
+.richtext > h2:first-child,
+.richtext > h3:first-child {
+  margin-top: 0;
+}
+
+.richtext ul,
+.richtext ol {
+  margin: 0 0 14px;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.richtext li::marker {
+  color: var(--md-sys-color-primary);
+}
+
+.richtext blockquote {
+  margin: 0 0 14px;
+  padding: 2px 4px 2px 14px;
+  border-left: 3px solid var(--md-sys-color-primary);
+  font-style: italic;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.richtext hr {
+  border: none;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  margin: 22px 0;
+}
+
+.richtext a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Tablas: tarjeta con scroll horizontal propio en pantallas estrechas */
+.richtext__tablewrap {
+  margin: 4px 0 18px;
+  overflow-x: auto;
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
+  border-radius: 14px;
+  background: var(--md-sys-color-surface-container-lowest);
+}
+.richtext table {
+  width: 100%;
+  min-width: 400px;
+  border-collapse: collapse;
+}
+.richtext th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.richtext td {
+  padding: 10px 14px;
+  border-top: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  vertical-align: top;
+}
+.richtext td:first-child {
+  font-style: italic;
+  font-weight: 500;
+  white-space: nowrap;
+}

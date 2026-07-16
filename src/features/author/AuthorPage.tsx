@@ -6,6 +6,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { BookCover } from '../../components/ui'
+import RichText from '../../components/RichText'
 import Stars from '../../components/Stars'
 import type { Author, Book } from '../../lib/database.types'
 import './author.css'
@@ -148,11 +149,19 @@ export default function AuthorPage() {
         <div className="author-edit">
           <textarea
             className="profile-input body-medium"
-            rows={5}
-            placeholder="Biografía del autor…"
+            rows={14}
+            placeholder={
+              'Biografía del autor…\n\n## Título de sección\n### Subtítulo\n**negrita**, *cursiva*\n- listas\n| tablas | con columnas |'
+            }
             value={bioDraft}
             onChange={(e) => setBioDraft(e.target.value)}
           />
+          <p className="body-small on-surface-variant">
+            Admite formato: <code>## título</code>, <code>### subtítulo</code>,{' '}
+            <code>**negrita**</code>, <code>*cursiva*</code>, listas con{' '}
+            <code>-</code> o <code>1.</code>, citas con <code>&gt;</code> y
+            tablas con <code>|</code>.
+          </p>
           <div className="author-edit__row">
             <input
               className="profile-input body-medium"
@@ -186,7 +195,7 @@ export default function AuthorPage() {
       ) : (
         <>
           {author.bio ? (
-            <p className="body-medium author-bio">{author.bio}</p>
+            <RichText text={author.bio} className="author-bio" />
           ) : (
             <p className="body-medium on-surface-variant author-bio">
               Aún no hay biografía de este autor.

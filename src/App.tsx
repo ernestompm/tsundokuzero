@@ -24,6 +24,7 @@ import ClubManagePage from './features/club/ClubManagePage'
 import ProfilePage from './features/profile/ProfilePage'
 import UserProfilePage from './features/profile/UserProfilePage'
 import AuthorPage from './features/author/AuthorPage'
+import AuthorPreview from './features/author/AuthorPreview'
 import NotificationsPage from './features/notifications/NotificationsPage'
 import ExplorePage from './features/explore/ExplorePage'
 import LibraryPage from './features/library/LibraryPage'
@@ -91,6 +92,7 @@ export default function App() {
               />
             }
           />
+          <Route path="author" element={<AuthorPreview />} />
           <Route
             path="thread"
             element={
