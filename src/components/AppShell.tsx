@@ -171,6 +171,9 @@ export default function AppShell() {
             </span>
             <span className="label-large">{dark ? 'Tema claro' : 'Tema oscuro'}</span>
           </button>
+          <span className="shell-version label-small">
+            Tsundoku Zero v{__APP_VERSION__} · beta
+          </span>
         </div>
       </aside>
 
@@ -247,6 +250,9 @@ export default function AppShell() {
                 <span className="material-symbols-rounded">logout</span>
                 <span className="label-large">Cerrar sesión</span>
               </button>
+              <span className="shell-version label-small">
+                Tsundoku Zero v{__APP_VERSION__} · beta
+              </span>
             </div>
           </nav>
         </div>

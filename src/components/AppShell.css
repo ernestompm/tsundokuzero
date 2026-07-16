@@ -157,6 +157,15 @@
   border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 
+/* Versión de la app, discreta al pie del menú/barra lateral */
+.shell-version {
+  display: block;
+  padding: 10px 16px 2px;
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+}
+
 /* La hamburguesa solo en móvil */
 @media (min-width: 1040px) {
   .drawer-scrim {
