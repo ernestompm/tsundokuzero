@@ -34,6 +34,12 @@ export default function HomeView({
 
   return (
     <div className="home">
+      {/* ===== Cabecera grande (móvil): fecha + «Hoy», estilo iOS ===== */}
+      <header className="home-today">
+        <span className="label-medium home-today__date">{todayLabel()}</span>
+        <h1 className="home-today__title serif">Hoy</h1>
+      </header>
+
       {/* ===== Hero (escritorio): lectura actual + reto personal ===== */}
       <div className="home-hero">
         <div className="hero-card">
@@ -97,7 +103,7 @@ export default function HomeView({
         </div>
       </div>
 
-      {/* ===== Lectura compacta (móvil) ===== */}
+      {/* ===== Tarjeta de lectura (móvil) ===== */}
       <button
         className="reading-strip"
         onClick={() => navigate(reading ? `/book/${reading.bookId}` : '/book')}
@@ -108,18 +114,26 @@ export default function HomeView({
               title={reading.title}
               author={reading.author}
               coverUrl={reading.coverUrl}
-              size="sm"
+              size="md"
             />
             <div className="reading-strip__info">
               <span className="label-small reading-strip__kicker">
+                Sigues leyendo
+              </span>
+              <span className="title-medium serif reading-strip__title">
                 {reading.title}
               </span>
-              <span className="title-small serif reading-strip__where">
+              <span className="body-small on-surface-variant reading-strip__where">
                 {reading.chapterNumber > 0
                   ? `Cap. ${reading.chapterNumber}${reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}`
                   : 'Aún no has empezado'}
               </span>
-              <ProgressBar percent={reading.percent} />
+              <span className="reading-strip__progress">
+                <ProgressBar percent={reading.percent} />
+                <span className="label-small on-surface-variant reading-strip__pct">
+                  {reading.percent}%
+                </span>
+              </span>
             </div>
           </>
         ) : (
@@ -135,9 +149,14 @@ export default function HomeView({
       {/* ===== Votación abierta ===== */}
       {data.openPoll && (
         <button className="poll-banner" onClick={() => navigate('/club')}>
-          <span className="material-symbols-rounded">how_to_vote</span>
-          <span className="label-large">
-            Votación abierta: {data.openPoll.title}
+          <span className="poll-banner__icon">
+            <span className="material-symbols-rounded">how_to_vote</span>
+          </span>
+          <span className="poll-banner__text">
+            <span className="label-small poll-banner__kicker">
+              Votación abierta
+            </span>
+            <span className="label-large">{data.openPoll.title}</span>
           </span>
           <span className="material-symbols-rounded">chevron_right</span>
         </button>
@@ -233,6 +252,37 @@ export default function HomeView({
   )
 }
 
+
+/** «miércoles, 16 de julio» — el uppercase lo pone el CSS */
+function todayLabel() {
+  return new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+/** Esqueleto de carga del Inicio: misma silueta que la pantalla real. */
+export function HomeSkeleton() {
+  return (
+    <div className="home" aria-busy>
+      <header className="home-today">
+        <span className="label-medium home-today__date">{todayLabel()}</span>
+        <h1 className="home-today__title serif">Hoy</h1>
+      </header>
+      <div className="skel" style={{ height: 118, borderRadius: 24, marginBottom: 12 }} />
+      <div className="skel" style={{ height: 58, borderRadius: 999, marginBottom: 24 }} />
+      <div className="skel" style={{ height: 22, width: 180, marginBottom: 14 }} />
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="skel"
+          style={{ height: 132, borderRadius: 20, marginBottom: 12 }}
+        />
+      ))}
+    </div>
+  )
+}
 
 function StatRow({
   icon,

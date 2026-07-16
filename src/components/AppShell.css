@@ -58,6 +58,11 @@
   align-items: center;
   gap: 4px;
 }
+/* En la barra superior móvil el menú ☰ ya hace de "marca de líneas":
+   ocultamos el logotipo de rayas para no ver dos hamburguesas juntas. */
+.top-bar .logo__mark {
+  display: none;
+}
 .top-bar__actions {
   display: flex;
   align-items: center;
@@ -158,14 +163,6 @@
     display: none;
   }
 }
-.top-bar__avatar {
-  border: none;
-  background: none;
-  padding: 4px;
-  cursor: pointer;
-  display: inline-flex;
-}
-
 /* ===================== Contenido ===================== */
 .content {
   flex: 1;
@@ -197,38 +194,31 @@
   border-top: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
 }
+/* Ítems estilo iOS: icono + etiqueta que se tiñen al activarse (sin píldora) */
 .nav-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   color: var(--md-sys-color-on-surface-variant);
   -webkit-tap-highlight-color: transparent;
+  transition: color var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
 }
 .nav-item.active {
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-primary);
 }
 .nav-icon-pill {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 30px;
-  border-radius: var(--md-sys-shape-corner-full);
-  transition: background-color var(--md-sys-motion-duration-short)
-    var(--md-sys-motion-easing-standard);
-}
-.nav-item.active .nav-icon-pill {
-  background: var(--md-sys-color-secondary-container);
-}
-.nav-item.active .nav-icon-pill .material-symbols-rounded {
-  color: var(--md-sys-color-on-secondary-container);
+  height: 28px;
 }
 .nav-icon-pill .material-symbols-rounded {
-  font-size: 24px;
+  font-size: 26px;
 }
 
 /* feedback táctil sutil, estilo iOS */
@@ -262,7 +252,10 @@
   place-items: center;
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  /* sombra teñida del color de marca: profundidad cálida, no gris */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.12),
+    0 8px 20px color-mix(in srgb, var(--md-sys-color-primary) 38%, transparent);
   --md-ripple-hover-color: var(--md-sys-color-on-primary);
   --md-ripple-pressed-color: var(--md-sys-color-on-primary);
 }

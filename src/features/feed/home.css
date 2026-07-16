@@ -4,6 +4,26 @@
   padding-top: 4px;
 }
 
+/* ===================== «Hoy» (cabecera grande, solo móvil) ===================== */
+.home-today {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 2px 16px;
+}
+.home-today__date {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.home-today__title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 40px;
+  font-weight: 520;
+  letter-spacing: -0.3px;
+}
+
 /* ===================== Hero (solo escritorio) ===================== */
 .home-hero {
   display: none;
@@ -79,32 +99,47 @@
   margin: 4px 0;
 }
 
-/* ===================== Lectura compacta (móvil) ===================== */
+/* ===================== Tarjeta de lectura (móvil) ===================== */
 .reading-strip {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 14px;
+  padding: 14px;
   margin-bottom: 12px;
-  border-radius: var(--md-sys-shape-corner-large);
-  background: var(--md-sys-color-surface-container-low);
-  border: none;
+  border-radius: 24px;
+  background: linear-gradient(
+    150deg,
+    var(--md-sys-color-surface-container-low),
+    var(--md-sys-color-surface-container)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+  box-shadow:
+    0 1px 2px rgba(35, 35, 30, 0.04),
+    0 10px 28px rgba(35, 35, 30, 0.06);
   cursor: pointer;
   text-align: left;
   color: inherit;
+  transition: transform 120ms var(--md-sys-motion-easing-standard);
+}
+.reading-strip:active {
+  transform: scale(0.985);
 }
 .reading-strip__info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 .reading-strip__kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.12em;
+  color: var(--md-sys-color-tertiary);
+  font-weight: 700;
+}
+.reading-strip__title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -114,8 +149,29 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.reading-strip__progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+.reading-strip__progress .progress {
+  flex: 1;
+}
+.reading-strip__pct {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
 .reading-strip__chev {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface-variant);
+  font-size: 20px;
 }
 
 /* ===================== Entrada al composer ===================== */
@@ -128,7 +184,9 @@
   margin: 0 0 8px;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-surface-container-lowest);
-  border: 1px solid var(--md-sys-color-outline-variant);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  box-shadow: 0 1px 2px rgba(35, 35, 30, 0.03);
   cursor: pointer;
   text-align: left;
   transition: box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
@@ -161,10 +219,14 @@
 .conv-card {
   display: flex;
   gap: 14px;
-  padding: 12px 14px;
-  border-radius: var(--md-sys-shape-corner-large);
+  padding: 14px;
+  border-radius: 20px;
   background: var(--md-sys-color-surface-container-lowest);
-  border: 1px solid var(--md-sys-color-outline-variant);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  box-shadow:
+    0 1px 2px rgba(35, 35, 30, 0.03),
+    0 6px 20px rgba(35, 35, 30, 0.05);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -213,10 +275,13 @@
 }
 .feed-card {
   padding: 16px;
-  border-radius: var(--md-sys-shape-corner-large);
+  border-radius: 20px;
   background: var(--md-sys-color-surface-container-lowest);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  box-shadow: 0 1px 2px rgba(35, 35, 30, 0.03);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  box-shadow:
+    0 1px 2px rgba(35, 35, 30, 0.03),
+    0 6px 20px rgba(35, 35, 30, 0.05);
 }
 .feed-card__head {
   display: flex;
@@ -243,18 +308,51 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 16px;
+  gap: 12px;
+  padding: 12px 14px;
   margin-bottom: 12px;
-  border-radius: var(--md-sys-shape-corner-large);
+  border-radius: 20px;
   border: none;
-  background: var(--md-sys-color-primary);
+  background: linear-gradient(
+    135deg,
+    var(--md-sys-color-primary),
+    color-mix(in srgb, var(--md-sys-color-primary) 82%, black)
+  );
   color: var(--md-sys-color-on-primary);
+  box-shadow: 0 6px 18px
+    color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
   cursor: pointer;
   text-align: left;
+  transition: transform 120ms var(--md-sys-motion-easing-standard);
 }
-.poll-banner .label-large {
+.poll-banner:active {
+  transform: scale(0.985);
+}
+.poll-banner__icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--md-sys-color-on-primary) 18%, transparent);
+}
+.poll-banner__text {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.poll-banner__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+.poll-banner__text .label-large {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .feed-card__chips {
   flex: none;
@@ -481,6 +579,9 @@
 
 /* ===================== ESCRITORIO ===================== */
 @media (min-width: 1040px) {
+  .home-today {
+    display: none; /* el hero rico ya cumple ese papel */
+  }
   .home-hero {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 260px;

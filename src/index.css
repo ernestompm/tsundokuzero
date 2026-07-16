@@ -98,6 +98,45 @@ a {
 .on-surface-variant { color: var(--md-sys-color-on-surface-variant); }
 .serif { font-family: var(--tz-typeface-serif); }
 
+/* ===== Transición de página (cada pantalla entra con un fade sutil) ===== */
+@media (prefers-reduced-motion: no-preference) {
+  .content > * {
+    animation: page-in 320ms var(--md-sys-motion-easing-emphasized) both;
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ===== Skeleton loaders (carga percibida moderna, sin spinners) ===== */
+.skel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
+}
+.skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--md-sys-color-surface-bright) 55%, transparent),
+    transparent
+  );
+  animation: skel-shine 1.3s ease infinite;
+}
+@keyframes skel-shine {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 /* Slider de progreso (Libro y onboarding) */
 .progress-slider {
   width: 100%;

@@ -87,7 +87,12 @@
   justify-content: space-between;
   margin: 28px 0 14px;
 }
-.section-header__title { font-weight: 500; }
+/* Títulos de sección en la serifa editorial: voz de revista en toda la app */
+.section-header__title {
+  font-family: var(--tz-typeface-serif);
+  font-weight: 540;
+  letter-spacing: -0.2px;
+}
 .section-header__action {
   color: var(--md-sys-color-primary);
   white-space: nowrap;
@@ -95,12 +100,16 @@
 
 /* ===================== Tarjeta ===================== */
 .card {
-  border-radius: var(--md-sys-shape-corner-large);
+  border-radius: 20px;
   padding: 16px;
 }
 .card--default {
   background: var(--md-sys-color-surface-container-lowest);
-  border: 1px solid var(--md-sys-color-outline-variant);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  box-shadow:
+    0 1px 2px rgba(35, 35, 30, 0.03),
+    0 6px 20px rgba(35, 35, 30, 0.05);
 }
 .card--soft {
   background: var(--md-sys-color-surface-container);

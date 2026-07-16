@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { useCompose } from '../../components/ComposeProvider'
 import { timeAgo } from '../../lib/time'
-import HomeView from './HomeView'
+import HomeView, { HomeSkeleton } from './HomeView'
 import type {
   BookConvo,
   FeedItem,
@@ -414,13 +413,7 @@ export default function FeedPage() {
     await load()
   }
 
-  if (!data) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', padding: 48 }}>
-        <md-circular-progress indeterminate />
-      </div>
-    )
-  }
+  if (!data) return <HomeSkeleton />
 
   return (
     <HomeView

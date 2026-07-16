@@ -265,26 +265,12 @@ export default function AppShell() {
             </md-icon-button>
             <Logo />
           </span>
+          {/* Solo lo esencial: buscar y avisos (tema y perfil viven en el menú) */}
           <span className="top-bar__actions">
             <md-icon-button aria-label="Buscar" onClick={() => navigate('/explore')}>
               <span className="material-symbols-rounded">search</span>
             </md-icon-button>
             {bell}
-            <md-icon-button
-              aria-label={dark ? 'Tema claro' : 'Tema oscuro'}
-              onClick={toggleTheme}
-            >
-              <span className="material-symbols-rounded">
-                {dark ? 'light_mode' : 'dark_mode'}
-              </span>
-            </md-icon-button>
-            <button
-              className="top-bar__avatar"
-              onClick={() => navigate('/me')}
-              aria-label="Tu perfil"
-            >
-              <Avatar name={profile?.display_name ?? 'Tú'} url={profile?.avatar_url} size={34} />
-            </button>
           </span>
         </header>
 
@@ -324,8 +310,8 @@ function NavItem({ to, icon, label }: { to: string; icon: string; label: string 
     >
       {({ isActive }) => (
         <>
+          {/* Sin ripple: en móvil el feedback es el tinte + escala, como iOS */}
           <span className="nav-icon-pill">
-            <md-ripple />
             <span className={`material-symbols-rounded${isActive ? ' filled' : ''}`}>
               {icon}
             </span>
