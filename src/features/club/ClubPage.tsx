@@ -289,36 +289,49 @@ export default function ClubPage() {
                   : 0
               const mine = pollState.myVote === o.id
               return (
-                <button
-                  key={o.id}
-                  className={`poll-option${mine ? ' mine' : ''}`}
-                  disabled={pollState.poll.status !== 'open' || busy}
-                  onClick={() => void vote(o.id)}
-                >
-                  <span className="poll-option__row">
-                    <span className="title-small">
-                      {mine ? '◉ ' : '○ '}
-                      {o.book_title}
+                <div key={o.id} className={`poll-option${mine ? ' mine' : ''}`}>
+                  <button
+                    className="poll-option__vote"
+                    disabled={pollState.poll.status !== 'open' || busy}
+                    onClick={() => void vote(o.id)}
+                  >
+                    <span className="poll-option__row">
+                      <span className="title-small">
+                        {mine ? '◉ ' : '○ '}
+                        {o.book_title}
+                      </span>
+                      <span className="label-medium on-surface-variant">
+                        {o.votes} {o.votes === 1 ? 'voto' : 'votos'}
+                      </span>
                     </span>
-                    <span className="label-medium on-surface-variant">
-                      {o.votes} {o.votes === 1 ? 'voto' : 'votos'}
+                    <span className="body-small on-surface-variant">
+                      {o.book_author}
                     </span>
-                  </span>
-                  <span className="body-small on-surface-variant">
-                    {o.book_author}
-                  </span>
-                  <span className="poll-option__bar">
-                    <span
-                      className="poll-option__fill"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </span>
-                  {o.note && (
-                    <span className="body-small poll-option__note serif">
-                      «{o.note}»
+                    <span className="poll-option__bar">
+                      <span
+                        className="poll-option__fill"
+                        style={{ width: `${pct}%` }}
+                      />
                     </span>
+                    {o.note && (
+                      <span className="body-small poll-option__note serif">
+                        «{o.note}»
+                      </span>
+                    )}
+                  </button>
+                  {/* Los candidatos son libros del catálogo: su ficha, a un toque */}
+                  {o.book_id && (
+                    <button
+                      className="poll-option__ficha label-medium"
+                      onClick={() => navigate(`/book/${o.book_id}`)}
+                    >
+                      Ver sinopsis y ficha
+                      <span className="material-symbols-rounded">
+                        chevron_right
+                      </span>
+                    </button>
                   )}
-                </button>
+                </div>
               )
             })}
           </div>

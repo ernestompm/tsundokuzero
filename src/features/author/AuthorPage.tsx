@@ -27,6 +27,7 @@ export default function AuthorPage() {
   const [nationalityDraft, setNationalityDraft] = useState('')
   const [birthDraft, setBirthDraft] = useState('')
   const [webDraft, setWebDraft] = useState('')
+  const [photoDraft, setPhotoDraft] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -97,6 +98,7 @@ export default function AuthorPage() {
     setNationalityDraft(author.nationality ?? '')
     setBirthDraft(author.birth_year?.toString() ?? '')
     setWebDraft(author.website ?? '')
+    setPhotoDraft(author.photo_url ?? '')
     setEditing(true)
   }
 
@@ -109,6 +111,7 @@ export default function AuthorPage() {
         nationality: nationalityDraft.trim() || null,
         birth_year: birthDraft.trim() ? Number(birthDraft) : null,
         website: webDraft.trim() || null,
+        photo_url: photoDraft.trim() || null,
       })
       .eq('id', author.id)
     setBusy(false)
@@ -126,9 +129,21 @@ export default function AuthorPage() {
   return (
     <section className="author">
       <header className="author-head">
-        <span className="author-head__initial serif" aria-hidden>
-          {author.name[0]}
-        </span>
+        {author.photo_url ? (
+          <img
+            className="author-head__photo"
+            src={author.photo_url}
+            alt={`Foto de ${author.name}`}
+            onError={(e) => {
+              // si la URL falla, volvemos a la inicial
+              ;(e.target as HTMLImageElement).style.display = 'none'
+            }}
+          />
+        ) : (
+          <span className="author-head__initial serif" aria-hidden>
+            {author.name[0]}
+          </span>
+        )}
         <h1 className="headline-medium serif">{author.name}</h1>
         {context && (
           <p className="body-medium on-surface-variant">{context}</p>
@@ -183,6 +198,22 @@ export default function AuthorPage() {
             value={webDraft}
             onChange={(e) => setWebDraft(e.target.value)}
           />
+          <input
+            className="profile-input body-medium"
+            placeholder="URL de foto del autor (https://…)"
+            value={photoDraft}
+            onChange={(e) => setPhotoDraft(e.target.value)}
+          />
+          {photoDraft.trim() && (
+            <img
+              className="author-head__photo"
+              src={photoDraft.trim()}
+              alt="Vista previa de la foto"
+              onError={(e) =>
+                ((e.target as HTMLImageElement).style.display = 'none')
+              }
+            />
+          )}
           <div className="author-edit__actions">
             <md-text-button onClick={() => setEditing(false)}>
               Cancelar

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/outlined-button.js'
 import '@material/web/button/filled-button.js'
@@ -45,6 +45,70 @@ export default function ProfilePage() {
   const [postToClub, setPostToClub] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  /** Sube la foto de perfil: recorte cuadrado a 512px → Storage → perfil. */
+  const changePhoto = async (file: File) => {
+    if (!session) return
+    setBusy(true)
+    setError(null)
+    try {
+      // Recorte centrado y reescalado en el navegador (nada de originales de 12 MB)
+      const objectUrl = URL.createObjectURL(file)
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('No se pudo leer la imagen'))
+        img.src = objectUrl
+      })
+      const side = Math.min(img.naturalWidth, img.naturalHeight)
+      const size = Math.min(512, side)
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      canvas
+        .getContext('2d')!
+        .drawImage(
+          img,
+          (img.naturalWidth - side) / 2,
+          (img.naturalHeight - side) / 2,
+          side,
+          side,
+          0,
+          0,
+          size,
+          size,
+        )
+      URL.revokeObjectURL(objectUrl)
+      const blob = await new Promise<Blob | null>((r) =>
+        canvas.toBlob(r, 'image/jpeg', 0.85),
+      )
+      if (!blob) throw new Error('No se pudo procesar la imagen')
+
+      const path = `${session.user.id}/avatar.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+      if (upErr)
+        throw new Error(
+          /bucket/i.test(upErr.message)
+            ? 'Falta ejecutar la migración 016 (bucket de avatares) en Supabase.'
+            : upErr.message,
+        )
+      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
+      // ?v= rompe la caché: el archivo se sobreescribe pero la URL cambia
+      const avatar_url = `${pub.publicUrl}?v=${Date.now()}`
+      const { error: dbErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url })
+        .eq('id', session.user.id)
+      if (dbErr) throw new Error(dbErr.message)
+      await refreshProfile()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo cambiar la foto')
+    }
+    setBusy(false)
+  }
 
   const load = useCallback(async () => {
     if (!session) return
@@ -191,6 +255,24 @@ export default function ProfilePage() {
         />
         {editing ? (
           <div className="profile-edit">
+            {/* Foto de perfil: se sube desde el dispositivo */}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void changePhoto(f)
+                e.target.value = ''
+              }}
+            />
+            <md-text-button
+              disabled={busy || undefined}
+              onClick={() => photoInputRef.current?.click()}
+            >
+              {busy ? 'Subiendo…' : 'Cambiar foto'}
+            </md-text-button>
             <input
               className="profile-input body-large"
               placeholder="Nombre visible"

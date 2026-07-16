@@ -68,12 +68,10 @@
 .poll-option {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 12px 14px;
+  padding: 12px 14px 8px;
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
-  cursor: pointer;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -81,9 +79,42 @@
 .poll-option.mine {
   border-color: var(--md-sys-color-primary);
 }
-.poll-option:disabled {
+/* La zona de voto es un botón interno (así la ficha no vota por ti) */
+.poll-option__vote {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+.poll-option__vote:disabled {
   cursor: default;
   opacity: 0.9;
+}
+.poll-option__ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 6px 0 2px;
+  border: none;
+  border-top: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  width: 100%;
+  background: none;
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+.poll-option__ficha .material-symbols-rounded {
+  font-size: 16px;
 }
 .poll-option__row {
   display: flex;

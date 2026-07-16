@@ -45,6 +45,7 @@ export type Author = {
   birth_year: number | null
   nationality: string | null
   website: string | null
+  photo_url: string | null
   created_at: string
 }
 
