@@ -118,6 +118,27 @@ Se añade una batería de cabeceras a todas las respuestas:
 
 ---
 
+## Guardarraíles automáticos (para que siga seguro al escalar)
+
+La seguridad no es un commit, es un proceso. Se añade infraestructura que
+**bloquea regresiones** en cada push/PR:
+
+- **`.github/workflows/ci.yml`** — lint, typecheck, build y `npm audit`
+  (falla en vulnerabilidades *high/critical*). Verificado en verde:
+  0 vulnerabilidades, typecheck limpio.
+- **`.github/workflows/rls-tests.yml` + `supabase/tests/seguridad_rls.test.sql`**
+  — levanta un Supabase local en CI y ejecuta una suite **pgTAP** que fija los
+  invariantes de seguridad: RLS activo en las 13 tablas de usuario, `anon` SIN
+  `EXECUTE` en las 14 RPC privilegiadas (candado contra la regresión de H0),
+  `private_settings` ilegible y el spoiler gate presente. Si alguien reabre un
+  agujero, el merge se cae.
+- **`.github/dependabot.yml`** — parches de dependencias y de acciones
+  semanales.
+
+> Recomiendo marcar el job **CI** (y, tras validar su primer run, el de
+> **RLS tests**) como *required status checks* en GitHub → Settings → Branches,
+> para que ningún merge a `main` los salte.
+
 ## Acción requerida del titular
 
 1. **⚠️ URGENTE — ejecutar la migración `022`** en el SQL Editor de Supabase:

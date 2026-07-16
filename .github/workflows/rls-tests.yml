@@ -1,0 +1,35 @@
+name: RLS security tests
+
+# Levanta un Supabase local (Docker), aplica TODAS las migraciones + seed y
+# ejecuta la suite pgTAP de invariantes de seguridad (supabase/tests/*.sql).
+# Si alguien reabre un agujero (RLS off, execute a anon…), este job falla.
+#
+# Se ejecuta aparte del CI de calidad: es más lento (arranca el stack) y su
+# primer run valida la propia suite pgTAP.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  rls:
+    name: pgTAP · invariantes de RLS y privilegios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Arrancar Supabase local
+        run: supabase start
+
+      - name: Ejecutar tests de seguridad (pgTAP)
+        run: supabase test db

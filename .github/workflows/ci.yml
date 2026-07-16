@@ -1,0 +1,46 @@
+name: CI
+
+# Guardarraíl de calidad y seguridad en cada push/PR a main.
+# Bloquea el merge si el lint, el typecheck, el build o el audit fallan.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Build · Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (reproducible)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Build
+        run: npm run build
+        env:
+          # El build no necesita credenciales reales; la app arranca en
+          # "modo pendiente" si faltan. Se ponen placeholders para el bundle.
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Audit de dependencias (falla en high/critical)
+        run: npm audit --audit-level=high
