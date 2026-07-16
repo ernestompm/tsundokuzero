@@ -268,6 +268,43 @@
 }
 
 /* ===================== Feed ===================== */
+/* Chips de filtro: Todo · Mi club · Leyendo ahora · Ya leídos */
+.feed-filter {
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.feed-filter::-webkit-scrollbar {
+  display: none;
+}
+.feed-filter__chip {
+  flex: none;
+  padding: 8px 15px;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color var(--md-sys-motion-duration-short)
+      var(--md-sys-motion-easing-standard),
+    transform 120ms var(--md-sys-motion-easing-standard);
+}
+.feed-filter__chip:active {
+  transform: scale(0.95);
+}
+.feed-filter__chip.active {
+  background: var(--md-sys-color-primary);
+  border-color: transparent;
+  color: var(--md-sys-color-on-primary);
+  font-weight: 600;
+}
+
 .feed-list {
   display: flex;
   flex-direction: column;
@@ -589,7 +626,10 @@
     margin-bottom: 20px;
   }
   .reading-strip {
-    display: none;
+    display: none; /* la 1ª lectura ya la enseña el hero */
+  }
+  .reading-strip--extra {
+    display: flex; /* lecturas personales adicionales, también en escritorio */
   }
   .conv-grid {
     grid-template-columns: repeat(3, 1fr);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
 import '@material/web/progress/circular-progress.js'
@@ -27,7 +27,14 @@ interface BookRow {
 export default function ExplorePage() {
   const { session } = useAuth()
   const navigate = useNavigate()
-  const [q, setQ] = useState('')
+  // ?q= viene del buscador de la navbar (escritorio)
+  const [searchParams] = useSearchParams()
+  const [q, setQ] = useState(searchParams.get('q') ?? '')
+
+  useEffect(() => {
+    const fromBar = searchParams.get('q')
+    if (fromBar != null) setQ(fromBar)
+  }, [searchParams])
   const [people, setPeople] = useState<PersonRow[] | null>(null)
   const [books, setBooks] = useState<BookRow[] | null>(null)
   const [following, setFollowing] = useState<Set<string>>(new Set())

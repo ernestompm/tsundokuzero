@@ -20,23 +20,20 @@ export default function FeedPage() {
     if (!session || !profile) return
     const myId = session.user.id
 
-    // ---- Lote 1: lectura, stats, seguidos, poll, descubre ----
+    // ---- Lote 1: lecturas, stats, seguidos, poll, descubre ----
     const [
-      { data: prog },
+      { data: progRows },
       { count: myIdeas },
       { count: myReplies },
-      { count: finished },
       { data: pollOptions },
       { data: myFollows },
       { data: openPoll },
     ] = await Promise.all([
       supabase
         .from('reading_progress')
-        .select('book_id, current_chapter, updated_at')
+        .select('book_id, current_chapter, status, updated_at')
         .eq('user_id', myId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .order('updated_at', { ascending: false }),
       supabase
         .from('discussions')
         .select('*', { count: 'exact', head: true })
@@ -45,11 +42,6 @@ export default function FeedPage() {
         .from('discussion_comments')
         .select('*', { count: 'exact', head: true })
         .eq('author_id', myId),
-      supabase
-        .from('reading_progress')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', myId)
-        .eq('status', 'finished'),
       supabase.from('poll_options').select('id, book_title, book_author').limit(8),
       supabase.from('follows').select('followed_id').eq('follower_id', myId),
       supabase
@@ -59,6 +51,13 @@ export default function FeedPage() {
         .limit(1)
         .maybeSingle(),
     ])
+
+    // Estanterías: en curso (para tarjetas y filtro) y terminados (filtro)
+    const progressList = progRows ?? []
+    const readingRows = progressList.filter((p) => p.status === 'reading')
+    const finishedBookIds = progressList
+      .filter((p) => p.status === 'finished')
+      .map((p) => p.book_id)
 
     // Feed social = yo + gente a la que sigo, más todo lo del club.
     const authorSet = [myId, ...(myFollows ?? []).map((f) => f.followed_id)]
@@ -76,7 +75,7 @@ export default function FeedPage() {
           .limit(30),
         supabase
           .from('posts')
-          .select('id, author_id, title, body, club_id, created_at')
+          .select('id, author_id, title, body, book_id, club_id, created_at')
           .or(feedFilter)
           .order('created_at', { ascending: false })
           .limit(15),
@@ -132,34 +131,41 @@ export default function FeedPage() {
     for (const c of commentRows ?? [])
       countById.set(c.discussion_id, (countById.get(c.discussion_id) ?? 0) + 1)
 
-    // ---- Lectura actual ----
-    let reading: HomeReading | null = null
-    if (prog) {
-      const [{ data: book }, { data: ch }] = await Promise.all([
-        supabase.from('books').select('*').eq('id', prog.book_id).maybeSingle(),
-        prog.current_chapter > 0
-          ? supabase
-              .from('chapters')
-              .select('label')
-              .eq('book_id', prog.book_id)
-              .eq('number', prog.current_chapter)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-      ])
-      if (book) {
-        reading = {
-          bookId: book.id,
-          title: book.title,
-          author: book.author,
-          coverUrl: book.cover_url,
-          chapterNumber: prog.current_chapter,
-          chapterLabel: ch?.label ?? null,
-          totalChapters: book.total_chapters,
-          percent: Math.round(
-            (prog.current_chapter / book.total_chapters) * 100,
-          ),
-        }
-      }
+    // ---- Lecturas en curso (todas: la del club y las personales) ----
+    let readings: HomeReading[] = []
+    if (readingRows.length > 0) {
+      const ids = readingRows.map((p) => p.book_id)
+      const [{ data: readingBooks }, { data: readingChapters }] =
+        await Promise.all([
+          supabase.from('books').select('*').in('id', ids),
+          supabase
+            .from('chapters')
+            .select('book_id, number, label')
+            .in('book_id', ids),
+        ])
+      const bookById = new Map((readingBooks ?? []).map((b) => [b.id, b]))
+      const chLabel = new Map(
+        (readingChapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
+      )
+      readings = readingRows.flatMap((p) => {
+        const book = bookById.get(p.book_id)
+        if (!book) return []
+        return [
+          {
+            bookId: book.id,
+            title: book.title,
+            author: book.author,
+            coverUrl: book.cover_url,
+            chapterNumber: p.current_chapter,
+            chapterLabel:
+              chLabel.get(`${p.book_id}/${p.current_chapter}`) ?? null,
+            totalChapters: book.total_chapters,
+            percent: Math.round(
+              (p.current_chapter / book.total_chapters) * 100,
+            ),
+          },
+        ]
+      })
     }
 
     // ---- Mezclar feed + conversaciones por libro ----
@@ -299,6 +305,7 @@ export default function FeedPage() {
                   chapterLabel:
                     labelByKey.get(`${p.book_id}/${p.chapter_number}`) ?? null,
                   bookTitle: bookById.get(p.book_id)?.title ?? '',
+                  bookId: p.book_id,
                 },
                 replies: group.slice(0, 3).reverse().map(toFeedReply),
               } satisfies FeedItem,
@@ -317,6 +324,7 @@ export default function FeedPage() {
           kind: null,
           postTitle: p.title,
           body: p.body,
+          bookId: p.book_id,
           isClub: p.club_id != null,
           createdAt: timeAgo(p.created_at),
         } satisfies FeedItem,
@@ -357,11 +365,13 @@ export default function FeedPage() {
     setData({
       displayName: profile.display_name,
       myId,
-      reading,
+      readings,
+      readingBookIds: readingRows.map((p) => p.book_id),
+      finishedBookIds,
       stats: {
         ideas: myIdeas ?? 0,
         replies: myReplies ?? 0,
-        finished: finished ?? 0,
+        finished: finishedBookIds.length,
       },
       conversations: conversations.slice(0, 6),
       discover: (pollOptions ?? []).map((o) => ({

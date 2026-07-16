@@ -4,16 +4,30 @@ import type { HomeData } from './homeTypes'
 export const SAMPLE_HOME: HomeData = {
   displayName: 'Ernesto',
   myId: 'e',
-  reading: {
-    bookId: 'sample',
-    title: 'La Biblioteca de la Medianoche',
-    author: 'Matt Haig',
-    coverUrl: null,
-    chapterNumber: 18,
-    chapterLabel: 'El tablero de ajedrez',
-    totalChapters: 73,
-    percent: 25,
-  },
+  readings: [
+    {
+      bookId: 'sample',
+      title: 'La Biblioteca de la Medianoche',
+      author: 'Matt Haig',
+      coverUrl: null,
+      chapterNumber: 18,
+      chapterLabel: 'El tablero de ajedrez',
+      totalChapters: 73,
+      percent: 25,
+    },
+    {
+      bookId: 'stoner',
+      title: 'Stoner',
+      author: 'John Williams',
+      coverUrl: null,
+      chapterNumber: 5,
+      chapterLabel: null,
+      totalChapters: 17,
+      percent: 29,
+    },
+  ],
+  readingBookIds: ['sample', 'stoner'],
+  finishedBookIds: ['humanos'],
   stats: { ideas: 12, replies: 34, finished: 3 },
   openPoll: { id: 'poll', title: 'Libro de agosto' },
   conversations: [
@@ -90,6 +104,7 @@ export const SAMPLE_HOME: HomeData = {
         chapterNumber: 6,
         chapterLabel: 'Puertas',
         bookTitle: 'La Biblioteca de la Medianoche',
+        bookId: 'sample',
       },
       replies: [
         {
@@ -102,6 +117,26 @@ export const SAMPLE_HOME: HomeData = {
           createdAt: 'hace 3 h',
         },
       ],
+    },
+    // Una IDEA sobre una lectura personal (fuera del club)
+    {
+      id: '2',
+      type: 'idea',
+      authorName: 'Ernesto Pérez',
+      authorUsername: 'ernesto',
+      authorId: 'e',
+      bookId: 'stoner',
+      bookTitle: 'Stoner',
+      chapterNumber: 5,
+      chapterLabel: null,
+      kind: 'comment',
+      body: 'Nadie me avisó de que este libro «tranquilo» iba a dolerme tanto. La escena de la biblioteca con Edith es demoledora.',
+      isClub: false,
+      createdAt: 'hace 2 h',
+      commentCount: 0,
+      reactions: { '❤️': 1 },
+      myReaction: null,
+      replies: [],
     },
     // Una entrada de MURO
     {

@@ -69,6 +69,48 @@
   gap: 2px;
 }
 
+/* Buscador y avatar: solo en escritorio (en móvil, icono + menú) */
+.top-bar__search {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 440px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
+  transition: border-color var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
+}
+.top-bar__search:focus-within {
+  border-color: var(--md-sys-color-primary);
+}
+.top-bar__search .material-symbols-rounded {
+  font-size: 20px;
+}
+.top-bar__searchinput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+}
+.top-bar__searchinput::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.top-bar__avatar {
+  display: none;
+  border: none;
+  background: none;
+  padding: 4px;
+  cursor: pointer;
+}
+
 /* ===================== Drawer (móvil) ===================== */
 .drawer-scrim {
   position: fixed;
@@ -330,12 +372,30 @@
     flex: 1;
     min-width: 0;
   }
+  /* Navbar de escritorio: buscador + avisos + perfil (sticky, translúcida) */
   .top-bar {
-    display: none;
+    display: flex;
+    height: 64px;
+    padding: 0 28px;
+    gap: 16px;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
+  }
+  .top-bar__brand {
+    display: none; /* el logo ya vive en la barra lateral */
+  }
+  .top-bar__search {
+    display: flex;
+  }
+  .top-bar__searchbtn {
+    display: none; /* en escritorio el buscador es el campo completo */
+  }
+  .top-bar__avatar {
+    display: inline-flex;
   }
   .content {
     max-width: 800px;
-    padding: 32px 28px 48px;
+    padding: 28px 28px 48px;
   }
 }
 

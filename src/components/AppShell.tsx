@@ -55,6 +55,7 @@ export default function AppShell() {
   const [dark, setDark] = useState(isDarkActive)
   const [unread, setUnread] = useState(0)
   const [drawer, setDrawer] = useState(false)
+  const [topQuery, setTopQuery] = useState('')
 
   // Cierra el drawer al cambiar de ruta
   useEffect(() => {
@@ -271,12 +272,50 @@ export default function AppShell() {
             </md-icon-button>
             <Logo />
           </span>
-          {/* Solo lo esencial: buscar y avisos (tema y perfil viven en el menú) */}
+
+          {/* Buscador (solo escritorio; en móvil queda el icono) */}
+          <form
+            className="top-bar__search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const q = topQuery.trim()
+              navigate(q ? `/explore?q=${encodeURIComponent(q)}` : '/explore')
+            }}
+          >
+            <span className="material-symbols-rounded" aria-hidden>
+              search
+            </span>
+            <input
+              className="top-bar__searchinput body-medium"
+              type="search"
+              placeholder="Buscar libros o lectores…"
+              aria-label="Buscar libros o lectores"
+              value={topQuery}
+              onChange={(e) => setTopQuery(e.target.value)}
+            />
+          </form>
+
           <span className="top-bar__actions">
-            <md-icon-button aria-label="Buscar" onClick={() => navigate('/explore')}>
+            <md-icon-button
+              class="top-bar__searchbtn"
+              aria-label="Buscar"
+              onClick={() => navigate('/explore')}
+            >
               <span className="material-symbols-rounded">search</span>
             </md-icon-button>
             {bell}
+            <button
+              className="top-bar__avatar"
+              onClick={() => navigate('/me')}
+              aria-label="Tu perfil"
+            >
+              <Avatar
+                name={profile?.display_name ?? 'Tú'}
+                url={profile?.avatar_url}
+                size={34}
+              />
+            </button>
           </span>
         </header>
 

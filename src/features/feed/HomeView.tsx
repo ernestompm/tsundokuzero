@@ -12,8 +12,28 @@ import { useCompose } from '../../components/ComposeProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
-import type { FeedItem, FeedReply, HomeData } from './homeTypes'
+import type {
+  FeedFilter,
+  FeedItem,
+  FeedReply,
+  HomeData,
+  HomeReading,
+} from './homeTypes'
 import './home.css'
+
+const FEED_FILTERS: { key: FeedFilter; label: string }[] = [
+  { key: 'all', label: 'Todo' },
+  { key: 'club', label: 'Mi club' },
+  { key: 'reading', label: 'Leyendo ahora' },
+  { key: 'finished', label: 'Ya leídos' },
+]
+
+const FILTER_EMPTY: Record<FeedFilter, string> = {
+  all: 'Aún no hay ideas en tu punto de lectura.',
+  club: 'Tu club todavía no ha publicado nada.',
+  reading: 'Nadie ha comentado aún los libros que estás leyendo.',
+  finished: 'No hay conversación sobre tus libros terminados.',
+}
 
 interface Props {
   data: HomeData
@@ -30,7 +50,22 @@ export default function HomeView({
 }: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
-  const { reading, stats, conversations, discover, feed } = data
+  const { readings, stats, conversations, discover, feed } = data
+  const reading = readings[0] ?? null
+
+  // Filtro del feed (en cliente: el feed ya viene cargado y gateado)
+  const [filter, setFilter] = useState<FeedFilter>('all')
+  const readingSet = new Set(data.readingBookIds)
+  const finishedSet = new Set(data.finishedBookIds)
+  const visibleFeed = feed.filter((item) => {
+    if (filter === 'all') return true
+    if (filter === 'club') return item.isClub
+    const bookId = item.bookId ?? item.parent?.bookId ?? null
+    if (bookId == null) return false
+    return filter === 'reading'
+      ? readingSet.has(bookId)
+      : finishedSet.has(bookId)
+  })
 
   return (
     <div className="home">
@@ -103,48 +138,27 @@ export default function HomeView({
         </div>
       </div>
 
-      {/* ===== Tarjeta de lectura (móvil) ===== */}
-      <button
-        className="reading-strip"
-        onClick={() => navigate(reading ? `/book/${reading.bookId}` : '/book')}
-      >
-        {reading ? (
-          <>
-            <BookCover
-              title={reading.title}
-              author={reading.author}
-              coverUrl={reading.coverUrl}
-              size="md"
-            />
-            <div className="reading-strip__info">
-              <span className="label-small reading-strip__kicker">
-                Sigues leyendo
-              </span>
-              <span className="title-medium serif reading-strip__title">
-                {reading.title}
-              </span>
-              <span className="body-small on-surface-variant reading-strip__where">
-                {reading.chapterNumber > 0
-                  ? `Cap. ${reading.chapterNumber}${reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}`
-                  : 'Aún no has empezado'}
-              </span>
-              <span className="reading-strip__progress">
-                <ProgressBar percent={reading.percent} />
-                <span className="label-small on-surface-variant reading-strip__pct">
-                  {reading.percent}%
-                </span>
-              </span>
-            </div>
-          </>
-        ) : (
+      {/* ===== Tarjetas de lectura (móvil): el club y tus lecturas ===== */}
+      {readings.length > 0 ? (
+        readings.map((r, i) => (
+          <ReadingStrip
+            key={r.bookId}
+            reading={r}
+            extra={i > 0}
+            kicker={i === 0 ? 'Sigues leyendo' : 'También estás leyendo'}
+            onOpen={() => navigate(`/book/${r.bookId}`)}
+          />
+        ))
+      ) : (
+        <button className="reading-strip" onClick={() => navigate('/book')}>
           <span className="reading-strip__info title-small">
             Empieza el libro del club
           </span>
-        )}
-        <span className="material-symbols-rounded reading-strip__chev">
-          chevron_right
-        </span>
-      </button>
+          <span className="material-symbols-rounded reading-strip__chev">
+            chevron_right
+          </span>
+        </button>
+      )}
 
       {/* ===== Votación abierta ===== */}
       {data.openPoll && (
@@ -211,10 +225,23 @@ export default function HomeView({
 
       {/* ===== Últimas ideas (el feed) ===== */}
       <SectionHeader title="Últimas ideas" />
-      {feed.length === 0 ? (
+      <div className="feed-filter" role="tablist" aria-label="Filtrar el feed">
+        {FEED_FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={filter === key}
+            className={`feed-filter__chip label-large${filter === key ? ' active' : ''}`}
+            onClick={() => setFilter(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {visibleFeed.length === 0 ? (
         <div className="feed-empty">
           <span className="material-symbols-rounded feed-empty__icon">forum</span>
-          <p className="body-large">Aún no hay ideas en tu punto de lectura.</p>
+          <p className="body-large">{FILTER_EMPTY[filter]}</p>
           <p className="body-medium on-surface-variant">
             Sé el primero: comparte una teoría o una pregunta sobre lo que llevas
             leído.
@@ -222,7 +249,7 @@ export default function HomeView({
         </div>
       ) : (
         <div className="feed-list">
-          {feed.map((item) => (
+          {visibleFeed.map((item) => (
             <FeedCard
               key={item.id}
               item={item}
@@ -252,6 +279,54 @@ export default function HomeView({
   )
 }
 
+
+/** Tarjeta de una lectura en curso (móvil). */
+function ReadingStrip({
+  reading,
+  kicker,
+  extra = false,
+  onOpen,
+}: {
+  reading: HomeReading
+  kicker: string
+  /** lecturas 2ª en adelante: visibles también en escritorio (el hero ya enseña la 1ª) */
+  extra?: boolean
+  onOpen: () => void
+}) {
+  return (
+    <button
+      className={`reading-strip${extra ? ' reading-strip--extra' : ''}`}
+      onClick={onOpen}
+    >
+      <BookCover
+        title={reading.title}
+        author={reading.author}
+        coverUrl={reading.coverUrl}
+        size="md"
+      />
+      <div className="reading-strip__info">
+        <span className="label-small reading-strip__kicker">{kicker}</span>
+        <span className="title-medium serif reading-strip__title">
+          {reading.title}
+        </span>
+        <span className="body-small on-surface-variant reading-strip__where">
+          {reading.chapterNumber > 0
+            ? `Cap. ${reading.chapterNumber}${reading.chapterLabel ? ` · ${reading.chapterLabel}` : ''}`
+            : 'Aún no has empezado'}
+        </span>
+        <span className="reading-strip__progress">
+          <ProgressBar percent={reading.percent} />
+          <span className="label-small on-surface-variant reading-strip__pct">
+            {reading.percent}%
+          </span>
+        </span>
+      </div>
+      <span className="material-symbols-rounded reading-strip__chev">
+        chevron_right
+      </span>
+    </button>
+  )
+}
 
 /** «miércoles, 16 de julio» — el uppercase lo pone el CSS */
 function todayLabel() {

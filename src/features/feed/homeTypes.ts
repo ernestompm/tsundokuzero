@@ -10,6 +10,7 @@ export interface FeedParent {
   chapterNumber: number
   chapterLabel: string | null
   bookTitle: string
+  bookId?: string
 }
 
 /** Respuesta mostrada colgando de su publicación (o de la cita). */
@@ -91,10 +92,17 @@ export interface HomeDiscover {
   author: string
 }
 
+/** Filtro del feed: todo · mi club · mis lecturas actuales · ya leídos */
+export type FeedFilter = 'all' | 'club' | 'reading' | 'finished'
+
 export interface HomeData {
   displayName: string
   myId?: string
-  reading: HomeReading | null
+  /** TODAS las lecturas en curso (la primera es la más reciente) */
+  readings: HomeReading[]
+  /** ids de libro para los filtros del feed */
+  readingBookIds: string[]
+  finishedBookIds: string[]
   stats: HomeStats
   conversations: BookConvo[]
   discover: HomeDiscover[]
