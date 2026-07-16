@@ -226,6 +226,25 @@ export default function FeedPage() {
       for (const d of discList) parentSourceById.set(d.id, d)
       for (const d of parentList) parentSourceById.set(d.id, d)
 
+      // Respuestas agrupadas por hilo padre: una tarjeta por HILO, jamás
+      // el mismo mensaje citado N veces (eso parecía "duplicado").
+      const repliesByParent = new Map<string, typeof replyList>()
+      for (const r of replyList) {
+        const arr = repliesByParent.get(r.discussion_id) ?? []
+        arr.push(r)
+        repliesByParent.set(r.discussion_id, arr)
+      }
+      const inFeed = new Set(discIds)
+      const toFeedReply = (r: (typeof replyList)[number]) => ({
+        id: r.id,
+        authorId: r.author_id,
+        authorName: nameById.get(r.author_id) ?? '·',
+        authorUsername: usernameById.get(r.author_id),
+        body: r.unlocked ? r.body : null,
+        unlockChapter: r.author_chapter,
+        createdAt: timeAgo(r.created_at),
+      })
+
       const ideaItems = discList.map((d) => ({
         ts: d.created_at,
         item: {
@@ -245,40 +264,48 @@ export default function FeedPage() {
           commentCount: countById.get(d.id) ?? 0,
           reactions: reactByDisc.get(d.id) ?? {},
           myReaction: myReactByDisc.get(d.id) ?? null,
+          // si la idea está en el feed, sus respuestas cuelgan de ELLA
+          replies: (repliesByParent.get(d.id) ?? [])
+            .slice(0, 3)
+            .reverse()
+            .map(toFeedReply),
         } satisfies FeedItem,
       }))
 
-      // Cada respuesta = su propia tarjeta, con el mensaje padre citado encima.
-      const replyItems = replyList.flatMap((r) => {
-        const p = parentSourceById.get(r.discussion_id)
-        if (!p) return []
-        return [
-          {
-            ts: r.created_at,
-            item: {
-              id: r.id,
-              type: 'reply',
-              authorId: r.author_id,
-              authorName: nameById.get(r.author_id) ?? '·',
-              authorUsername: usernameById.get(r.author_id),
-              body: r.unlocked ? r.body : null,
-              chapterNumber: r.author_chapter,
-              isClub: false,
-              createdAt: timeAgo(r.created_at),
-              parent: {
-                discussionId: p.id,
-                authorName: nameById.get(p.author_id) ?? '·',
-                authorUsername: usernameById.get(p.author_id),
-                body: p.unlocked ? p.body : null,
-                chapterNumber: p.chapter_number,
-                chapterLabel:
-                  labelByKey.get(`${p.book_id}/${p.chapter_number}`) ?? null,
-                bookTitle: bookById.get(p.book_id)?.title ?? '',
-              },
-            } satisfies FeedItem,
-          },
-        ]
-      })
+      // Solo hilos cuyo padre NO está a la vista: cita + sus respuestas.
+      const replyItems = [...repliesByParent.entries()]
+        .filter(([parentId]) => !inFeed.has(parentId))
+        .flatMap(([parentId, group]) => {
+          const p = parentSourceById.get(parentId)
+          if (!p) return []
+          const latest = group[0]
+          return [
+            {
+              ts: latest.created_at,
+              item: {
+                id: `thread-${parentId}`,
+                type: 'reply',
+                authorId: latest.author_id,
+                authorName: nameById.get(latest.author_id) ?? '·',
+                authorUsername: usernameById.get(latest.author_id),
+                body: null,
+                isClub: false,
+                createdAt: timeAgo(latest.created_at),
+                parent: {
+                  discussionId: p.id,
+                  authorName: nameById.get(p.author_id) ?? '·',
+                  authorUsername: usernameById.get(p.author_id),
+                  body: p.unlocked ? p.body : null,
+                  chapterNumber: p.chapter_number,
+                  chapterLabel:
+                    labelByKey.get(`${p.book_id}/${p.chapter_number}`) ?? null,
+                  bookTitle: bookById.get(p.book_id)?.title ?? '',
+                },
+                replies: group.slice(0, 3).reverse().map(toFeedReply),
+              } satisfies FeedItem,
+            },
+          ]
+        })
 
       const postItems = postList.map((p) => ({
         ts: p.created_at,

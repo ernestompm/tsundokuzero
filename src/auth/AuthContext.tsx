@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -24,42 +25,74 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null)
 
-async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data } = await supabase
+/**
+ * 'error' = fallo de red/servidor (NO significa que el perfil no exista).
+ * Distinguirlo evita expulsar a onboarding a usuarios ya registrados
+ * cuando una petición falla un instante (típico en móvil).
+ */
+async function fetchProfile(
+  userId: string,
+): Promise<Profile | null | 'error'> {
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .maybeSingle()
-  return data
+  return error ? 'error' : data
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const profileRef = useRef<Profile | null>(null)
+
+  const applyProfile = (p: Profile | null) => {
+    profileRef.current = p
+    setProfile(p)
+  }
 
   useEffect(() => {
     let cancelled = false
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const loadInitial = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (cancelled) return
       setSession(session)
-      if (session) setProfile(await fetchProfile(session.user.id))
-      setLoading(false)
-    })
+      if (session) {
+        let p = await fetchProfile(session.user.id)
+        if (p === 'error') {
+          // Reintento breve: un fallo transitorio no debe parecer "sin perfil"
+          await new Promise((r) => setTimeout(r, 800))
+          p = await fetchProfile(session.user.id)
+        }
+        if (!cancelled && p !== 'error') applyProfile(p)
+      }
+      if (!cancelled) setLoading(false)
+    }
+    void loadInitial()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession)
       if (!newSession) {
-        setProfile(null)
-      } else {
-        // fuera del callback: el SDK no permite awaits dentro
-        void fetchProfile(newSession.user.id).then((p) => {
-          if (!cancelled) setProfile(p)
-        })
+        applyProfile(null)
+        return
       }
+      // En refrescos de token del mismo usuario no hace falta re-consultar
+      if (
+        profileRef.current &&
+        profileRef.current.id === newSession.user.id
+      )
+        return
+      // fuera del callback: el SDK no permite awaits dentro
+      void fetchProfile(newSession.user.id).then((p) => {
+        // En error conservamos lo que hubiera: jamás degradar a "sin perfil"
+        if (!cancelled && p !== 'error') applyProfile(p)
+      })
     })
 
     return () => {
@@ -69,15 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshProfile = useCallback(async () => {
-    if (session) setProfile(await fetchProfile(session.user.id))
+    if (!session) return
+    const p = await fetchProfile(session.user.id)
+    if (p !== 'error') applyProfile(p)
   }, [session])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
 
-  const isSuperAdmin =
-    session?.user.app_metadata?.is_super_admin === true
+  const isSuperAdmin = session?.user.app_metadata?.is_super_admin === true
 
   return (
     <AuthContext.Provider

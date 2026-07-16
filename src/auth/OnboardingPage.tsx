@@ -20,6 +20,12 @@ export default function OnboardingPage() {
   const navigate = useNavigate()
 
   const [step, setStep] = useState<1 | 2>(profile ? 2 : 1)
+
+  // Si el perfil llega tarde (carga lenta en móvil), salta solo al paso 2:
+  // nunca pedir crear una identidad que ya existe.
+  useEffect(() => {
+    if (profile && step === 1) setStep(2)
+  }, [profile, step])
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [club, setClub] = useState<Club | null>(null)
@@ -96,6 +102,13 @@ export default function OnboardingPage() {
         display_name: displayName.trim() || clean,
       })
       if (error) {
+        if (error.code === '23505' && error.message.includes('profiles_pkey')) {
+          // Ya tenía perfil (pantalla mostrada por un fallo transitorio):
+          // recuperar y continuar sin molestar.
+          await refreshProfile()
+          setStep(2)
+          return
+        }
         setError(
           error.code === '23505'
             ? 'Ese nombre de usuario ya está cogido.'

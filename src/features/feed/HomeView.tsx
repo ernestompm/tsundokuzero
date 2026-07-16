@@ -12,7 +12,7 @@ import { useCompose } from '../../components/ComposeProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
-import type { FeedItem, HomeData } from './homeTypes'
+import type { FeedItem, FeedReply, HomeData } from './homeTypes'
 import './home.css'
 
 interface Props {
@@ -254,6 +254,34 @@ function StatRow({
   )
 }
 
+function FeedReplyRow({
+  reply,
+  onOpen,
+}: {
+  reply: FeedReply
+  onOpen: () => void
+}) {
+  return (
+    <div className="feed-reply">
+      <Avatar name={reply.authorName} size={26} />
+      <div className="feed-reply__content">
+        {reply.body == null ? (
+          <span className="feed-reply__locked body-small">
+            <span className="material-symbols-rounded">lock</span>
+            Desbloquearás esta respuesta al llegar al capítulo{' '}
+            {reply.unlockChapter}
+          </span>
+        ) : (
+          <p className="body-small feed-reply__body" onClick={onOpen}>
+            <span className="feed-reply__who">{reply.authorName}</span>{' '}
+            {reply.body}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function FeedCard({
   item,
   mine,
@@ -343,44 +371,44 @@ function FeedCard({
         </button>
       )}
 
-      <header className="feed-card__head">
-        {item.authorUsername ? (
-          <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
-            <Avatar name={item.authorName} size={40} />
-            {meta}
-          </Link>
-        ) : (
-          <div className="feed-card__author">
-            <Avatar name={item.authorName} size={40} />
-            {meta}
-          </div>
-        )}
-        <span className="feed-card__chips">
-          <span className="chip chip--kind label-small">{kindChip}</span>
-          {item.isClub && <span className="chip chip--club label-small">Club</span>}
-        </span>
-      </header>
-
-      {!unlocked ? (
-        <div style={{ margin: '12px 0 4px' }}>
-          <LockedTeaser
-            label={
-              isReply
-                ? `Desbloquearás esta respuesta al llegar al capítulo ${item.chapterNumber}`
-                : `Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`
-            }
-          />
-        </div>
-      ) : (
-        <div className="feed-card__body body-large" onClick={go}>
-          {item.postTitle && (
-            <div className="title-medium serif" style={{ marginBottom: 4 }}>
-              {item.postTitle}
+      {/* Cabecera: ideas y posts (las tarjetas de hilo hablan por la cita) */}
+      {!isReply && (
+        <header className="feed-card__head">
+          {item.authorUsername ? (
+            <Link to={`/u/${item.authorUsername}`} className="feed-card__author">
+              <Avatar name={item.authorName} size={40} />
+              {meta}
+            </Link>
+          ) : (
+            <div className="feed-card__author">
+              <Avatar name={item.authorName} size={40} />
+              {meta}
             </div>
           )}
-          {item.body}
-        </div>
+          <span className="feed-card__chips">
+            <span className="chip chip--kind label-small">{kindChip}</span>
+            {item.isClub && <span className="chip chip--club label-small">Club</span>}
+          </span>
+        </header>
       )}
+
+      {!isReply &&
+        (!unlocked ? (
+          <div style={{ margin: '12px 0 4px' }}>
+            <LockedTeaser
+              label={`Desbloquearás esta idea al llegar al capítulo ${item.chapterNumber}`}
+            />
+          </div>
+        ) : (
+          <div className="feed-card__body body-large" onClick={go}>
+            {item.postTitle && (
+              <div className="title-medium serif" style={{ marginBottom: 4 }}>
+                {item.postTitle}
+              </div>
+            )}
+            {item.body}
+          </div>
+        ))}
 
       {/* Reacciones (solo ideas desbloqueadas) */}
       {isIdea && unlocked && onReact && (
@@ -390,6 +418,20 @@ function FeedCard({
             mine={item.myReaction ?? null}
             onReact={(emoji) => onReact(item.id, emoji)}
           />
+        </div>
+      )}
+
+      {/* Respuestas colgando de la publicación (una sola vez, sin repetir) */}
+      {(item.replies?.length ?? 0) > 0 && (
+        <div className="feed-thread">
+          {item.replies!.map((r) => (
+            <FeedReplyRow key={r.id} reply={r} onOpen={go} />
+          ))}
+          {isIdea && (item.commentCount ?? 0) > item.replies!.length && (
+            <button className="feed-thread__more label-medium" onClick={go}>
+              Ver las {item.commentCount} respuestas
+            </button>
+          )}
         </div>
       )}
 
@@ -415,7 +457,7 @@ function FeedCard({
       )}
 
       <footer className="feed-card__foot">
-        {(isIdea || isReply) && unlocked && onReply && (
+        {(isIdea ? unlocked : isReply) && onReply && (
           <button className="feed-action" onClick={() => setReplying((v) => !v)}>
             <span className="material-symbols-rounded">chat_bubble</span>
             {isIdea && (item.commentCount ?? 0) > 0

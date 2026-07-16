@@ -30,12 +30,30 @@
 
 * {
   box-sizing: border-box;
+  /* iOS: sin flash gris al tocar (lo sustituyen los ripples/estados) */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
+}
+
+html {
+  /* que el rebote elástico de iOS enseñe papel, no blanco/negro */
+  background: var(--md-sys-color-background);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iOS Safari hace zoom al enfocar inputs con letra < 16px: en móvil,
+   todos los campos a 16px para una escritura nativa sin saltos. */
+@media (max-width: 1039px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 body {

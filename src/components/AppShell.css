@@ -186,8 +186,16 @@
   align-items: stretch;
   height: calc(76px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background: var(--md-sys-color-surface-container);
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  /* translúcida con blur, como las tab bars de iOS */
+  background: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container) 80%,
+    transparent
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border-top: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
 }
 .nav-item {
   flex: 1;
@@ -221,6 +229,21 @@
 }
 .nav-icon-pill .material-symbols-rounded {
   font-size: 24px;
+}
+
+/* feedback táctil sutil, estilo iOS */
+.nav-item:active .nav-icon-pill {
+  transform: scale(0.92);
+}
+.fab:active {
+  transform: scale(0.94);
+}
+.nav-icon-pill,
+.fab {
+  transition:
+    transform 120ms var(--md-sys-motion-easing-standard),
+    background-color var(--md-sys-motion-duration-short)
+      var(--md-sys-motion-easing-standard);
 }
 
 /* FAB central */

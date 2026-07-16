@@ -12,6 +12,18 @@ export interface FeedParent {
   bookTitle: string
 }
 
+/** Respuesta mostrada colgando de su publicación (o de la cita). */
+export interface FeedReply {
+  id: string
+  authorId: string
+  authorName: string
+  authorUsername?: string
+  /** null = bloqueada (su autor iba por delante de ti) */
+  body: string | null
+  unlockChapter?: number
+  createdAt: string
+}
+
 export interface FeedItem {
   id: string
   /** idea = publicación anclada · reply = respuesta (con padre citado) · post = muro */
@@ -34,8 +46,11 @@ export interface FeedItem {
   reactions?: Record<string, number>
   myReaction?: string | null
 
-  // --- reply ---
+  // --- reply (una tarjeta por HILO, no por respuesta) ---
   parent?: FeedParent
+
+  /** respuestas colgando (ideas del feed y tarjetas de hilo) */
+  replies?: FeedReply[]
 
   // --- post ---
   postTitle?: string | null
