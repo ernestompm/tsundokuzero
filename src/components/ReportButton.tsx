@@ -5,6 +5,7 @@ import '@material/web/button/text-button.js'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { friendlyError } from '../lib/errors'
+import { Chip } from './ui'
 import { useModalBehavior } from './modal'
 import type { ReportReason, ReportTargetType } from '../lib/database.types'
 import './ReportButton.css'
@@ -118,21 +119,19 @@ export default function ReportButton({
                 {error && <p className="report-dialog__error body-small">{error}</p>}
                 <div className="report-dialog__reasons">
                   {REASONS.map(([key, label]) => (
-                    <button
+                    <Chip
                       key={key}
-                      type="button"
-                      className={`report-reason label-medium${reason === key ? ' active' : ''}`}
+                      className="report-reason"
+                      active={reason === key}
+                      icon={reason === key ? 'check_circle' : 'radio_button_unchecked'}
                       onClick={() => setReason(key)}
                     >
-                      <span className="material-symbols-rounded" aria-hidden="true">
-                        {reason === key ? 'check_circle' : 'radio_button_unchecked'}
-                      </span>
                       {label}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
                 <textarea
-                  className="report-dialog__details body-medium"
+                  className="tz-input report-dialog__details body-medium"
                   rows={2}
                   maxLength={2000}
                   placeholder="Detalles (opcional)"

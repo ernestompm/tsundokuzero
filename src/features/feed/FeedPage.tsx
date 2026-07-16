@@ -8,6 +8,7 @@ import { timeAgo } from '../../lib/time'
 import HomeView, { HomeSkeleton } from './HomeView'
 import type {
   BookConvo,
+  FeedFilter,
   FeedItem,
   HomeData,
   HomeReading,
@@ -17,6 +18,8 @@ export default function FeedPage() {
   const { session, profile } = useAuth()
   const { version } = useCompose()
   const [data, setData] = useState<HomeData | null>(null)
+  // auditoría B-04: el filtro del feed vive aquí para aplicarlo en la query
+  const [filter, setFilter] = useState<FeedFilter>('all')
   // auditoría A-01: error de la última acción (reaccionar/responder/eliminar)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -70,47 +73,91 @@ export default function FeedPage() {
     const authorsCsv = authorSet.join(',')
     const feedFilter = `author_id.in.(${authorsCsv}),club_id.not.is.null`
 
+    // auditoría B-04: el filtro del feed se aplica en la propia query (antes
+    // se filtraba en cliente sobre lo ya cargado y podía verse «vacío» aunque
+    // hubiera contenido más antiguo). Misma semántica que el filtro cliente:
+    // · club → publicaciones con club (isClub)
+    // · reading / finished → libros del usuario en ese estado
+    const filterBookIds =
+      filter === 'reading'
+        ? readingRows.map((p) => p.book_id)
+        : filter === 'finished'
+          ? finishedBookIds
+          : null
+
+    const discussionCols =
+      'id, author_id, book_id, chapter_number, kind, body, club_id, created_at, unlocked'
+    let discQuery = supabase
+      .from('feed_discussions')
+      .select(discussionCols)
+      .or(feedFilter)
+    if (filter === 'club') discQuery = discQuery.not('club_id', 'is', null)
+    if (filterBookIds) discQuery = discQuery.in('book_id', filterBookIds)
+
+    let postQuery = supabase
+      .from('posts')
+      .select('id, author_id, title, body, book_id, club_id, created_at')
+      .or(feedFilter)
+    if (filter === 'club') postQuery = postQuery.not('club_id', 'is', null)
+    if (filterBookIds) postQuery = postQuery.in('book_id', filterBookIds)
+
     // ---- Lote 2: ideas + posts + respuestas (mías y de mis seguidos) ----
-    const [{ data: discussions }, { data: posts }, { data: myReplyRows }] =
-      await Promise.all([
-        supabase
-          .from('feed_discussions')
-          .select('id, author_id, book_id, chapter_number, kind, body, club_id, created_at, unlocked')
-          .or(feedFilter)
-          .order('created_at', { ascending: false })
-          .limit(30),
-        supabase
-          .from('posts')
-          .select('id, author_id, title, body, book_id, club_id, created_at')
-          .or(feedFilter)
-          .order('created_at', { ascending: false })
-          .limit(15),
-        supabase
-          .from('thread_comments')
-          .select('id, discussion_id, author_id, body, created_at, unlocked, author_chapter')
-          .in('author_id', authorSet)
-          .order('created_at', { ascending: false })
-          .limit(20),
-      ])
+    const [
+      { data: discussions },
+      { data: convoRows },
+      { data: posts },
+      { data: myReplyRows },
+    ] = await Promise.all([
+      discQuery.order('created_at', { ascending: false }).limit(30),
+      // Conversaciones activas: siempre sobre lo más reciente, sin filtro
+      filter === 'all'
+        ? Promise.resolve({ data: null })
+        : supabase
+            .from('feed_discussions')
+            .select(discussionCols)
+            .or(feedFilter)
+            .order('created_at', { ascending: false })
+            .limit(30),
+      postQuery.order('created_at', { ascending: false }).limit(15),
+      supabase
+        .from('thread_comments')
+        .select('id, discussion_id, author_id, body, created_at, unlocked, author_chapter')
+        .in('author_id', authorSet)
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ])
 
     // Bloqueos (P2-13): el contenido de quien has bloqueado no se muestra
     const discList0 = (discussions ?? []).filter((d) => !blocked.has(d.author_id))
     const replyList = (myReplyRows ?? []).filter((r) => !blocked.has(r.author_id))
+    const convoList = (convoRows ?? discussions ?? []).filter(
+      (d) => !blocked.has(d.author_id),
+    )
     const discIds = discList0.map((d) => d.id)
 
-    // Padres de esas respuestas que aún no están entre las ideas del feed
-    const parentIds = [...new Set(replyList.map((r) => r.discussion_id))].filter(
-      (id) => !discIds.includes(id),
-    )
+    // Padres de esas respuestas que aún no están entre las ideas del feed.
+    // Bajo «Mi club» las tarjetas de hilo no entran (nunca cuentan como club),
+    // así que sus padres ni se cargan.
+    const parentIds =
+      filter === 'club'
+        ? []
+        : [...new Set(replyList.map((r) => r.discussion_id))].filter(
+            (id) => !discIds.includes(id),
+          )
+
+    // Con filtro de libros, los hilos citados también lo respetan
+    let parentQuery = parentIds.length
+      ? supabase
+          .from('feed_discussions')
+          .select('id, author_id, book_id, chapter_number, body, club_id, created_at, unlocked')
+          .in('id', parentIds)
+      : null
+    if (parentQuery && filterBookIds)
+      parentQuery = parentQuery.in('book_id', filterBookIds)
 
     const [{ data: parentDiscs }, { data: reactionRows }, { data: commentRows }] =
       await Promise.all([
-        parentIds.length
-          ? supabase
-              .from('feed_discussions')
-              .select('id, author_id, book_id, chapter_number, body, club_id, created_at, unlocked')
-              .in('id', parentIds)
-          : Promise.resolve({ data: [] }),
+        parentQuery ?? Promise.resolve({ data: [] }),
         discIds.length
           ? supabase
               .from('reactions')
@@ -188,12 +235,14 @@ export default function FeedPage() {
         ...postList.map((p) => p.author_id),
         ...replyList.map((r) => r.author_id),
         ...parentList.map((p) => p.author_id),
+        ...convoList.map((d) => d.author_id),
       ]),
     ]
     const bookIds = [
       ...new Set([
         ...discList.map((d) => d.book_id),
         ...parentList.map((p) => p.book_id),
+        ...convoList.map((d) => d.book_id),
       ]),
     ]
 
@@ -348,9 +397,9 @@ export default function FeedPage() {
         .slice(0, 40)
         .map((x) => x.item)
 
-      // Conversaciones activas agrupadas por libro
-      const byBook = new Map<string, typeof discList>()
-      for (const d of discList) {
+      // Conversaciones activas agrupadas por libro (ajenas al filtro del feed)
+      const byBook = new Map<string, typeof convoList>()
+      for (const d of convoList) {
         const arr = byBook.get(d.book_id) ?? []
         arr.push(d)
         byBook.set(d.book_id, arr)
@@ -399,11 +448,19 @@ export default function FeedPage() {
       feed,
       openPoll: openPoll ?? null,
     })
-  }, [session, profile])
+  }, [session, profile, filter])
 
   useEffect(() => {
     void load()
   }, [load, version])
+
+  // auditoría B-04: cambiar de filtro recarga del servidor; mientras llega,
+  // vuelve el esqueleto (el mismo patrón de carga que al entrar a la pantalla)
+  const changeFilter = (next: FeedFilter) => {
+    if (next === filter) return
+    setData(null)
+    setFilter(next)
+  }
 
   // auditoría A-01: cada acción comprueba el error; si falla se avisa
   // con un banner y NO se recarga (así no desaparece nada de la pantalla)
@@ -470,6 +527,8 @@ export default function FeedPage() {
   return (
     <HomeView
       data={data}
+      filter={filter}
+      onFilterChange={changeFilter}
       actionError={actionError}
       onDeleteItem={deleteItem}
       onReact={react}

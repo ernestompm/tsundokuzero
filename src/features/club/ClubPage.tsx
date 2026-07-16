@@ -52,7 +52,9 @@ export default function ClubPage() {
   // Estado de carga explícito (auditoría C-03): sin él, «no hay club»
   // dejaba el spinner girando para siempre.
   const [loading, setLoading] = useState(true)
-  const [voteError, setVoteError] = useState<string | null>(null)
+  // Error de la última acción (votar, cerrar votación…): antes solo cubría
+  // el voto (voteError); se generaliza para no silenciar ningún fallo.
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session) return
@@ -193,7 +195,7 @@ export default function ClubPage() {
   const vote = async (optionId: string) => {
     if (!session || !pollState) return
     setBusy(true)
-    setVoteError(null)
+    setActionError(null)
     // Auditoría A-01: el voto puede fallar (red, RLS…) y hay que decirlo
     const { error } = await supabase.from('poll_votes').upsert(
       {
@@ -204,7 +206,7 @@ export default function ClubPage() {
       { onConflict: 'poll_id,user_id' },
     )
     if (error) {
-      setVoteError(
+      setActionError(
         friendlyError(error, 'No se pudo registrar tu voto. Inténtalo de nuevo.'),
       )
     } else {
@@ -226,10 +228,16 @@ export default function ClubPage() {
     )
       return
     setBusy(true)
-    await supabase
+    setActionError(null)
+    // Auditoría: cerrar la votación también puede fallar y hay que decirlo
+    const { error } = await supabase
       .from('polls')
       .update({ status: 'closed' })
       .eq('id', pollState.poll.id)
+    if (error)
+      setActionError(
+        friendlyError(error, 'No se pudo cerrar la votación. Inténtalo de nuevo.'),
+      )
     await load()
     setBusy(false)
   }
@@ -343,10 +351,10 @@ export default function ClubPage() {
             </p>
           )}
 
-          {/* Auditoría A-01: aviso inline si el voto no se pudo guardar */}
-          {voteError && (
+          {/* Auditoría A-01: aviso inline si la acción no se pudo completar */}
+          {actionError && (
             <p className="club-banner club-banner--error body-small" role="alert">
-              {voteError}
+              {actionError}
             </p>
           )}
 

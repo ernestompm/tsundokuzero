@@ -1,18 +1,14 @@
 .explore {
 }
 
+/* Base compartida en .tz-input (M-09): aquí solo dimensiones y el radio
+   de píldora propio del buscador. */
 .explore-search {
   width: 100%;
-  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-full);
   padding: 14px 20px;
-  background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;
-  /* auditoría: outline eliminado — rige la regla global :focus-visible */
-}
-.explore-search:focus {
-  border-color: var(--md-sys-color-primary);
 }
 
 .explore-books {
@@ -55,12 +51,12 @@
 .explore-people {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .person-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 10px 14px;
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
@@ -71,7 +67,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   color: inherit;
 }
 .person-row__names {

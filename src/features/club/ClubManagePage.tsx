@@ -116,18 +116,35 @@ export default function ClubManagePage() {
   }
 
   const saveInfo = async () => {
+    setBanner(null)
     setBusy(true)
-    await supabase
+    const { error } = await supabase
       .from('clubs')
       .update({ name: name.trim(), description: description.trim() || null })
       .eq('id', club.id)
+    // Auditoría A-04: guardar también puede fallar y hay que decirlo
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudieron guardar los datos del club. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
 
   const setBook = async (bookId: string) => {
+    setBanner(null)
     setBusy(true)
-    await supabase.from('clubs').update({ current_book_id: bookId }).eq('id', club.id)
+    const { error } = await supabase
+      .from('clubs')
+      .update({ current_book_id: bookId })
+      .eq('id', club.id)
+    // Auditoría A-04
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo cambiar el libro del mes. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
@@ -144,7 +161,16 @@ export default function ClubManagePage() {
       return
     setBanner(null)
     setBusy(true)
-    await supabase.rpc('transfer_captaincy', { club: club.id, new_captain: userId })
+    const { error } = await supabase.rpc('transfer_captaincy', {
+      club: club.id,
+      new_captain: userId,
+    })
+    // Auditoría A-04: si la RPC falla, el capitán seguía creyéndose relevado
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo transferir la capitanía. Inténtalo de nuevo.'),
+      })
     await load()
     setBusy(false)
   }
@@ -247,7 +273,7 @@ export default function ClubManagePage() {
       .select()
       .single()
     if (!error && poll) {
-      await supabase.from('poll_options').insert(
+      const { error: optsError } = await supabase.from('poll_options').insert(
         chosen.map((b) => ({
           poll_id: poll.id,
           book_id: b.id,
@@ -255,8 +281,19 @@ export default function ClubManagePage() {
           book_author: b.author,
         })),
       )
-      setPollTitle('')
-      setPollBookIds([])
+      // Auditoría A-04: sin esto quedaba una votación vacía y en silencio
+      if (optsError) {
+        setBanner({
+          kind: 'error',
+          text: friendlyError(
+            optsError,
+            'La votación se creó sin sus libros. Descártala y vuelve a intentarlo.',
+          ),
+        })
+      } else {
+        setPollTitle('')
+        setPollBookIds([])
+      }
     } else if (error) {
       // Auditoría A-04
       setBanner({
@@ -307,14 +344,14 @@ export default function ClubManagePage() {
         <h2 className="title-small manage-card__title">Datos del club</h2>
         {/* Auditoría A-08: inputs con etiqueta accesible */}
         <input
-          className="profile-input body-medium"
+          className="tz-input body-medium"
           placeholder="Nombre del club"
           aria-label="Nombre del club"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <textarea
-          className="profile-input body-medium"
+          className="tz-input manage-textarea body-medium"
           rows={2}
           placeholder="Descripción"
           aria-label="Descripción del club"
@@ -396,7 +433,7 @@ export default function ClubManagePage() {
           <>
             {/* Auditoría A-08: input con etiqueta accesible */}
             <input
-              className="profile-input body-medium"
+              className="tz-input body-medium"
               placeholder="Título — p. ej. «Libro de septiembre»"
               aria-label="Título de la votación"
               value={pollTitle}

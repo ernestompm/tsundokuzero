@@ -1,7 +1,7 @@
 /* Layout base = MÓVIL. El hero rico aparece en escritorio (>=1040px). */
 
 .home {
-  padding-top: 4px;
+  padding-top: var(--tz-space-1);
 }
 
 /* ===================== «Hoy» (cabecera grande, solo móvil) ===================== */
@@ -32,7 +32,7 @@
 .hero-card {
   position: relative;
   padding: 24px 28px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
   box-shadow: 0 1px 2px rgba(35, 35, 30, 0.04), 0 8px 24px rgba(35, 35, 30, 0.05);
@@ -44,7 +44,7 @@
 }
 .hero-card__body {
   display: flex;
-  gap: 24px;
+  gap: var(--tz-space-6);
   margin-top: 12px;
   align-items: flex-start;
 }
@@ -67,7 +67,7 @@
   max-width: 420px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   margin: 4px 0 8px;
 }
 .hero-card__cover {
@@ -76,7 +76,7 @@
 
 .stats-card {
   padding: 20px 22px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
 }
@@ -152,7 +152,7 @@
 .reading-strip__progress {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin-top: 5px;
 }
 .reading-strip__progress .progress {
@@ -179,7 +179,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 12px 14px;
   margin: 0 0 8px;
   border-radius: var(--md-sys-shape-corner-full);
@@ -220,13 +220,11 @@
   display: flex;
   gap: 14px;
   padding: 14px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-  box-shadow:
-    0 1px 2px rgba(35, 35, 30, 0.03),
-    0 6px 20px rgba(35, 35, 30, 0.05);
+  box-shadow: var(--tz-shadow-card);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -244,7 +242,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
 }
 .conv-card__title {
   overflow: hidden;
@@ -256,22 +254,24 @@
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: var(--tz-space-2);
 }
 .conv-card__count {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--tz-space-1);
 }
 .conv-card__count .material-symbols-rounded {
   font-size: 16px;
 }
 
 /* ===================== Feed ===================== */
-/* Chips de filtro: Todo · Mi club · Leyendo ahora · Ya leídos */
+/* Chips de filtro: Todo · Mi club · Leyendo ahora · Ya leídos.
+   M-09: la anatomía (píldora, borde, estado activo) la pone .tz-chip;
+   aquí solo quedan tamaño, fondo en reposo y el gesto de pulsación. */
 .feed-filter {
   display: flex;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin: -4px 0 14px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -283,26 +283,17 @@
 .feed-filter__chip {
   flex: none;
   padding: 8px 15px;
-  border-radius: var(--md-sys-shape-corner-full);
-  border: 1px solid
-    color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
-  background: var(--md-sys-color-surface-container-lowest);
-  color: var(--md-sys-color-on-surface-variant);
   font-size: 13px;
-  cursor: pointer;
   transition:
     background-color var(--md-sys-motion-duration-short)
       var(--md-sys-motion-easing-standard),
     transform 120ms var(--md-sys-motion-easing-standard);
 }
+.feed-filter__chip:not(.tz-chip--active) {
+  background: var(--md-sys-color-surface-container-lowest);
+}
 .feed-filter__chip:active {
   transform: scale(0.95);
-}
-.feed-filter__chip.active {
-  background: var(--md-sys-color-primary);
-  border-color: transparent;
-  color: var(--md-sys-color-on-primary);
-  font-weight: 600;
 }
 
 /* auditoría A-01: aviso inline cuando una acción del feed falla */
@@ -317,17 +308,15 @@
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 .feed-card {
-  padding: 16px;
-  border-radius: 20px;
+  padding: var(--tz-space-4);
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-  box-shadow:
-    0 1px 2px rgba(35, 35, 30, 0.03),
-    0 6px 20px rgba(35, 35, 30, 0.05);
+  box-shadow: var(--tz-shadow-card);
 }
 .feed-card__head {
   display: flex;
@@ -354,10 +343,10 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 12px 14px;
   margin-bottom: 12px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   border: none;
   background: linear-gradient(
     135deg,
@@ -429,16 +418,16 @@
 /* ---- Hilo de respuestas dentro de la publicación ---- */
 .feed-thread {
   margin: 10px 0 2px;
-  padding-left: 12px;
+  padding-left: var(--tz-space-3);
   border-left: 2px solid var(--md-sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .feed-reply {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .feed-reply__content {
   flex: 1;
@@ -536,21 +525,16 @@
 .feed-reply-box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin: 10px 0 2px;
 }
+/* M-09: borde, fondo, placeholder y foco los pone .tz-input; aquí solo
+   la forma de píldora y sus dimensiones.
+   auditoría A-05: sin outline:none — el :focus-visible global da el foco */
 .feed-reply-box__input {
   flex: 1;
-  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-full);
   padding: 10px 16px;
-  background: var(--md-sys-color-surface-container-lowest);
-  color: inherit;
-  font: inherit;
-  /* auditoría A-05: sin outline:none — el :focus-visible global da el foco */
-}
-.feed-reply-box__input:focus {
-  border-color: var(--md-sys-color-primary);
 }
 .feed-reply-box__send {
   flex: none;
@@ -567,9 +551,9 @@
 
 .feed-card__foot {
   display: flex;
-  gap: 20px;
+  gap: var(--tz-space-5);
   margin-top: 12px;
-  padding-top: 12px;
+  padding-top: var(--tz-space-3);
   border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 .feed-action {
@@ -635,7 +619,7 @@
   .home-hero {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 16px;
+    gap: var(--tz-space-4);
     margin-bottom: 20px;
   }
   .reading-strip {

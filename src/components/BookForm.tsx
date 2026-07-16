@@ -219,15 +219,34 @@ export default function BookForm({
         label,
       })),
     )
-    if (chError)
-      setError(
-        // auditoría A-04
-        friendlyError(
-          chError,
-          'El libro se creó, pero no se pudieron guardar los capítulos.',
-        ),
-      )
-    else {
+    if (chError) {
+      // Transacción compensatoria: Supabase no ofrece transacciones
+      // multi-tabla desde el cliente, así que si fallan los capítulos
+      // (segunda llamada) borramos el libro recién creado para no dejar
+      // una ficha huérfana sin capítulos en el catálogo.
+      const { error: undoError } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', book.id)
+      if (undoError) {
+        // La compensación también falló: aviso honesto del estado real.
+        // El detalle técnico queda en consola para depurar.
+        console.error('[tz] capítulos no insertados:', chError.message)
+        console.error('[tz] rollback del libro fallido:', undoError.message)
+        setError(
+          'El libro se creó sin capítulos: bórralo desde Admin → Libros y vuelve a intentarlo.',
+        )
+      } else {
+        // friendlyError deja el detalle en consola y traduce los casos
+        // conocidos; el fallback deja claro que no se guardó nada
+        setError(
+          friendlyError(
+            chError,
+            'No se pudo crear el libro completo; no se ha guardado nada. Inténtalo de nuevo.',
+          ),
+        )
+      }
+    } else {
       setIsbn('')
       setTitle('')
       setAuthor('')
@@ -253,7 +272,7 @@ export default function BookForm({
 
       <div className="bookform__isbn">
         <input
-          className="bookform__input body-medium"
+          className="tz-input bookform__input body-medium"
           placeholder="ISBN — p. ej. 978-84-663-8033-1"
           aria-label="ISBN del libro" /* auditoría A-08 */
           inputMode="numeric"
@@ -275,7 +294,7 @@ export default function BookForm({
       <label className="bookform__field label-medium">
         Título *
         <input
-          className="bookform__input body-medium"
+          className="tz-input bookform__input body-medium"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -283,7 +302,7 @@ export default function BookForm({
       <label className="bookform__field label-medium">
         Autor *
         <input
-          className="bookform__input body-medium"
+          className="tz-input bookform__input body-medium"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
         />
@@ -291,7 +310,7 @@ export default function BookForm({
       <label className="bookform__field label-medium">
         Sinopsis{synopsisSource ? ` — importada de ${synopsisSource}: reescríbela` : ''}
         <textarea
-          className="bookform__input body-medium"
+          className="tz-input bookform__input body-medium"
           rows={3}
           value={synopsis}
           onChange={(e) => {
@@ -305,7 +324,7 @@ export default function BookForm({
         <label className="bookform__field label-medium" style={{ flex: 1 }}>
           URL de portada
           <input
-            className="bookform__input body-medium"
+            className="tz-input bookform__input body-medium"
             placeholder="https://…"
             value={cover}
             onChange={(e) => {
@@ -317,7 +336,7 @@ export default function BookForm({
         <label className="bookform__field label-medium" style={{ flex: 1 }}>
           Enlace de compra
           <input
-            className="bookform__input body-medium"
+            className="tz-input bookform__input body-medium"
             placeholder="Amazon…"
             value={buy}
             onChange={(e) => setBuy(e.target.value)}
@@ -335,7 +354,7 @@ export default function BookForm({
       <label className="bookform__field label-medium">
         Capítulos * — un título por línea, en orden ({chapterCount})
         <textarea
-          className="bookform__input body-medium"
+          className="tz-input bookform__input body-medium"
           rows={6}
           placeholder={'Cero horas\nLa señora Elm\nLa biblioteca de la medianoche\n…'}
           value={chapters}

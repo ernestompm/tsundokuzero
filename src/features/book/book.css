@@ -1,12 +1,21 @@
+/* Banner de error de acciones: progreso, estantería o reseña (auditoría A-03) */
+.book__error {
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 10px 14px;
+  margin-bottom: var(--tz-space-3);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
 .book-head {
   display: flex;
-  gap: 16px;
+  gap: var(--tz-space-4);
   align-items: flex-start;
 }
 .book-head__coverwrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
   align-items: center;
   flex-shrink: 0;
 }
@@ -36,7 +45,7 @@
 .book-progress__stepper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .book-progress__label {
   flex: 1;
@@ -64,7 +73,7 @@
 .book-rating-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin-top: 6px;
 }
 .book-extra {
@@ -84,7 +93,7 @@
 .book-synopsis-toggle {
   background: none;
   border: none;
-  padding: 8px 0 0;
+  padding: var(--tz-space-2) 0 0;
   color: var(--md-sys-color-primary);
   cursor: pointer;
 }
@@ -102,38 +111,22 @@
   margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
   align-items: flex-start;
 }
+/* Base compartida en .tz-input (auditoría M-09): aquí solo lo propio */
 .book-review__text {
-  width: 100%;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 10px 14px;
-  background: var(--md-sys-color-surface-container-lowest);
-  color: inherit;
-  font: inherit;
   resize: vertical;
 }
-.book-review__text:focus {
-  border-color: var(--md-sys-color-primary);
-}
-/* Confirmación y error al guardar la reseña (auditoría A-03) */
+/* Confirmación al guardar la reseña (auditoría A-03) */
 .book-review__saved {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--tz-space-1);
   color: var(--md-sys-color-primary);
 }
 .book-review__saved .material-symbols-rounded {
   font-size: 18px;
-}
-.book-review__error {
-  width: 100%;
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 10px 14px;
-  background: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-on-error-container);
 }
 .book-others-reviews {
   margin-top: 16px;
@@ -178,7 +171,7 @@
   display: block;
   width: 100%;
   margin-top: 12px;
-  padding: 12px;
+  padding: var(--tz-space-3);
   border-radius: var(--md-sys-shape-corner-full);
   border: 1px solid var(--md-sys-color-outline-variant);
   background: none;
@@ -201,13 +194,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .chapter-row {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 12px 14px;
   border-radius: var(--md-sys-shape-corner-large);
   border: 1px solid var(--md-sys-color-outline-variant);
@@ -254,7 +247,7 @@
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--tz-space-1);
   color: var(--md-sys-color-on-surface-variant);
 }
 .chapter-row__count .material-symbols-rounded {

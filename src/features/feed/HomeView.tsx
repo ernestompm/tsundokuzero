@@ -6,6 +6,7 @@ import {
   Avatar,
   AvatarStack,
   BookCover,
+  Chip,
   ProgressBar,
   SectionHeader,
 } from '../../components/ui'
@@ -30,13 +31,13 @@ const FEED_FILTERS: { key: FeedFilter; label: string }[] = [
   { key: 'finished', label: 'Ya leídos' },
 ]
 
-// auditoría B-04: el filtro es en cliente sobre lo ya cargado, así que los
-// vacíos de club/leídos solo pueden hablar de «lo más reciente»
+// auditoría B-04: el filtro se aplica en la query del servidor, así que un
+// vacío significa que de verdad no hay nada que enseñar
 const FILTER_EMPTY: Record<FeedFilter, string> = {
   all: 'Aún no hay ideas en tu punto de lectura.',
-  club: 'Tu club no ha publicado nada entre lo más reciente.',
+  club: 'Tu club aún no ha publicado nada.',
   reading: 'Nadie ha comentado aún los libros que estás leyendo.',
-  finished: 'No hay conversación sobre tus libros terminados entre lo más reciente.',
+  finished: 'No hay conversación sobre tus libros terminados.',
 }
 
 /** Enter y Espacio activan la acción, como en un botón real (auditoría A-07) */
@@ -51,6 +52,10 @@ function pressKeys(action: () => void) {
 
 interface Props {
   data: HomeData
+  /** auditoría B-04: filtro controlado desde FeedPage (se aplica en la query
+      del servidor). Sin estas props, HomeView filtra en cliente (la preview) */
+  filter?: FeedFilter
+  onFilterChange?: (filter: FeedFilter) => void
   /** auditoría A-01: error de la última acción, mostrado junto al feed */
   actionError?: string | null
   onDeleteItem?: (id: string, type: 'idea' | 'post') => void
@@ -61,6 +66,8 @@ interface Props {
 
 export default function HomeView({
   data,
+  filter: serverFilter,
+  onFilterChange,
   actionError,
   onDeleteItem,
   onReact,
@@ -71,19 +78,25 @@ export default function HomeView({
   const { readings, stats, conversations, discover, feed } = data
   const reading = readings[0] ?? null
 
-  // Filtro del feed (en cliente: el feed ya viene cargado y gateado)
-  const [filter, setFilter] = useState<FeedFilter>('all')
+  // Filtro del feed: controlado (FeedPage lo aplica en la query, auditoría
+  // B-04) o, si no llegan las props, en cliente como antes (la preview)
+  const [localFilter, setLocalFilter] = useState<FeedFilter>('all')
+  const filter = serverFilter ?? localFilter
+  const setFilter = onFilterChange ?? setLocalFilter
   const readingSet = new Set(data.readingBookIds)
   const finishedSet = new Set(data.finishedBookIds)
-  const visibleFeed = feed.filter((item) => {
-    if (filter === 'all') return true
-    if (filter === 'club') return item.isClub
-    const bookId = item.bookId ?? item.parent?.bookId ?? null
-    if (bookId == null) return false
-    return filter === 'reading'
-      ? readingSet.has(bookId)
-      : finishedSet.has(bookId)
-  })
+  const visibleFeed =
+    serverFilter != null
+      ? feed // ya viene filtrado del servidor
+      : feed.filter((item) => {
+          if (filter === 'all') return true
+          if (filter === 'club') return item.isClub
+          const bookId = item.bookId ?? item.parent?.bookId ?? null
+          if (bookId == null) return false
+          return filter === 'reading'
+            ? readingSet.has(bookId)
+            : finishedSet.has(bookId)
+        })
 
   return (
     <div className="home">
@@ -248,17 +261,17 @@ export default function HomeView({
 
       {/* ===== Últimas ideas (el feed) ===== */}
       <SectionHeader title="Últimas ideas" />
-      {/* auditoría B-09: grupo de botones con aria-pressed (no es un tablist real) */}
+      {/* auditoría B-09: grupo de botones con aria-pressed (lo aporta Chip) */}
       <div className="feed-filter" role="group" aria-label="Filtrar el feed">
         {FEED_FILTERS.map(({ key, label }) => (
-          <button
+          <Chip
             key={key}
-            aria-pressed={filter === key}
-            className={`feed-filter__chip label-large${filter === key ? ' active' : ''}`}
+            className="feed-filter__chip"
+            active={filter === key}
             onClick={() => setFilter(key)}
           >
             {label}
-          </button>
+          </Chip>
         ))}
       </div>
       {actionError && (
@@ -623,7 +636,7 @@ function FeedCard({
       {replying && (
         <div className="feed-reply-box">
           <input
-            className="feed-reply-box__input body-medium"
+            className="tz-input feed-reply-box__input"
             aria-label="Escribe tu respuesta"
             placeholder="Escribe tu respuesta…"
             autoFocus

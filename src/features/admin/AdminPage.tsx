@@ -240,7 +240,7 @@ function UsersTab() {
         </p>
         <div className="admin-book__row">
           <input
-            className="admin-input body-medium"
+            className="tz-input admin-input body-medium"
             placeholder="p. ej. tsundoku-2026"
             aria-label="Código de invitación" /* auditoría A-08 */
             value={inviteCode}
@@ -257,7 +257,7 @@ function UsersTab() {
       </div>
 
       <input
-        className="admin-search body-medium"
+        className="tz-input admin-search body-medium"
         placeholder="Buscar por nombre, @usuario o email…"
         aria-label="Buscar usuarios por nombre, usuario o email" /* auditoría A-08 */
         value={search}
@@ -390,7 +390,7 @@ function ContentTab() {
         moderar. {items.length} publicaciones.
       </p>
       <input
-        className="admin-search body-medium"
+        className="tz-input admin-search body-medium"
         placeholder="Buscar por texto, autor o libro…"
         aria-label="Buscar publicaciones por texto, autor o libro" /* auditoría A-08 */
         value={search}
@@ -407,7 +407,7 @@ function ContentTab() {
           {editingId === i.id ? (
             <>
               <textarea
-                className="admin-edit body-medium"
+                className="tz-input admin-edit body-medium"
                 rows={3}
                 aria-label="Texto de la publicación" /* auditoría A-08 */
                 value={draft}
@@ -607,7 +607,7 @@ function ReportsTab() {
 
       {visible.length === 0 && (
         <p className="body-medium on-surface-variant">
-          {showResolved ? 'Nada resuelto todavía.' : 'No hay denuncias pendientes. 🎉'}
+          {showResolved ? 'Nada resuelto todavía.' : 'No hay denuncias pendientes.'}
         </p>
       )}
 
@@ -632,7 +632,7 @@ function ReportsTab() {
           {r.status === 'open' ? (
             <>
               <textarea
-                className="admin-edit body-small"
+                className="tz-input admin-edit body-small"
                 rows={2}
                 placeholder="Motivo para el autor (obligatorio si retiras; DSA art. 17)…"
                 aria-label="Motivo para el autor" /* auditoría A-08 */
@@ -776,7 +776,7 @@ function LegalTab() {
   return (
     <div className="admin-list">
       {error && <p className="admin-error body-medium">{error}</p>}
-      {notice && <p className="body-small admin-card__body">✅ {notice}</p>}
+      {notice && <p className="body-small admin-card__body">{notice}</p>}
       <p className="body-small on-surface-variant">
         Identidad del prestador (LSSI art. 10). Estos datos son públicos: se
         insertan en el Aviso legal, la Privacidad, las Cookies y los Términos.
@@ -787,7 +787,7 @@ function LegalTab() {
           <label key={field} className="admin-legal__field label-medium">
             {label}
             <input
-              className="admin-input body-medium"
+              className="tz-input admin-input body-medium"
               value={values[field] ?? ''}
               onChange={(e) =>
                 setValues((v) => ({ ...v, [field]: e.target.value }))
@@ -958,7 +958,7 @@ function BooksTab() {
             </span>
             <div className="admin-book__row">
               <input
-                className="admin-input body-small"
+                className="tz-input admin-input body-small"
                 placeholder="URL de portada (https://…)"
                 aria-label={`URL de portada de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.cover_url ?? ''}
@@ -970,7 +970,7 @@ function BooksTab() {
             </div>
             <div className="admin-book__row">
               <input
-                className="admin-input body-small"
+                className="tz-input admin-input body-small"
                 placeholder="Enlace de compra (Amazon…)"
                 aria-label={`Enlace de compra de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.buy_url ?? ''}
@@ -982,7 +982,7 @@ function BooksTab() {
             </div>
             <div className="admin-book__row">
               <input
-                className="admin-input body-small"
+                className="tz-input admin-input body-small"
                 placeholder="Autor (crea su página si no existe)"
                 aria-label={`Autor de ${b.title}`} /* auditoría A-08 */
                 defaultValue={b.author}
@@ -993,7 +993,7 @@ function BooksTab() {
               />
             </div>
             <textarea
-              className="admin-edit body-small"
+              className="tz-input admin-edit body-small"
               rows={3}
               placeholder="Sinopsis (se muestra en la ficha del libro)"
               aria-label={`Sinopsis de ${b.title}`} /* auditoría A-08 */
@@ -1005,7 +1005,7 @@ function BooksTab() {
             />
             <div className="admin-book__row">
               <input
-                className="admin-input body-small"
+                className="tz-input admin-input body-small"
                 placeholder="Añadir capítulo por título…"
                 aria-label={`Añadir capítulo a ${b.title}`} /* auditoría A-08 */
                 value={chapterDrafts[b.id] ?? ''}

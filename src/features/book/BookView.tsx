@@ -12,8 +12,8 @@ import './book.css'
 interface Props {
   data: BookViewData
   busy?: boolean
-  /** error al guardar la reseña (auditoría A-03) */
-  rateError?: string | null
+  /** error al guardar cualquier acción: progreso, estantería o reseña (auditoría A-03) */
+  actionError?: string | null
   onSetChapter: (n: number) => void
   onOpenChapter: (n: number) => void
   /** puede devolver éxito/fallo; `void` sigue valiendo (previews) */
@@ -24,7 +24,7 @@ interface Props {
 export default function BookView({
   data,
   busy,
-  rateError,
+  actionError,
   onSetChapter,
   onOpenChapter,
   onRate,
@@ -56,6 +56,12 @@ export default function BookView({
 
   return (
     <section className="book">
+      {/* Banner de error de acciones: progreso, estantería o reseña */}
+      {actionError && (
+        <p className="book__error body-small" role="alert">
+          {actionError}
+        </p>
+      )}
       <Card className="book-head" tone="default">
         <div className="book-head__coverwrap">
           <BookCover
@@ -203,18 +209,13 @@ export default function BookView({
             size={30}
           />
           <textarea
-            className="book-review__text body-medium"
+            className="tz-input book-review__text body-medium"
             rows={3}
             placeholder="Deja una reseña para el club (opcional)…"
             aria-label="Tu reseña del libro"
             value={reviewDraft}
             onChange={(e) => setReviewDraft(e.target.value)}
           />
-          {rateError && (
-            <p className="book-review__error body-small" role="alert">
-              {rateError}
-            </p>
-          )}
           <md-filled-button
             disabled={
               busy ||

@@ -122,7 +122,7 @@ export default function ExplorePage() {
     <section className="explore">
       <PageHeader title="Explorar" sub="Libros, autores y lectores del club" />
       <input
-        className="explore-search body-large"
+        className="tz-input explore-search body-large"
         placeholder="Busca libros, autores o personas…"
         aria-label="Buscar libros, autores o personas" /* auditoría A-08 */
         value={q}

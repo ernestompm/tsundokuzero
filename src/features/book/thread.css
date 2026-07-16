@@ -22,7 +22,7 @@
 }
 .thread-reply {
   display: flex;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 14px 4px;
   border-top: 1px solid var(--md-sys-color-outline-variant);
 }
@@ -36,7 +36,7 @@
 .thread-reply__head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .thread-reply__del {
   margin-left: auto;
@@ -58,7 +58,7 @@
   position: sticky;
   bottom: calc(88px + env(safe-area-inset-bottom));
   display: flex;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin-top: 12px;
   padding: 10px;
   border-radius: var(--md-sys-shape-corner-large);
@@ -72,9 +72,10 @@
 }
 .thread-composer__input {
   flex: 1;
+  /* mismos valores que .tz-input (auditoría M-09) */
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-full);
-  padding: 12px 16px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: var(--tz-space-3) var(--tz-space-4);
   background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;

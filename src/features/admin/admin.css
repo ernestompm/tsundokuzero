@@ -27,7 +27,7 @@
 .admin-tiles {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 @media (min-width: 720px) {
   .admin-tiles {
@@ -60,14 +60,14 @@
 .admin-error {
   background: var(--md-sys-color-error-container);
   color: var(--md-sys-color-on-error-container);
-  padding: 12px 16px;
+  padding: var(--tz-space-3) var(--tz-space-4);
   border-radius: var(--md-sys-shape-corner-medium);
 }
 
 .admin-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 12px 14px;
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
@@ -88,7 +88,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--tz-space-1);
   color: var(--md-sys-color-on-surface-variant);
 }
 .admin-danger {
@@ -99,21 +99,12 @@
   color: var(--md-sys-color-error);
 }
 
+/* M-09: la base (borde, fondo, foco…) vive en .tz-input (ui.css);
+   aquí solo quedan las particularidades de esta feature */
 .admin-search,
 .admin-input {
-  width: 100%;
-  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-full);
   padding: 10px 16px;
-  background: var(--md-sys-color-surface-container-lowest);
-  color: inherit;
-  font: inherit;
-  /* auditoría: outline eliminado — rige la regla global :focus-visible */
-}
-.admin-search:focus,
-.admin-input:focus,
-.admin-edit:focus {
-  border-color: var(--md-sys-color-primary);
 }
 
 .admin-card {
@@ -128,20 +119,13 @@
 .admin-card__actions {
   display: flex;
   justify-content: flex-end;
-  gap: 4px;
+  gap: var(--tz-space-1);
   margin-top: 6px;
 }
+/* M-09: base en .tz-input; solo dimensiones y ajustes propios */
 .admin-edit {
-  width: 100%;
   margin-top: 8px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 10px 14px;
-  background: var(--md-sys-color-surface-container-lowest);
-  color: inherit;
-  font: inherit;
   resize: vertical;
-  /* auditoría: outline eliminado — rige la regla global :focus-visible */
 }
 
 .admin-book {
@@ -153,11 +137,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .admin-book__row {
   display: flex;
-  gap: 8px;
+  gap: var(--tz-space-2);
   align-items: center;
 }
 .admin-new-book {
@@ -168,7 +152,7 @@
 .admin-newbook {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 .admin-newbook__row {
   display: flex;
@@ -177,19 +161,19 @@
 .admin-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
   color: var(--md-sys-color-on-surface-variant);
 }
 .admin-isbn-row {
   display: flex;
-  gap: 8px;
+  gap: var(--tz-space-2);
   align-items: center;
 }
 .admin-isbn-row .admin-input {
   flex: 1;
 }
 .admin-isbn-msg {
-  padding: 8px 12px;
+  padding: var(--tz-space-2) var(--tz-space-3);
   border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
@@ -199,9 +183,6 @@
 .admin-legal__field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
   margin-bottom: 12px;
-}
-.admin-legal__field .admin-input {
-  width: 100%;
 }

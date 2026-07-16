@@ -16,7 +16,8 @@ export default function BookPage() {
   const [data, setData] = useState<BookViewData | null>(null)
   const [missing, setMissing] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [rateError, setRateError] = useState<string | null>(null)
+  // Error de cualquier acción de guardado (progreso, estantería, reseña)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!session || !bookId) return
@@ -146,7 +147,13 @@ export default function BookPage() {
       // Al llegar al último capítulo el libro pasa a «Leídos» solo.
       status: n >= data.totalChapters ? 'finished' : 'reading',
     })
-    if (!error) await load()
+    if (error) {
+      setActionError(friendlyError(error, 'No se pudo guardar tu progreso. Inténtalo de nuevo.'))
+      setBusy(false)
+      return
+    }
+    setActionError(null)
+    await load()
     setBusy(false)
   }
 
@@ -183,11 +190,11 @@ export default function BookPage() {
       { onConflict: 'book_id,user_id' },
     )
     if (error) {
-      setRateError(friendlyError(error, 'No se pudo guardar la reseña. Inténtalo de nuevo.'))
+      setActionError(friendlyError(error, 'No se pudo guardar la reseña. Inténtalo de nuevo.'))
       setBusy(false)
       return false
     }
-    setRateError(null)
+    setActionError(null)
     await load()
     setBusy(false)
     return true
@@ -196,7 +203,7 @@ export default function BookPage() {
   const addToShelf = async (status: 'want' | 'reading') => {
     if (!session || !data) return
     setBusy(true)
-    await supabase.from('reading_progress').upsert(
+    const { error } = await supabase.from('reading_progress').upsert(
       {
         user_id: session.user.id,
         book_id: data.bookId,
@@ -205,6 +212,12 @@ export default function BookPage() {
       },
       { onConflict: 'user_id,book_id' },
     )
+    if (error) {
+      setActionError(friendlyError(error, 'No se pudo añadir a la estantería. Inténtalo de nuevo.'))
+      setBusy(false)
+      return
+    }
+    setActionError(null)
     await load()
     setBusy(false)
   }
@@ -213,7 +226,7 @@ export default function BookPage() {
     <BookView
       data={data}
       busy={busy}
-      rateError={rateError}
+      actionError={actionError}
       onSetChapter={setChapter}
       onOpenChapter={(n) => navigate(`/book/${data.bookId}/chapter/${n}`)}
       onRate={rate}

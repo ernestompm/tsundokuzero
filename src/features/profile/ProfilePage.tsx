@@ -30,6 +30,51 @@ interface PostRow {
   createdAt: string
 }
 
+/** Centro de avisos: qué tipos de notificación recibe el usuario. */
+type NotifPrefs = {
+  reply: boolean
+  follow: boolean
+  poll: boolean
+  unlock: boolean
+  book_done: boolean
+}
+
+const NOTIF_DEFAULTS: NotifPrefs = {
+  reply: true,
+  follow: true,
+  poll: true,
+  unlock: true,
+  book_done: true,
+}
+
+const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = [
+  {
+    key: 'reply',
+    label: 'Respuestas a tus mensajes',
+    hint: 'Cuando alguien responde a una idea o comentario tuyo.',
+  },
+  {
+    key: 'unlock',
+    label: 'Respuestas que se desbloquean',
+    hint: 'Cuando llegas al capítulo y por fin puedes leer una respuesta.',
+  },
+  {
+    key: 'follow',
+    label: 'Nuevos seguidores',
+    hint: 'Cuando alguien empieza a seguirte.',
+  },
+  {
+    key: 'poll',
+    label: 'Votaciones del club',
+    hint: 'Cuando se abre una votación para elegir libro.',
+  },
+  {
+    key: 'book_done',
+    label: 'Libro terminado por el club',
+    hint: 'Cuando todo el club acaba la lectura del mes.',
+  },
+]
+
 export default function ProfilePage() {
   const { session, profile, isSuperAdmin, refreshProfile, signOut } = useAuth()
   const navigate = useNavigate()
@@ -60,6 +105,49 @@ export default function ProfilePage() {
   const [passError, setPassError] = useState<string | null>(null)
   const [passMsg, setPassMsg] = useState<string | null>(null)
   const [passBusy, setPassBusy] = useState(false)
+  // Centro de avisos (migr. 018): sin fila guardada, todo activado
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(NOTIF_DEFAULTS)
+
+  useEffect(() => {
+    if (!session) return
+    let cancelled = false
+    supabase
+      .from('notification_prefs')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) {
+          setNotifPrefs({
+            reply: data.reply,
+            follow: data.follow,
+            poll: data.poll,
+            unlock: data.unlock,
+            book_done: data.book_done,
+          })
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [session])
+
+  /** Enciende/apaga un tipo de aviso (optimista; el filtro real es un
+   *  trigger en el servidor, así que aplica a TODO lo que se genere). */
+  const toggleNotifPref = async (key: keyof NotifPrefs) => {
+    if (!session) return
+    const prev = notifPrefs
+    const next = { ...notifPrefs, [key]: !notifPrefs[key] }
+    setNotifPrefs(next)
+    setError(null)
+    const { error: e } = await supabase
+      .from('notification_prefs')
+      .upsert({ user_id: session.user.id, ...next }, { onConflict: 'user_id' })
+    if (e) {
+      setNotifPrefs(prev) // revertir: no se guardó
+      setError(friendlyError(e, 'No se pudo guardar tu preferencia de avisos.'))
+    }
+  }
 
   /** Sube la foto de perfil: recorte cuadrado a 512px → Storage → perfil. */
   const changePhoto = async (file: File) => {
@@ -389,7 +477,7 @@ export default function ProfilePage() {
               red social). No subas una imagen que no quieras que se vea.
             </p>
             <input
-              className="profile-input body-large"
+              className="tz-input profile-input body-large"
               placeholder="Nombre visible"
               aria-label="Nombre visible" /* auditoría A-08 */
               value={nameDraft}
@@ -397,7 +485,7 @@ export default function ProfilePage() {
               onChange={(e) => setNameDraft(e.target.value)}
             />
             <textarea
-              className="profile-input body-medium"
+              className="tz-input profile-input body-medium"
               placeholder="Bio: cuéntanos qué clase de lector eres…"
               aria-label="Bio" /* auditoría A-08 */
               rows={2}
@@ -465,13 +553,32 @@ export default function ProfilePage() {
             onChange={() => void toggleAheadReplies()}
           />
         </label>
+
+        {/* ===== Centro de avisos (migr. 018) ===== */}
+        <div className="profile-setting__divider" role="presentation" />
+        <p className="label-medium profile-setting__group">
+          Qué avisos recibes
+        </p>
+        {NOTIF_OPTIONS.map(({ key, label, hint }) => (
+          <label key={key} className="profile-setting profile-setting--compact">
+            <span className="profile-setting__text">
+              <span className="body-medium">{label}</span>
+              <span className="body-small on-surface-variant">{hint}</span>
+            </span>
+            <md-switch
+              aria-label={label}
+              selected={notifPrefs[key] || undefined}
+              onChange={() => void toggleNotifPref(key)}
+            />
+          </label>
+        ))}
       </div>
 
       <h2 className="title-small profile-sec">Mi muro</h2>
       {writing ? (
         <div className="post-composer">
           <input
-            className="profile-input body-large"
+            className="tz-input profile-input body-large"
             placeholder="Título (opcional)"
             aria-label="Título de la entrada (opcional)" /* auditoría A-08 */
             maxLength={120}
@@ -479,7 +586,7 @@ export default function ProfilePage() {
             onChange={(e) => setPostTitle(e.target.value)}
           />
           <textarea
-            className="profile-input body-medium"
+            className="tz-input profile-input body-medium"
             placeholder="Escribe tu entrada: reseñas, ensayos, tu pila de lectura…"
             aria-label="Texto de la entrada" /* auditoría A-08 */
             rows={5}
@@ -591,7 +698,7 @@ export default function ProfilePage() {
       <div className="profile-password">
         <input
           type="password"
-          className="profile-input body-medium"
+          className="tz-input profile-input body-medium"
           placeholder="Nueva contraseña"
           aria-label="Nueva contraseña"
           autoComplete="new-password"
@@ -600,7 +707,7 @@ export default function ProfilePage() {
         />
         <input
           type="password"
-          className="profile-input body-medium"
+          className="tz-input profile-input body-medium"
           placeholder="Repite la nueva contraseña"
           aria-label="Repite la nueva contraseña"
           autoComplete="new-password"
@@ -655,7 +762,7 @@ export default function ProfilePage() {
               <b>{profile?.username}</b> para confirmar:
             </p>
             <input
-              className="profile-input body-medium"
+              className="tz-input profile-input body-medium"
               placeholder={profile?.username ?? ''}
               aria-label="Escribe tu nombre de usuario para confirmar el borrado" /* auditoría A-08 */
               value={deleteText}

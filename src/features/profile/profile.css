@@ -1,7 +1,7 @@
 .profile {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 
 .profile-head {
@@ -10,8 +10,8 @@
   align-items: center;
   gap: 6px;
   text-align: center;
-  padding: 20px 16px;
-  border-radius: 20px;
+  padding: var(--tz-space-5) var(--tz-space-4);
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
   box-shadow: 0 1px 2px rgba(35, 35, 30, 0.03);
@@ -33,19 +33,14 @@
   gap: 10px;
   margin-top: 8px;
 }
+/* Base compartida en .tz-input (M-09): aquí solo dimensiones propias.
+   OJO: la clase también la usa ClubManagePage — no eliminar. */
 .profile-input {
   width: 100%;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
   padding: 12px 14px;
-  background: var(--md-sys-color-surface-container-lowest);
   color: inherit;
   font: inherit;
-  /* auditoría: outline eliminado — rige la regla global :focus-visible */
   resize: vertical;
-}
-.profile-input:focus {
-  border-color: var(--md-sys-color-primary);
 }
 
 /* ===== Cambiar contraseña (auditoría C-01b) ===== */
@@ -61,7 +56,7 @@
 .profile-edit__actions {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .profile-error {
   background: var(--md-sys-color-error-container);
@@ -79,18 +74,16 @@
 
 /* ===== Configuración ===== */
 .profile-settings {
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-  box-shadow:
-    0 1px 2px rgba(35, 35, 30, 0.03),
-    0 6px 20px rgba(35, 35, 30, 0.05);
+  box-shadow: var(--tz-shadow-card);
 }
 .profile-setting {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--tz-space-4);
   padding: 14px 16px;
   cursor: pointer;
 }
@@ -99,16 +92,30 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
 }
 .profile-setting md-switch {
   flex: none;
+}
+.profile-setting--compact {
+  padding: 10px 16px;
+}
+.profile-setting__divider {
+  border-top: 1px solid
+    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+  margin: 2px 0;
+}
+.profile-setting__group {
+  margin: 10px 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .profile-ideas {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .idea-row {
   display: flex;
@@ -145,7 +152,7 @@
 .post-composer__row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
   flex-wrap: wrap;
 }
 .post-row__meta {
@@ -165,7 +172,7 @@
 .profile-report {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--tz-space-1);
   color: var(--md-sys-color-on-surface-variant);
 }
 
@@ -179,7 +186,7 @@
 .profile-data__row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 12px 14px;
   border-radius: var(--md-sys-shape-corner-large);
   border: 1px solid var(--md-sys-color-outline-variant);

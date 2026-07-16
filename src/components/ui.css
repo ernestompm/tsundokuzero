@@ -100,8 +100,8 @@
 
 /* ===================== Tarjeta ===================== */
 .card {
-  border-radius: 20px;
-  padding: 16px;
+  border-radius: var(--tz-shape-card);
+  padding: var(--tz-space-4);
 }
 .card--default {
   background: var(--md-sys-color-surface-container-lowest);

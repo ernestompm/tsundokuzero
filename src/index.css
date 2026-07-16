@@ -30,6 +30,11 @@
   --tz-space-6: 24px;
   --tz-space-8: 32px;
 
+  /* Radio de tarjeta de la marca (auditoría M-14): 20px no existe en el
+     shape scale MD3, así que se declara como token propio en vez de
+     repetirlo a pelo por los css de cada feature. */
+  --tz-shape-card: 20px;
+
   /* Sombras tokenizadas (auditoría M-14): tarjeta en reposo y elevada */
   --tz-shadow-card:
     0 1px 2px rgba(35, 35, 30, 0.03),

@@ -1,7 +1,7 @@
 .club {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 
 .club-head {
@@ -41,13 +41,13 @@
 }
 
 .club-poll {
-  padding: 16px;
+  padding: var(--tz-space-4);
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 .club-poll__head {
   display: flex;
@@ -120,7 +120,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .poll-option__bar {
   height: 6px;
@@ -144,7 +144,7 @@
 .poll-option__voters {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tz-space-2);
   margin-top: 7px;
 }
 
@@ -152,13 +152,13 @@
 .club-manage {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 .manage-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px;
+  padding: var(--tz-space-4);
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid var(--md-sys-color-outline-variant);
@@ -168,13 +168,19 @@
   letter-spacing: 0.08em;
   color: var(--md-sys-color-on-surface-variant);
 }
+/* M-09: los campos de gestión usan la base compartida .tz-input (ui.css);
+   antes tomaban prestada .profile-input de otra feature. Lo único que
+   aquella aportaba de más era el redimensionado del textarea. */
+.manage-textarea {
+  resize: vertical;
+}
 .manage-card md-filled-button {
   align-self: flex-start;
 }
 .manage-current-book {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
 }
 .manage-book-picker {
   display: flex;
@@ -187,7 +193,7 @@
   width: 68px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--tz-space-1);
   background: none;
   border: 2px solid transparent;
   border-radius: 8px;
@@ -257,12 +263,12 @@
 .club-members {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--tz-space-2);
 }
 .club-member {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 8px 14px;
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
@@ -274,7 +280,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   color: inherit;
 }
 
@@ -282,7 +288,7 @@
 .club-insights {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tz-space-3);
   padding: 14px 16px;
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-tertiary-container);
