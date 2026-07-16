@@ -141,6 +141,12 @@
   font-style: italic;
   margin-top: 2px;
 }
+.poll-option__voters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
 
 /* ===================== Gestión del club ===================== */
 .club-manage {

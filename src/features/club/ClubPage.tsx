@@ -6,7 +6,7 @@ import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
-import { Avatar, BookCover } from '../../components/ui'
+import { Avatar, AvatarStack, BookCover } from '../../components/ui'
 import type { Book, Club, Poll, PollOption } from '../../lib/database.types'
 import './club.css'
 
@@ -22,9 +22,20 @@ interface Member {
 
 interface PollState {
   poll: Poll
-  options: (PollOption & { votes: number })[]
+  options: (PollOption & {
+    votes: number
+    /** quién ha votado esta opción (voto público dentro del club) */
+    voters: { name: string; url?: string | null }[]
+  })[]
   totalVotes: number
   myVote: string | null
+}
+
+/** «Marina, Carlos y 2 más» a partir de los nombres de pila. */
+function voterNames(voters: { name: string }[]): string {
+  const names = voters.map((v) => v.name.split(/\s+/)[0])
+  if (names.length <= 2) return names.join(' y ')
+  return `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`
 }
 
 export default function ClubPage() {
@@ -111,11 +122,19 @@ export default function ClubPage() {
       const countByOption = new Map<string, number>()
       for (const v of voteRows)
         countByOption.set(v.option_id, (countByOption.get(v.option_id) ?? 0) + 1)
+      // Voto público dentro del club: quién ha votado cada opción
+      const profById = new Map((profiles ?? []).map((p) => [p.id, p]))
       setPollState({
         poll,
         options: (options ?? []).map((o) => ({
           ...o,
           votes: countByOption.get(o.id) ?? 0,
+          voters: voteRows
+            .filter((v) => v.option_id === o.id)
+            .map((v) => {
+              const p = profById.get(v.user_id)
+              return { name: p?.display_name ?? 'Alguien', url: p?.avatar_url }
+            }),
         })),
         totalVotes: voteRows.length,
         myVote:
@@ -313,6 +332,18 @@ export default function ClubPage() {
                         style={{ width: `${pct}%` }}
                       />
                     </span>
+                    {/* Quién ha votado (el voto es visible dentro del club) */}
+                    {o.voters.length > 0 && (
+                      <span className="poll-option__voters">
+                        <AvatarStack
+                          people={o.voters.slice(0, 4)}
+                          extra={Math.max(0, o.voters.length - 4)}
+                        />
+                        <span className="body-small on-surface-variant">
+                          {voterNames(o.voters)}
+                        </span>
+                      </span>
+                    )}
                     {o.note && (
                       <span className="body-small poll-option__note serif">
                         «{o.note}»

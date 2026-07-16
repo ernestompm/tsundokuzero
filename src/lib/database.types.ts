@@ -16,6 +16,8 @@ export type Profile = {
   display_name: string
   bio: string | null
   avatar_url: string | null
+  /** ajuste: ver respuestas de gente que va por delante (migr. 017) */
+  show_ahead_replies: boolean
   created_at: string
 }
 

@@ -4,6 +4,7 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-tonal-button.js'
+import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
@@ -187,6 +188,25 @@ export default function ProfilePage() {
     void load()
   }, [load])
 
+  /** Ajuste anti-spoiler: ver (o no) respuestas de gente más adelantada. */
+  const toggleAheadReplies = async () => {
+    if (!session || !profile) return
+    setError(null)
+    const { error: e } = await supabase
+      .from('profiles')
+      .update({ show_ahead_replies: !profile.show_ahead_replies })
+      .eq('id', session.user.id)
+    if (e) {
+      setError(
+        /show_ahead_replies|column/i.test(e.message)
+          ? 'Falta ejecutar la migración 017 en Supabase para activar este ajuste.'
+          : e.message,
+      )
+      return
+    }
+    await refreshProfile()
+  }
+
   const startEdit = () => {
     setNameDraft(profile?.display_name ?? '')
     setBioDraft(profile?.bio ?? '')
@@ -325,6 +345,29 @@ export default function ProfilePage() {
             </md-outlined-button>
           </>
         )}
+      </div>
+
+      {/* ===== Configuración ===== */}
+      <h2 className="title-small profile-sec">Configuración</h2>
+      <div className="profile-settings">
+        <label className="profile-setting">
+          <span className="profile-setting__text">
+            <span className="body-medium">
+              Puedo ver las respuestas de personas que van por delante de mí en
+              la lectura
+            </span>
+            <span className="body-small on-surface-variant">
+              Desbloquea las respuestas escritas desde capítulos que aún no has
+              alcanzado, para que la conversación fluya. ⚠️ Pueden contener
+              spoilers. Las ideas de capítulos futuros siguen selladas.
+            </span>
+          </span>
+          <md-switch
+            aria-label="Ver respuestas de personas más adelantadas"
+            selected={profile?.show_ahead_replies || undefined}
+            onChange={() => void toggleAheadReplies()}
+          />
+        </label>
       </div>
 
       <h2 className="title-small profile-sec">Mi muro</h2>
