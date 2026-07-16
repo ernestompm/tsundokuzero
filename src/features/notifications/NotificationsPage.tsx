@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
+import { fetchBlockedIds } from '../../lib/blocks'
 import { Avatar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import { timeAgo } from '../../lib/time'
@@ -29,14 +30,20 @@ export default function NotificationsPage() {
 
   const load = useCallback(async () => {
     if (!session) return
-    const { data: rows } = await supabase
-      .from('notifications')
-      .select('id, actor_id, type, discussion_id, poll_id, book_id, note, read, created_at')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(40)
+    const [{ data: rows }, blocked] = await Promise.all([
+      supabase
+        .from('notifications')
+        .select('id, actor_id, type, discussion_id, poll_id, book_id, note, read, created_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(40),
+      fetchBlockedIds(session.user.id),
+    ])
 
-    const list = rows ?? []
+    // Bloqueos (P2-13): sin avisos provocados por gente bloqueada
+    const list = (rows ?? []).filter(
+      (n) => !n.actor_id || !blocked.has(n.actor_id),
+    )
     const actorIds = [...new Set(list.map((n) => n.actor_id).filter(Boolean))] as string[]
     const { data: actors } = actorIds.length
       ? await supabase

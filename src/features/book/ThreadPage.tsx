@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
+import { fetchBlockedIds } from '../../lib/blocks'
 import { timeAgo } from '../../lib/time'
 import ThreadView from './ThreadView'
 import type { ThreadViewData } from './chapterTypes'
@@ -19,12 +20,16 @@ export default function ThreadPage() {
     if (!session || !discussionId) return
 
     // Vista con teaser: body=null si el hilo está por delante de ti
-    const { data: disc } = await supabase
-      .from('feed_discussions')
-      .select('id, book_id, chapter_number, author_id, kind, club_id, created_at, unlocked, body')
-      .eq('id', discussionId)
-      .maybeSingle()
-    if (!disc) {
+    const [{ data: disc }, blocked] = await Promise.all([
+      supabase
+        .from('feed_discussions')
+        .select('id, book_id, chapter_number, author_id, kind, club_id, created_at, unlocked, body')
+        .eq('id', discussionId)
+        .maybeSingle(),
+      fetchBlockedIds(session.user.id),
+    ])
+    // Bloqueos (P2-13): un hilo de alguien bloqueado no se muestra
+    if (!disc || blocked.has(disc.author_id)) {
       setMissing(true)
       return
     }
@@ -60,7 +65,9 @@ export default function ThreadPage() {
         .eq('discussion_id', discussionId),
     ])
 
-    const commentList = comments ?? []
+    const commentList = (comments ?? []).filter(
+      (c) => !blocked.has(c.author_id),
+    )
     const authorIds = [
       ...new Set([disc.author_id, ...commentList.map((c) => c.author_id)]),
     ]

@@ -31,6 +31,10 @@ export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState('')
   // Aceptación registrada aquí (paso común a email y OAuth): RGPD art. 7
   const [accepted, setAccepted] = useState(false)
+  // Invitación: prefijada desde el alta; editable (OAuth u otro dispositivo)
+  const [invite, setInvite] = useState(
+    () => localStorage.getItem('tz-invite') ?? '',
+  )
   const [club, setClub] = useState<Club | null>(null)
   const [book, setBook] = useState<Book | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -85,19 +89,10 @@ export default function OnboardingPage() {
   }, [])
 
   /**
-   * Deja constancia de la aceptación (versión + fecha, RGPD art. 7).
-   * No bloquea el onboarding si falla (p. ej. migración 018 pendiente):
-   * TermsGate volverá a pedirla en la siguiente carga.
+   * Crea el perfil vía RPC `complete_onboarding` (migr. 020): el código de
+   * invitación y la aceptación de términos se validan EN SERVIDOR y el
+   * consentimiento queda registrado en la misma transacción (RGPD art. 7).
    */
-  const recordConsent = async () => {
-    if (!session) return
-    await supabase.from('consents').insert({
-      user_id: session.user.id,
-      doc: 'terms',
-      doc_version: TERMS_VERSION,
-    })
-  }
-
   const createProfile = async (e: FormEvent) => {
     e.preventDefault()
     if (!session) return
@@ -120,10 +115,11 @@ export default function OnboardingPage() {
 
     setBusy(true)
     try {
-      const { error } = await supabase.from('profiles').insert({
-        id: session.user.id,
-        username: clean,
-        display_name: displayName.trim() || clean,
+      const { error } = await supabase.rpc('complete_onboarding', {
+        invite: invite.trim(),
+        new_username: clean,
+        new_display_name: displayName.trim() || clean,
+        accepted_terms_version: TERMS_VERSION,
       })
       if (error) {
         if (error.code === '23505' && error.message.includes('profiles_pkey')) {
@@ -133,14 +129,26 @@ export default function OnboardingPage() {
           setStep(2)
           return
         }
-        setError(
-          error.code === '23505'
-            ? 'Ese nombre de usuario ya está cogido.'
-            : error.message,
-        )
+        if (error.message.includes('invalid_invite')) {
+          setError('Código de invitación incorrecto.')
+        } else if (error.message.includes('invite_not_configured')) {
+          setError(
+            'El registro está cerrado temporalmente: el administrador aún no ha fijado el código de invitación.',
+          )
+        } else if (error.message.includes('terms_not_accepted')) {
+          setError('Debes aceptar los términos para continuar.')
+        } else if (error.message.includes('complete_onboarding')) {
+          setError('Falta ejecutar la migración 020 en Supabase.')
+        } else {
+          setError(
+            error.code === '23505'
+              ? 'Ese nombre de usuario ya está cogido.'
+              : error.message,
+          )
+        }
         return
       }
-      await recordConsent()
+      localStorage.removeItem('tz-invite')
       await refreshProfile()
       setStep(2)
     } finally {
@@ -213,6 +221,15 @@ export default function OnboardingPage() {
               supporting-text="Como te verán los demás (opcional)"
               onInput={(e) =>
                 setDisplayName((e.currentTarget as HTMLInputElement).value)
+              }
+            />
+            <md-outlined-text-field
+              label="Código de invitación"
+              required
+              value={invite}
+              supporting-text="Se comprueba al crear tu identidad"
+              onInput={(e) =>
+                setInvite((e.currentTarget as HTMLInputElement).value)
               }
             />
             <button

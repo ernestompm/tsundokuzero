@@ -130,16 +130,53 @@ function UsersTab() {
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  // Código de invitación (validado en servidor, migr. 020)
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null)
+  const [inviteBusy, setInviteBusy] = useState(false)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_users')
     if (error) setError(error.message)
     else setUsers((data as AdminUser[] | null) ?? [])
+
+    const { data: code, error: codeError } = await supabase.rpc(
+      'admin_get_invite_code',
+    )
+    if (codeError) {
+      setInviteMsg(
+        /admin_get_invite_code|function/i.test(codeError.message)
+          ? 'Falta ejecutar la migración 020 (invitación en servidor).'
+          : codeError.message,
+      )
+    } else {
+      setInviteCode((code as string | null) ?? '')
+      if (!code)
+        setInviteMsg(
+          '⚠️ Sin código configurado: nadie nuevo puede completar el registro.',
+        )
+    }
   }, [])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  const saveInviteCode = async () => {
+    setInviteBusy(true)
+    setInviteMsg(null)
+    const { error } = await supabase.rpc('admin_set_invite_code', {
+      code: inviteCode.trim(),
+    })
+    setInviteBusy(false)
+    setInviteMsg(
+      error
+        ? error.message
+        : inviteCode.trim()
+          ? '✅ Código guardado. Recuerda actualizar VITE_INVITE_CODE en Vercel para que el formulario de alta pida el mismo.'
+          : '⚠️ Código vacío: el registro queda cerrado.',
+    )
+  }
 
   const toggleAdmin = async (u: AdminUser) => {
     setSavingId(u.id)
@@ -181,6 +218,31 @@ function UsersTab() {
   return (
     <div className="admin-list">
       {error && <p className="admin-error body-medium">{error}</p>}
+
+      {/* Invitación validada en servidor (P1-7) */}
+      <div className="admin-card">
+        <span className="label-medium">Código de invitación</span>
+        <p className="body-small on-surface-variant" style={{ margin: '4px 0 8px' }}>
+          Se exige en servidor al completar el registro. Vacío = registro
+          cerrado.
+        </p>
+        <div className="admin-book__row">
+          <input
+            className="admin-input body-medium"
+            placeholder="p. ej. tsundoku-2026"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+          />
+          <md-outlined-button
+            disabled={inviteBusy || undefined}
+            onClick={() => void saveInviteCode()}
+          >
+            Guardar
+          </md-outlined-button>
+        </div>
+        {inviteMsg && <p className="body-small" style={{ marginTop: 6 }}>{inviteMsg}</p>}
+      </div>
+
       <input
         className="admin-search body-medium"
         placeholder="Buscar por nombre, @usuario o email…"

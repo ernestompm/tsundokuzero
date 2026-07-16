@@ -61,6 +61,10 @@ export default function LoginPage() {
       return
     }
 
+    // El código se re-valida EN SERVIDOR al completar el onboarding
+    // (migr. 020); se guarda para no pedirlo dos veces.
+    if (mode === 'signup') localStorage.setItem('tz-invite', invite.trim())
+
     if (mode === 'signup' && !accepted) {
       setError(
         'Para crear la cuenta debes aceptar los términos y declarar que tienes al menos 14 años.',

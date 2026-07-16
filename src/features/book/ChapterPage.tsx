@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
+import { fetchBlockedIds } from '../../lib/blocks'
 import { timeAgo } from '../../lib/time'
 import ChapterView from './ChapterView'
 import type { ChapterViewData, ThreadDiscussion } from './chapterTypes'
@@ -47,25 +48,32 @@ export default function ChapterPage() {
     const canWrite = (progress?.current_chapter ?? 0) >= chapterNumber
 
     // El spoiler gate (RLS) filtra en servidor lo que no debe verse.
-    const { data: discussions } = await supabase
-      .from('discussions')
-      .select('id, author_id, kind, body, club_id, created_at')
-      .eq('book_id', bookId)
-      .eq('chapter_number', chapterNumber)
-      .order('created_at', { ascending: true })
+    const [{ data: discussions }, blocked] = await Promise.all([
+      supabase
+        .from('discussions')
+        .select('id, author_id, kind, body, club_id, created_at')
+        .eq('book_id', bookId)
+        .eq('chapter_number', chapterNumber)
+        .order('created_at', { ascending: true }),
+      fetchBlockedIds(session.user.id),
+    ])
 
-    const list = discussions ?? []
+    // Bloqueos (P2-13): sus hilos y respuestas no se muestran
+    const list = (discussions ?? []).filter((d) => !blocked.has(d.author_id))
     const discIds = list.map((d) => d.id)
     const authorIds = new Set(list.map((d) => d.author_id))
 
     // Vista enmascarada: body=null si el autor iba por delante de ti
-    const { data: comments } = discIds.length
+    const { data: rawComments } = discIds.length
       ? await supabase
           .from('thread_comments')
           .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
           .in('discussion_id', discIds)
           .order('created_at', { ascending: true })
       : { data: [] }
+    const comments = (rawComments ?? []).filter(
+      (c) => !blocked.has(c.author_id),
+    )
     for (const c of comments ?? []) authorIds.add(c.author_id)
 
     const { data: reactionRows } = discIds.length

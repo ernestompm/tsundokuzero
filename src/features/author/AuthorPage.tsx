@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { BookCover } from '../../components/ui'
 import RichText from '../../components/RichText'
+import SensitiveNote, { isSensitiveText } from './SensitiveNote'
 import Stars from '../../components/Stars'
 import type { Author, Book } from '../../lib/database.types'
 import './author.css'
@@ -280,7 +281,10 @@ export default function AuthorPage() {
       ) : (
         <>
           {author.bio ? (
-            <RichText text={author.bio} className="author-bio" />
+            <>
+              {isSensitiveText(author.bio) && <SensitiveNote />}
+              <RichText text={author.bio} className="author-bio" />
+            </>
           ) : (
             <p className="body-medium on-surface-variant author-bio">
               Aún no hay biografía de este autor.

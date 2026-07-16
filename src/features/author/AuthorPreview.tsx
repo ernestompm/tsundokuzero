@@ -1,4 +1,5 @@
 import RichText from '../../components/RichText'
+import SensitiveNote, { isSensitiveText } from './SensitiveNote'
 import './author.css'
 
 /**
@@ -54,6 +55,7 @@ export default function AuthorPreview() {
         <h1 className="headline-medium serif">Matt Haig</h1>
         <p className="body-medium on-surface-variant">Reino Unido · n. 1975</p>
       </header>
+      {isSensitiveText(SAMPLE_BIO) && <SensitiveNote />}
       <RichText text={SAMPLE_BIO} className="author-bio" />
     </section>
   )

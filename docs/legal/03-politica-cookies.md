@@ -12,6 +12,7 @@
 |---|---|---|---|---|
 | `sb-*-auth-token` | localStorage (técnica) | Propia (Supabase Auth) | Mantener tu sesión iniciada de forma segura | Hasta que cierres sesión |
 | `tz-theme-mode` | localStorage (técnica/personalización) | Propia | Recordar tu preferencia de tema claro/oscuro | Persistente hasta que la borres |
+| `tz-invite` | localStorage (técnica) | Propia | Recordar tu código de invitación entre el alta y la creación del perfil | Se elimina al completar el registro |
 | Caché de la aplicación | Cache Storage / Service Worker (técnica) | Propia | Cargar la aplicación más rápido y permitir su instalación como PWA | Gestionada automáticamente |
 
 Ninguno de estos elementos permite identificarte fuera del Servicio ni rastrear tu navegación por otros sitios.

@@ -17,10 +17,17 @@ import './legal.css'
  * Los datos del titular se cargan de app_settings (Administración → Legal)
  * y sustituyen los tokens del texto; si faltan, el token queda visible.
  */
+interface ModStats {
+  open: number
+  actioned: number
+  dismissed: number
+}
+
 export default function LegalPage() {
   const { doc } = useParams()
   const entry = doc ? LEGAL_DOCS[doc] : undefined
   const [settings, setSettings] = useState<LegalSettings>({})
+  const [stats, setStats] = useState<ModStats | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -35,6 +42,21 @@ export default function LegalPage() {
       cancelled = true
     }
   }, [])
+
+  // Cifras agregadas de moderación (P2-15, DSA art. 15): solo recuentos.
+  useEffect(() => {
+    if (doc !== 'transparencia') return
+    let cancelled = false
+    supabase.rpc('moderation_stats').then(({ data, error }) => {
+      // Sin migración 020, la sección de cifras simplemente no se muestra
+      if (cancelled || error) return
+      const row = ((data as ModStats[] | null) ?? [])[0]
+      if (row) setStats(row)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [doc])
 
   useEffect(() => {
     if (entry) {
@@ -73,6 +95,29 @@ export default function LegalPage() {
         </nav>
 
         <RichText text={fillLegalBody(entry.body, settings)} className="legal-body" />
+
+        {doc === 'transparencia' && stats && (
+          <div className="legal-stats">
+            <div className="legal-stat">
+              <span className="headline-medium">{stats.open}</span>
+              <span className="body-small on-surface-variant">
+                denuncias pendientes
+              </span>
+            </div>
+            <div className="legal-stat">
+              <span className="headline-medium">{stats.actioned}</span>
+              <span className="body-small on-surface-variant">
+                contenidos retirados
+              </span>
+            </div>
+            <div className="legal-stat">
+              <span className="headline-medium">{stats.dismissed}</span>
+              <span className="body-small on-surface-variant">
+                denuncias desestimadas
+              </span>
+            </div>
+          </div>
+        )}
 
         <footer className="legal-foot body-small on-surface-variant">
           Tsundoku Zero · beta ·{' '}

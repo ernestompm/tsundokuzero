@@ -110,6 +110,13 @@ export type AppSetting = {
   updated_at: string
 }
 
+/** Bloqueo entre usuarios (P2-13, migr. 020) */
+export type Block = {
+  blocker_id: string
+  blocked_id: string
+  created_at: string
+}
+
 export type ReportTargetType =
   | 'discussion'
   | 'comment'
@@ -281,6 +288,7 @@ export type Database = {
         'id' | 'created_at' | 'status' | 'resolved_at' | 'resolution_note'
       >
       app_settings: TableDef<AppSetting, 'key' | 'value', 'updated_at'>
+      blocks: TableDef<Block, 'blocker_id' | 'blocked_id', 'created_at'>
     }
     Views: {
       /** reseñas: review=null hasta que TERMINAS el libro (o es tuya) */
@@ -423,6 +431,35 @@ export type Database = {
       admin_delete_review: {
         Args: { book: string; target_user: string }
         Returns: undefined
+      }
+      complete_onboarding: {
+        Args: {
+          invite: string
+          new_username: string
+          new_display_name: string
+          accepted_terms_version: number
+        }
+        Returns: undefined
+      }
+      admin_set_invite_code: {
+        Args: { code: string }
+        Returns: undefined
+      }
+      admin_get_invite_code: {
+        Args: Record<string, never>
+        Returns: string
+      }
+      block_user: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      unblock_user: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      moderation_stats: {
+        Args: Record<string, never>
+        Returns: { open: number; actioned: number; dismissed: number }[]
       }
     }
     Enums: Record<string, never>

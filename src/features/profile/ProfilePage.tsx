@@ -90,10 +90,12 @@ export default function ProfilePage() {
       )
       if (!blob) throw new Error('No se pudo procesar la imagen')
 
-      const path = `${session.user.id}/avatar.jpg`
+      // Nombre no adivinable (P2-12): el bucket es público, pero la URL
+      // solo la conoce quien ve tu perfil — no es derivable del uid.
+      const path = `${session.user.id}/${crypto.randomUUID()}.jpg`
       const { error: upErr } = await supabase.storage
         .from('avatars')
-        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+        .upload(path, blob, { contentType: 'image/jpeg' })
       if (upErr)
         throw new Error(
           /bucket/i.test(upErr.message)
@@ -101,13 +103,22 @@ export default function ProfilePage() {
             : upErr.message,
         )
       const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
-      // ?v= rompe la caché: el archivo se sobreescribe pero la URL cambia
-      const avatar_url = `${pub.publicUrl}?v=${Date.now()}`
       const { error: dbErr } = await supabase
         .from('profiles')
-        .update({ avatar_url })
+        .update({ avatar_url: pub.publicUrl })
         .eq('id', session.user.id)
       if (dbErr) throw new Error(dbErr.message)
+
+      // Minimización: la foto anterior se elimina, no se acumula
+      const { data: existing } = await supabase.storage
+        .from('avatars')
+        .list(session.user.id)
+      const stale = (existing ?? [])
+        .filter((f) => `${session.user.id}/${f.name}` !== path)
+        .map((f) => `${session.user.id}/${f.name}`)
+      if (stale.length > 0)
+        await supabase.storage.from('avatars').remove(stale)
+
       await refreshProfile()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo cambiar la foto')
@@ -342,6 +353,10 @@ export default function ProfilePage() {
             >
               {busy ? 'Subiendo…' : 'Cambiar foto'}
             </md-text-button>
+            <p className="body-small on-surface-variant" style={{ margin: 0 }}>
+              Tu foto de perfil es públicamente accesible (como en cualquier
+              red social). No subas una imagen que no quieras que se vea.
+            </p>
             <input
               className="profile-input body-large"
               placeholder="Nombre visible"

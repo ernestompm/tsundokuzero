@@ -16,15 +16,21 @@
 | P0-4 Borrado de cuenta | ✅ Hecho | RPC `delete_own_account()` + confirmación escribiendo el usuario (Perfil → Tus datos) |
 | P0-5 Denuncias DSA | ✅ Hecho | Botón 🚩 en ideas, respuestas, muros y perfiles; cola «Denuncias» en admin; notificación `moderation` con motivo (art. 17) |
 | P1-6 Exportación de datos | ✅ Hecho | RPC `export_my_data()` → JSON descargable desde el perfil |
-| P1-7 Invitación en servidor | ⬜ Pendiente | Requiere edge function o tabla de invitaciones; decidir enfoque |
+| P1-7 Invitación en servidor | ✅ Hecho | RPC `complete_onboarding` (migr. 020): código validado en servidor, consentimiento registrado en la misma transacción, INSERT directo de `profiles` retirado. Gestión del código en Admin → Usuarios |
 | P1-8 Procedencia portada/sinopsis | ✅ Hecho | Columnas `cover_source`/`synopsis_source`; BookForm las rellena y avisa de reescribir; atribución visible en la ficha |
 | P1-9 Crédito foto de autor | ✅ Hecho | `photo_credit`/`photo_license` obligatorios al guardar foto; pie de foto visible |
 | P1-10 Email del fundador | ✅ Hecho | Migr. 018 elimina el trigger `auto_promote_founder` (el email sigue en el historial de git — decisión pendiente del titular) |
 | P1-11 Citas con fuente | ✅ Hecho | Citas pasadas a paráfrasis en seed y preview (re-ejecutar `seed_author_matt_haig.sql`) |
-| P2-12…16 | ⬜ Pendientes | Sin cambios |
+| P2-12 Avatares | ✅ Hecho | Aviso de foto pública en la UI; archivo `{uid}/{uuid}.jpg` no adivinable; la foto anterior se elimina al reemplazar |
+| P2-13 Bloqueos | ✅ Hecho | Tabla `blocks` + RPCs `block_user`/`unblock_user` (rompen follows; trigger impide re-seguir); botón en perfil ajeno; filtrado en feed, capítulos, hilos y notificaciones |
+| P2-14 Contenido sensible | ✅ Hecho | Nota con la línea 024 en fichas de autor que tratan salud mental (`SensitiveNote`, detección por texto) |
+| P2-15 Transparencia | ✅ Hecho | Página pública `/legal/transparencia` con normas en lenguaje llano y cifras agregadas en vivo (`moderation_stats()`, sin datos personales) |
+| P2-16 Índice de capítulos | ✅ Criterio documentado | Decisión: se mantienen los títulos — uso funcional/identificativo para anclar debates, sin reproducir prosa. Revisar solo si un titular de derechos objeta (vía de retirada del Aviso legal §3) |
 | Extra: datos del titular por UI | ✅ Hecho | Administración → **Legal** (tabla `app_settings`, migr. 019): nombre, NIF, domicilio, emails e inscripción registral se rellenan sin tocar código; los textos legales los inyectan al renderizar y estampan la fecha de publicación |
 
-> ⚠️ **Para activar todo el backend: ejecutar en el SQL Editor `supabase/migrations/20260716000018_compliance.sql` y `20260716000019_legal_settings.sql`.** La UI degrada con mensajes claros si faltan las migraciones. Tras la 019: entrar en Administración → Legal y rellenar los datos del titular (hasta entonces los textos muestran los tokens `[…]`).
+> ⚠️ **Para activar todo el backend: ejecutar en el SQL Editor las migraciones `…018_compliance.sql`, `…019_legal_settings.sql` y `…020_invites_blocks.sql`.** La UI degrada con mensajes claros si faltan.
+> Tras la 019: Administración → Legal → rellenar los datos del titular.
+> **Tras la 020: Administración → Usuarios → fijar el código de invitación** (sin él, ningún usuario nuevo puede completar el registro) y mantener `VITE_INVITE_CODE` en Vercel con el mismo valor para el pre-chequeo del formulario.
 
 ---
 

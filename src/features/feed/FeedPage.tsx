@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { useCompose } from '../../components/ComposeProvider'
+import { fetchBlockedIds } from '../../lib/blocks'
 import { timeAgo } from '../../lib/time'
 import HomeView, { HomeSkeleton } from './HomeView'
 import type {
@@ -28,6 +29,7 @@ export default function FeedPage() {
       { data: pollOptions },
       { data: myFollows },
       { data: openPoll },
+      blocked,
     ] = await Promise.all([
       supabase
         .from('reading_progress')
@@ -50,6 +52,7 @@ export default function FeedPage() {
         .eq('status', 'open')
         .limit(1)
         .maybeSingle(),
+      fetchBlockedIds(myId),
     ])
 
     // Estanterías: en curso (para tarjetas y filtro) y terminados (filtro)
@@ -87,8 +90,9 @@ export default function FeedPage() {
           .limit(20),
       ])
 
-    const discList0 = discussions ?? []
-    const replyList = myReplyRows ?? []
+    // Bloqueos (P2-13): el contenido de quien has bloqueado no se muestra
+    const discList0 = (discussions ?? []).filter((d) => !blocked.has(d.author_id))
+    const replyList = (myReplyRows ?? []).filter((r) => !blocked.has(r.author_id))
     const discIds = discList0.map((d) => d.id)
 
     // Padres de esas respuestas que aún no están entre las ideas del feed
@@ -170,8 +174,8 @@ export default function FeedPage() {
 
     // ---- Mezclar feed + conversaciones por libro ----
     const discList = discList0
-    const postList = posts ?? []
-    const parentList = parentDiscs ?? []
+    const postList = (posts ?? []).filter((p) => !blocked.has(p.author_id))
+    const parentList = (parentDiscs ?? []).filter((p) => !blocked.has(p.author_id))
     const conversations: BookConvo[] = []
     let feed: FeedItem[] = []
 

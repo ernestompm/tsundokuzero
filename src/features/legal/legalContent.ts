@@ -11,6 +11,7 @@ import avisoLegalRaw from '../../../docs/legal/01-aviso-legal.md?raw'
 import privacidadRaw from '../../../docs/legal/02-politica-privacidad.md?raw'
 import cookiesRaw from '../../../docs/legal/03-politica-cookies.md?raw'
 import terminosRaw from '../../../docs/legal/04-terminos-condiciones.md?raw'
+import transparenciaRaw from '../../../docs/legal/06-transparencia.md?raw'
 
 /** Versión vigente de términos+privacidad registrada en `consents`. */
 export const TERMS_VERSION = 1
@@ -54,9 +55,21 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
     short: 'Aviso legal',
     body: stripH1(avisoLegalRaw),
   },
+  transparencia: {
+    slug: 'transparencia',
+    title: 'Normas y transparencia',
+    short: 'Transparencia',
+    body: stripH1(transparenciaRaw),
+  },
 }
 
-export const LEGAL_ORDER = ['terminos', 'privacidad', 'cookies', 'aviso-legal']
+export const LEGAL_ORDER = [
+  'terminos',
+  'privacidad',
+  'cookies',
+  'aviso-legal',
+  'transparencia',
+]
 
 /* ===== Datos del titular (tabla app_settings, migr. 019) =====
  * Los textos llevan tokens que se sustituyen al renderizar con lo que el

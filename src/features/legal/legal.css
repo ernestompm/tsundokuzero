@@ -56,6 +56,26 @@
   padding: 4px 0 12px;
 }
 
+/* Cifras agregadas de moderación (transparencia, P2-15) */
+.legal-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.legal-stat {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+}
+
 .legal-foot {
   border-top: 1px solid var(--md-sys-color-outline-variant);
   padding-top: 16px;

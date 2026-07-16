@@ -35,6 +35,7 @@ export default function UserProfilePage() {
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
   const [amFollowing, setAmFollowing] = useState(false)
+  const [amBlocking, setAmBlocking] = useState(false)
   const [ideas, setIdeas] = useState<IdeaRow[]>([])
   const [posts, setPosts] = useState<PostRow[]>([])
 
@@ -50,6 +51,24 @@ export default function UserProfilePage() {
       return
     }
     setPerson(p)
+
+    // Bloqueo (P2-13): con el perfil bloqueado no se carga su contenido
+    const { data: blockRow } = await supabase
+      .from('blocks')
+      .select('blocked_id')
+      .eq('blocker_id', session.user.id)
+      .eq('blocked_id', p.id)
+      .maybeSingle()
+    if (blockRow) {
+      setAmBlocking(true)
+      setIdeas([])
+      setPosts([])
+      setFollowers(0)
+      setFollowing(0)
+      setAmFollowing(false)
+      return
+    }
+    setAmBlocking(false)
 
     const [
       { count: followersCount },
@@ -158,6 +177,27 @@ export default function UserProfilePage() {
     }
   }
 
+  /** Bloquear/desbloquear (P2-13): el RPC rompe los follows en ambos sentidos. */
+  const toggleBlock = async () => {
+    if (!session) return
+    if (amBlocking) {
+      await supabase.rpc('unblock_user', { target: person.id })
+    } else {
+      if (
+        !window.confirm(
+          `¿Bloquear a ${person.display_name}? Dejaréis de seguiros y no verás su contenido ni sus avisos. Puedes deshacerlo cuando quieras.`,
+        )
+      )
+        return
+      const { error } = await supabase.rpc('block_user', { target: person.id })
+      if (error && /block_user|function/i.test(error.message)) {
+        window.alert('Falta ejecutar la migración 020 en Supabase.')
+        return
+      }
+    }
+    await load()
+  }
+
   return (
     <section className="profile">
       <div className="profile-head">
@@ -175,7 +215,11 @@ export default function UserProfilePage() {
             <span className="on-surface-variant">seguidores</span>
           </span>
         </div>
-        {amFollowing ? (
+        {amBlocking ? (
+          <md-outlined-button onClick={() => void toggleBlock()}>
+            Desbloquear
+          </md-outlined-button>
+        ) : amFollowing ? (
           <md-outlined-button onClick={() => void toggleFollow()}>
             Siguiendo
           </md-outlined-button>
@@ -191,8 +235,26 @@ export default function UserProfilePage() {
             reportedUserId={person.id}
             excerpt={person.bio}
           />
+          {!amBlocking && (
+            <button
+              type="button"
+              className="report-btn"
+              aria-label={`Bloquear a ${person.display_name}`}
+              title="Bloquear"
+              onClick={() => void toggleBlock()}
+            >
+              <span className="material-symbols-rounded">person_remove</span>
+            </button>
+          )}
         </span>
       </div>
+
+      {amBlocking && (
+        <p className="body-medium on-surface-variant" style={{ textAlign: 'center' }}>
+          Has bloqueado a esta persona: no ves su contenido ni sus avisos, y
+          no puede seguirte.
+        </p>
+      )}
 
       {posts.length > 0 && (
         <>
