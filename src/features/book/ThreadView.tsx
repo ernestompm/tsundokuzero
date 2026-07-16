@@ -5,6 +5,7 @@ import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
+import ReportButton from '../../components/ReportButton'
 import LockedTeaser from '../../components/LockedTeaser'
 import { KIND_LABEL, type ThreadViewData } from './chapterTypes'
 import './thread.css'
@@ -85,6 +86,14 @@ export default function ThreadView({
             </>
           )}
           <span style={{ flex: 1 }} />
+          {data.body != null && (
+            <ReportButton
+              targetType="discussion"
+              targetId={data.discussionId}
+              reportedUserId={data.authorId}
+              excerpt={data.body}
+            />
+          )}
           {mine && onDeleteDiscussion && (
             <md-icon-button
               aria-label="Eliminar"
@@ -149,6 +158,12 @@ export default function ThreadView({
                     <span className="body-small on-surface-variant">
                       {c.createdAt}
                     </span>
+                    <ReportButton
+                      targetType="comment"
+                      targetId={c.id}
+                      reportedUserId={c.authorId}
+                      excerpt={c.body}
+                    />
                     {currentUserId === c.authorId && onDeleteComment && (
                       <button
                         className="thread-reply__del"

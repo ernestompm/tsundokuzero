@@ -32,13 +32,13 @@ Haig no suele construir fantasía compleja ni ciencia ficción muy técnica. Uti
 
 > ¿Qué cambiaríamos si pudiéramos regresar a los momentos decisivos de nuestra vida?
 
-La fantasía es el mecanismo; el verdadero asunto es siempre emocional. Él mismo ha explicado que procura rodear los elementos fantásticos de detalles reales para que la historia resulte creíble y «emocionalmente real».
+La fantasía es el mecanismo; el verdadero asunto es siempre emocional. Él mismo ha explicado que procura rodear los elementos fantásticos de detalles reales para que la historia resulte creíble y emocionalmente verosímil.
 
 ### 2. Prosa muy accesible
 
 Su escritura es clara, directa y fácil de leer. Emplea capítulos relativamente breves, frases sencillas, diálogos ágiles y reflexiones que pueden funcionar casi como aforismos. No busca deslumbrar mediante una prosa especialmente experimental, sino que el lector comprenda inmediatamente el conflicto y conecte con la emoción.
 
-Por eso sus novelas funcionan como fábulas o parábolas contemporáneas: tienen una premisa reconocible, un recorrido emocional definido y una conclusión filosófica bastante clara. Una crítica de *La biblioteca de la medianoche* describió la novela como deliberadamente «aerodinámica»: pocos personajes secundarios, escasas tramas paralelas y una atención casi total al problema psicológico de la protagonista.
+Por eso sus novelas funcionan como fábulas o parábolas contemporáneas: tienen una premisa reconocible, un recorrido emocional definido y una conclusión filosófica bastante clara. Parte de la crítica ha descrito *La biblioteca de la medianoche* como una novela deliberadamente aerodinámica: pocos personajes secundarios, escasas tramas paralelas y una atención casi total al problema psicológico de la protagonista.
 
 ### 3. Oscuridad que termina buscando la luz
 

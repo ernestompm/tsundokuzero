@@ -5,6 +5,7 @@ import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
+import ReportButton from '../../components/ReportButton'
 import type { DiscussionKind } from '../../lib/database.types'
 import {
   KIND_LABEL,
@@ -235,6 +236,12 @@ function DiscussionCard({
           </>
         )}
         <span style={{ flex: 1 }} />
+        <ReportButton
+          targetType="discussion"
+          targetId={d.id}
+          reportedUserId={d.authorId}
+          excerpt={d.body}
+        />
         {mine && !editing && (
           <span className="disc__tools">
             <md-icon-button
@@ -308,6 +315,14 @@ function DiscussionCard({
                 <p className="body-small" style={{ flex: 1 }}>
                   <span className="who">{c.authorName}</span> · {c.body}
                 </p>
+              )}
+              {c.body != null && (
+                <ReportButton
+                  targetType="comment"
+                  targetId={c.id}
+                  reportedUserId={c.authorId}
+                  excerpt={c.body}
+                />
               )}
               {currentUserId === c.authorId && onDeleteComment && (
                 <button

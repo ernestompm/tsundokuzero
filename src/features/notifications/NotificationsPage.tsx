@@ -31,7 +31,7 @@ export default function NotificationsPage() {
     if (!session) return
     const { data: rows } = await supabase
       .from('notifications')
-      .select('id, actor_id, type, discussion_id, poll_id, book_id, read, created_at')
+      .select('id, actor_id, type, discussion_id, poll_id, book_id, note, read, created_at')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(40)
@@ -60,6 +60,12 @@ export default function NotificationsPage() {
         } else if (n.type === 'book_done') {
           to = n.book_id ? `/book/${n.book_id}` : '/club'
           detail = '¡El club ha terminado el libro! Deja tu reseña'
+        } else if (n.type === 'moderation') {
+          // DSA art. 17: motivación de la decisión de moderación
+          to = '/legal/terminos'
+          detail = n.note
+            ? `Moderación: ${n.note}`
+            : 'Un moderador ha retirado uno de tus contenidos.'
         } else if (n.type === 'follow') {
           to = actor?.username ? `/u/${actor.username}` : '/'
           detail = 'empezó a seguirte'
@@ -113,7 +119,10 @@ export default function NotificationsPage() {
       ) : (
         <div className="noti-list">
           {items.map((n) => {
-            const systemMsg = n.type === 'unlock' || n.type === 'book_done'
+            const systemMsg =
+              n.type === 'unlock' ||
+              n.type === 'book_done' ||
+              n.type === 'moderation'
             const icon =
               n.type === 'reply'
                 ? 'chat_bubble'
@@ -123,7 +132,9 @@ export default function NotificationsPage() {
                     ? 'lock_open'
                     : n.type === 'book_done'
                       ? 'menu_book'
-                      : 'how_to_vote'
+                      : n.type === 'moderation'
+                        ? 'flag'
+                        : 'how_to_vote'
             return (
               <button
                 key={n.id}

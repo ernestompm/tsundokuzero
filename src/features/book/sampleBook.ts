@@ -32,6 +32,7 @@ export const SAMPLE_BOOK: BookViewData = {
   author: 'Matt Haig',
   authorId: null,
   coverUrl: null,
+  coverSource: null,
   synopsis:
     'Entre la vida y la muerte hay una biblioteca. Cada libro de sus estanterías es una vida que Nora Seed pudo haber vivido: la que dejó al abandonar la natación, la que perdió al cancelar su boda, la que nunca empezó en Australia. Esta noche, Nora tendrá que decidir qué vida merece de verdad ser vivida.',
   buyUrl: 'https://www.amazon.es/dp/8420454826',

@@ -1,24 +1,22 @@
-// Verifica que el subconjunto de Material Symbols de index.html esté en
-// ORDEN ALFABÉTICO (Google Fonts devuelve 400 si no lo está → se rompen
-// TODOS los iconos) y que incluya todos los iconos usados en el código.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+// Verifica que scripts/icons.txt (fuente de verdad del subconjunto
+// SELF-HOSTED de Material Symbols) esté en orden alfabético y cubra todos
+// los iconos usados en el código. Si añades un icono nuevo: añádelo a
+// icons.txt (ordenado) y ejecuta `npm run fetch:icons` para regenerar
+// public/fonts/material-symbols-rounded.woff2.
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const html = readFileSync('index.html', 'utf8')
-const m = html.match(/icon_names=([a-z_,]+)/)
-if (!m) {
-  console.error('✗ No se encontró icon_names en index.html')
-  process.exit(1)
-}
-const list = m[1].split(',')
+const list = readFileSync('scripts/icons.txt', 'utf8')
+  .split(/\r?\n/)
+  .map((l) => l.trim())
+  .filter(Boolean)
 
-// 1) Orden alfabético
+// 1) Orden alfabético (el endpoint de subsetting exige la lista ordenada)
 const sorted = [...list].sort()
 if (list.join(',') !== sorted.join(',')) {
   const bad = list.find((x, i) => x !== sorted[i])
-  console.error(`✗ icon_names NO está ordenado alfabéticamente (revisa «${bad}»).`)
-  console.error('  Google Fonts responde 400 y se rompen todos los iconos.')
-  console.error('  Orden correcto:\n  ' + sorted.join(','))
+  console.error(`✗ scripts/icons.txt NO está ordenado alfabéticamente (revisa «${bad}»).`)
+  console.error('  Orden correcto:\n  ' + sorted.join('\n  '))
   process.exit(1)
 }
 
@@ -44,8 +42,14 @@ const subset = new Set(list)
 const missing = [...used].filter((i) => !subset.has(i)).sort()
 if (missing.length) {
   console.error('✗ Iconos usados que faltan en el subset:', missing.join(', '))
-  console.error('  Añádelos (ordenados) a icon_names en index.html.')
+  console.error('  Añádelos (ordenados) a scripts/icons.txt y ejecuta npm run fetch:icons.')
   process.exit(1)
 }
 
-console.log(`✓ Iconos OK: ${list.length} en el subset, orden alfabético, cobertura completa.`)
+// 3) La fuente self-hosted debe existir (RGPD: nada se carga de Google)
+if (!existsSync('public/fonts/material-symbols-rounded.woff2')) {
+  console.error('✗ Falta public/fonts/material-symbols-rounded.woff2 — ejecuta npm run fetch:icons.')
+  process.exit(1)
+}
+
+console.log(`✓ Iconos OK: ${list.length} en el subset, orden alfabético, cobertura completa, fuente self-hosted presente.`)

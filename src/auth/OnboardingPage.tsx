@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { TERMS_VERSION } from '../features/legal/legalContent'
 import type { Book, Chapter, Club } from '../lib/database.types'
 import './auth.css'
 
@@ -28,6 +29,8 @@ export default function OnboardingPage() {
   }, [profile, step])
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
+  // Aceptación registrada aquí (paso común a email y OAuth): RGPD art. 7
+  const [accepted, setAccepted] = useState(false)
   const [club, setClub] = useState<Club | null>(null)
   const [book, setBook] = useState<Book | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -81,6 +84,20 @@ export default function OnboardingPage() {
       })
   }, [])
 
+  /**
+   * Deja constancia de la aceptación (versión + fecha, RGPD art. 7).
+   * No bloquea el onboarding si falla (p. ej. migración 018 pendiente):
+   * TermsGate volverá a pedirla en la siguiente carga.
+   */
+  const recordConsent = async () => {
+    if (!session) return
+    await supabase.from('consents').insert({
+      user_id: session.user.id,
+      doc: 'terms',
+      doc_version: TERMS_VERSION,
+    })
+  }
+
   const createProfile = async (e: FormEvent) => {
     e.preventDefault()
     if (!session) return
@@ -90,6 +107,13 @@ export default function OnboardingPage() {
     if (!/^[a-z0-9_]{3,20}$/.test(clean)) {
       setError(
         'El usuario debe tener 3–20 caracteres: letras minúsculas, números o _',
+      )
+      return
+    }
+
+    if (!accepted) {
+      setError(
+        'Para continuar debes aceptar los términos y declarar que tienes al menos 14 años.',
       )
       return
     }
@@ -116,6 +140,7 @@ export default function OnboardingPage() {
         )
         return
       }
+      await recordConsent()
       await refreshProfile()
       setStep(2)
     } finally {
@@ -190,7 +215,39 @@ export default function OnboardingPage() {
                 setDisplayName((e.currentTarget as HTMLInputElement).value)
               }
             />
-            <md-filled-button type="submit" disabled={busy || undefined}>
+            <button
+              type="button"
+              className={`consent-toggle body-small${accepted ? ' active' : ''}`}
+              aria-pressed={accepted}
+              onClick={() => setAccepted((v) => !v)}
+            >
+              <span className="material-symbols-rounded">
+                {accepted ? 'check_circle' : 'radio_button_unchecked'}
+              </span>
+              <span>
+                He leído y acepto los{' '}
+                <Link
+                  to="/legal/terminos"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Términos y condiciones
+                </Link>{' '}
+                y la{' '}
+                <Link
+                  to="/legal/privacidad"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Política de privacidad
+                </Link>
+                , y declaro tener al menos 14 años.
+              </span>
+            </button>
+            <md-filled-button
+              type="submit"
+              disabled={busy || !accepted || undefined}
+            >
               Continuar
             </md-filled-button>
           </form>

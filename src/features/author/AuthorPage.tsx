@@ -28,6 +28,10 @@ export default function AuthorPage() {
   const [birthDraft, setBirthDraft] = useState('')
   const [webDraft, setWebDraft] = useState('')
   const [photoDraft, setPhotoDraft] = useState('')
+  // Crédito/licencia de la foto: obligatorios si hay foto (LPI, P1-9)
+  const [photoCreditDraft, setPhotoCreditDraft] = useState('')
+  const [photoLicenseDraft, setPhotoLicenseDraft] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -99,10 +103,22 @@ export default function AuthorPage() {
     setBirthDraft(author.birth_year?.toString() ?? '')
     setWebDraft(author.website ?? '')
     setPhotoDraft(author.photo_url ?? '')
+    setPhotoCreditDraft(author.photo_credit ?? '')
+    setPhotoLicenseDraft(author.photo_license ?? '')
+    setEditError(null)
     setEditing(true)
   }
 
   const saveEdit = async () => {
+    // LPI: las fotos de autor tienen copyright del fotógrafo. Sin crédito
+    // y licencia (Wikimedia Commons, kit de prensa…) no se guarda foto.
+    if (photoDraft.trim() && !(photoCreditDraft.trim() && photoLicenseDraft.trim())) {
+      setEditError(
+        'Para guardar una foto indica su crédito (autor/fuente) y su licencia. Usa solo imágenes con licencia compatible (p. ej. Wikimedia Commons o material de prensa de la editorial).',
+      )
+      return
+    }
+    setEditError(null)
     setBusy(true)
     await supabase
       .from('authors')
@@ -112,6 +128,8 @@ export default function AuthorPage() {
         birth_year: birthDraft.trim() ? Number(birthDraft) : null,
         website: webDraft.trim() || null,
         photo_url: photoDraft.trim() || null,
+        photo_credit: photoDraft.trim() ? photoCreditDraft.trim() : null,
+        photo_license: photoDraft.trim() ? photoLicenseDraft.trim() : null,
       })
       .eq('id', author.id)
     setBusy(false)
@@ -130,15 +148,23 @@ export default function AuthorPage() {
     <section className="author">
       <header className="author-head">
         {author.photo_url ? (
-          <img
-            className="author-head__photo"
-            src={author.photo_url}
-            alt={`Foto de ${author.name}`}
-            onError={(e) => {
-              // si la URL falla, volvemos a la inicial
-              ;(e.target as HTMLImageElement).style.display = 'none'
-            }}
-          />
+          <span className="author-head__photowrap">
+            <img
+              className="author-head__photo"
+              src={author.photo_url}
+              alt={`Foto de ${author.name}`}
+              onError={(e) => {
+                // si la URL falla, volvemos a la inicial
+                ;(e.target as HTMLImageElement).style.display = 'none'
+              }}
+            />
+            {author.photo_credit && (
+              <span className="author-photo-credit label-small on-surface-variant">
+                Foto: {author.photo_credit}
+                {author.photo_license ? ` (${author.photo_license})` : ''}
+              </span>
+            )}
+          </span>
         ) : (
           <span className="author-head__initial serif" aria-hidden>
             {author.name[0]}
@@ -204,6 +230,34 @@ export default function AuthorPage() {
             value={photoDraft}
             onChange={(e) => setPhotoDraft(e.target.value)}
           />
+          {photoDraft.trim() && (
+            <>
+              <div className="author-edit__row">
+                <input
+                  className="profile-input body-medium"
+                  placeholder="Crédito de la foto (autor / fuente) *"
+                  value={photoCreditDraft}
+                  onChange={(e) => setPhotoCreditDraft(e.target.value)}
+                />
+                <input
+                  className="profile-input body-medium"
+                  placeholder="Licencia (CC BY-SA 4.0, prensa…) *"
+                  value={photoLicenseDraft}
+                  onChange={(e) => setPhotoLicenseDraft(e.target.value)}
+                />
+              </div>
+              <p className="body-small on-surface-variant">
+                Solo imágenes con licencia compatible: Wikimedia Commons o
+                material de prensa de la editorial. El crédito se muestra al
+                pie de la foto.
+              </p>
+            </>
+          )}
+          {editError && (
+            <p className="body-small" style={{ color: 'var(--md-sys-color-error)' }}>
+              {editError}
+            </p>
+          )}
           {photoDraft.trim() && (
             <img
               className="author-head__photo"

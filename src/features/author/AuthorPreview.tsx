@@ -15,7 +15,7 @@ Utiliza un elemento extraordinario como una especie de experimento filosófico:
 
 > ¿Qué pasaría si pudiéramos vivir todas las vidas que descartamos?
 
-La fantasía es el mecanismo; el verdadero asunto es siempre emocional. Procura rodear los elementos fantásticos de detalles reales para que la historia resulte «emocionalmente real».
+La fantasía es el mecanismo; el verdadero asunto es siempre emocional. Procura rodear los elementos fantásticos de detalles reales para que la historia resulte emocionalmente verosímil.
 
 ### Oscuridad que termina buscando la luz
 

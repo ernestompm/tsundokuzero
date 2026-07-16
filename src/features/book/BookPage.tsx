@@ -87,6 +87,7 @@ export default function BookPage() {
       author: book.author,
       authorId: book.author_id,
       coverUrl: book.cover_url,
+      coverSource: book.cover_source,
       synopsis: book.synopsis,
       buyUrl: book.buy_url,
       currentChapter: current,

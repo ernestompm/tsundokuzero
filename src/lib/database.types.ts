@@ -38,6 +38,9 @@ export type Book = {
   buy_url: string | null
   created_at: string
   created_by: string | null
+  /** procedencia de la portada/sinopsis (LPI, migr. 018) */
+  cover_source: string | null
+  synopsis_source: string | null
 }
 
 export type Author = {
@@ -49,6 +52,9 @@ export type Author = {
   website: string | null
   photo_url: string | null
   created_at: string
+  /** crédito y licencia de la foto (LPI, migr. 018) */
+  photo_credit: string | null
+  photo_license: string | null
 }
 
 export type BookRating = {
@@ -72,6 +78,7 @@ export type NotificationType =
   | 'poll'
   | 'unlock'
   | 'book_done'
+  | 'moderation'
 
 export type Notification = {
   id: string
@@ -83,6 +90,55 @@ export type Notification = {
   book_id: string | null
   read: boolean
   created_at: string
+  /** motivo de una decisión de moderación (DSA art. 17, migr. 018) */
+  note: string | null
+}
+
+/** Registro inmutable de aceptación de términos (RGPD art. 7, migr. 018) */
+export type Consent = {
+  user_id: string
+  doc: 'terms'
+  doc_version: number
+  accepted_at: string
+}
+
+/** Ajustes públicos de la app: datos del titular para los textos legales
+ *  (migr. 019). Lectura anónima — jamás guardar secretos aquí. */
+export type AppSetting = {
+  key: string
+  value: string
+  updated_at: string
+}
+
+export type ReportTargetType =
+  | 'discussion'
+  | 'comment'
+  | 'post'
+  | 'review'
+  | 'profile'
+export type ReportReason =
+  | 'illegal'
+  | 'harassment'
+  | 'spoiler'
+  | 'spam'
+  | 'ip'
+  | 'other'
+export type ReportStatus = 'open' | 'actioned' | 'dismissed'
+
+/** Denuncia de contenido (DSA art. 16, migr. 018) */
+export type Report = {
+  id: string
+  reporter_id: string | null
+  reported_user_id: string | null
+  target_type: ReportTargetType
+  target_id: string
+  excerpt: string | null
+  reason: ReportReason
+  details: string | null
+  status: ReportStatus
+  created_at: string
+  resolved_at: string | null
+  resolution_note: string | null
 }
 
 export type Chapter = {
@@ -218,6 +274,13 @@ export type Database = {
         'user_id' | 'type',
         'id' | 'created_at'
       >
+      consents: TableDef<Consent, 'user_id' | 'doc' | 'doc_version', 'accepted_at'>
+      reports: TableDef<
+        Report,
+        'target_type' | 'target_id' | 'reason',
+        'id' | 'created_at' | 'status' | 'resolved_at' | 'resolution_note'
+      >
+      app_settings: TableDef<AppSetting, 'key' | 'value', 'updated_at'>
     }
     Views: {
       /** reseñas: review=null hasta que TERMINAS el libro (o es tuya) */
@@ -336,6 +399,30 @@ export type Database = {
           ideas_week: number
           new_users_week: number
         }[]
+      }
+      delete_own_account: {
+        Args: Record<string, never>
+        Returns: undefined
+      }
+      export_my_data: {
+        Args: Record<string, never>
+        Returns: unknown
+      }
+      admin_resolve_report: {
+        Args: { report: string; new_status: string; note?: string | null }
+        Returns: undefined
+      }
+      admin_delete_comment: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      admin_delete_post: {
+        Args: { target: string }
+        Returns: undefined
+      }
+      admin_delete_review: {
+        Args: { book: string; target_user: string }
+        Returns: undefined
       }
     }
     Enums: Record<string, never>

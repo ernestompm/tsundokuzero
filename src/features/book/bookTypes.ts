@@ -14,6 +14,8 @@ export interface BookViewData {
   coverUrl: string | null
   synopsis: string | null
   buyUrl: string | null
+  /** procedencia de la portada, para la atribución (LPI, P1-8) */
+  coverSource: string | null
   currentChapter: number
   totalChapters: number
   currentLabel: string | null

@@ -185,18 +185,28 @@ function parseBlocks(text: string): ReactNode[] {
 
 /* ===================== Inline ===================== */
 
-/** [texto](https://…) → enlace; luego negrita y cursiva. */
+/**
+ * [texto](https://…) → enlace externo (pestaña nueva);
+ * [texto](/ruta) → enlace interno (p. ej. entre páginas legales);
+ * luego negrita y cursiva. Nada más: jamás javascript: ni HTML.
+ */
 function inline(text: string): ReactNode[] {
   const out: ReactNode[] = []
-  const linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+  const linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g
   let last = 0
   let key = 0
   let m: RegExpExecArray | null
   while ((m = linkRe.exec(text)) !== null) {
     if (m.index > last) out.push(...emphasis(text.slice(last, m.index), key))
     key += 100
+    const external = m[2].startsWith('http')
     out.push(
-      <a key={`l${key++}`} href={m[2]} target="_blank" rel="noopener noreferrer">
+      <a
+        key={`l${key++}`}
+        href={m[2]}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+      >
         {emphasis(m[1], key)}
       </a>,
     )

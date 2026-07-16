@@ -3,6 +3,19 @@
   gap: 16px;
   align-items: flex-start;
 }
+.book-head__coverwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+/* Atribución de la portada (LPI): discreta bajo la imagen */
+.book-cover-credit {
+  max-width: 96px;
+  text-align: center;
+  opacity: 0.8;
+}
 .book-head__info {
   flex: 1;
   min-width: 0;

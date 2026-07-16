@@ -24,6 +24,9 @@ export default function BookForm({
   const [author, setAuthor] = useState('')
   const [synopsis, setSynopsis] = useState('')
   const [cover, setCover] = useState('')
+  // Procedencia de portada y sinopsis (LPI, P1-8): se guarda en el libro
+  const [coverSource, setCoverSource] = useState<string | null>(null)
+  const [synopsisSource, setSynopsisSource] = useState<string | null>(null)
   const [buy, setBuy] = useState('')
   const [chapters, setChapters] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +45,8 @@ export default function BookForm({
       let fAuthor = ''
       let fSynopsis = ''
       let fCover = ''
+      let fCoverSource: string | null = null
+      let fSynopsisSource: string | null = null
 
       // 1) Google Books
       try {
@@ -55,7 +60,9 @@ export default function BookForm({
           if (v.subtitle) fTitle += ` — ${v.subtitle}`
           fAuthor = (v.authors ?? []).join(' y ')
           fSynopsis = v.description ?? ''
+          if (fSynopsis) fSynopsisSource = 'Google Books'
           fCover = (v.imageLinks?.thumbnail ?? '').replace('http://', 'https://')
+          if (fCover) fCoverSource = 'Google Books'
         }
       } catch {
         /* seguimos con Open Library */
@@ -77,7 +84,10 @@ export default function BookForm({
               (v.authors ?? [])
                 .map((a: { name: string }) => a.name)
                 .join(' y ')
-            fCover = fCover || v.cover?.large || v.cover?.medium || ''
+            if (!fCover && (v.cover?.large || v.cover?.medium)) {
+              fCover = v.cover.large || v.cover.medium
+              fCoverSource = 'Open Library'
+            }
           }
         } catch {
           /* nada */
@@ -104,6 +114,7 @@ export default function BookForm({
                 fSynopsis = typeof d === 'string' ? d : (d?.value ?? '')
               }
             }
+            if (fSynopsis) fSynopsisSource = 'Open Library'
           }
         } catch {
           /* nada */
@@ -115,7 +126,10 @@ export default function BookForm({
         try {
           const url = `https://covers.openlibrary.org/b/isbn/${clean}-L.jpg?default=false`
           const res = await fetch(url, { method: 'HEAD' })
-          if (res.ok) fCover = url
+          if (res.ok) {
+            fCover = url
+            fCoverSource = 'Open Library'
+          }
         } catch {
           /* nada */
         }
@@ -130,8 +144,14 @@ export default function BookForm({
 
       if (fTitle) setTitle(fTitle)
       if (fAuthor) setAuthor(fAuthor)
-      if (fSynopsis) setSynopsis(fSynopsis)
-      if (fCover) setCover(fCover)
+      if (fSynopsis) {
+        setSynopsis(fSynopsis)
+        setSynopsisSource(fSynopsisSource)
+      }
+      if (fCover) {
+        setCover(fCover)
+        setCoverSource(fCoverSource)
+      }
       setBuy(`https://www.amazon.es/s?k=${clean}`)
 
       const found: string[] = []
@@ -143,7 +163,10 @@ export default function BookForm({
       setLookupMsg(
         `Encontrado: ${found.join(', ')}.` +
           (missing.length ? ` Sin datos de: ${missing.join(', ')} — rellénalo a mano.` : '') +
-          ' Los capítulos van siempre a mano.',
+          ' Los capítulos van siempre a mano.' +
+          (fSynopsis
+            ? ' ⚠️ La sinopsis importada es texto editorial con copyright: reescríbela con tus palabras antes de crear el libro.'
+            : ''),
       )
     } finally {
       setLookupBusy(false)
@@ -169,7 +192,10 @@ export default function BookForm({
         title: t,
         author: a,
         cover_url: cover.trim() || null,
+        // Procedencia (LPI): 'Manual' cuando la URL/texto lo puso el editor
+        cover_source: cover.trim() ? (coverSource ?? 'Manual') : null,
         synopsis: synopsis.trim() || null,
+        synopsis_source: synopsis.trim() ? (synopsisSource ?? 'Propia') : null,
         buy_url: buy.trim() || null,
         total_chapters: chapterTitles.length,
       })
@@ -253,12 +279,16 @@ export default function BookForm({
         />
       </label>
       <label className="bookform__field label-medium">
-        Sinopsis
+        Sinopsis{synopsisSource ? ` — importada de ${synopsisSource}: reescríbela` : ''}
         <textarea
           className="bookform__input body-medium"
           rows={3}
           value={synopsis}
-          onChange={(e) => setSynopsis(e.target.value)}
+          onChange={(e) => {
+            setSynopsis(e.target.value)
+            // al reescribirla pasa a ser redacción propia
+            setSynopsisSource(null)
+          }}
         />
       </label>
       <div className="bookform__row">
@@ -268,7 +298,10 @@ export default function BookForm({
             className="bookform__input body-medium"
             placeholder="https://…"
             value={cover}
-            onChange={(e) => setCover(e.target.value)}
+            onChange={(e) => {
+              setCover(e.target.value)
+              setCoverSource(null)
+            }}
           />
         </label>
         <label className="bookform__field label-medium" style={{ flex: 1 }}>

@@ -3,8 +3,10 @@ import { AuthProvider } from './auth/AuthContext'
 import { ComposeProvider } from './components/ComposeProvider'
 import ComposeSheet from './components/ComposeSheet'
 import RequireAuth from './auth/RequireAuth'
+import TermsGate from './auth/TermsGate'
 import AppShell from './components/AppShell'
 import LoginPage from './auth/LoginPage'
+import LegalPage from './features/legal/LegalPage'
 import OnboardingPage from './auth/OnboardingPage'
 import FeedPage from './features/feed/FeedPage'
 import HomeView from './features/feed/HomeView'
@@ -36,6 +38,9 @@ export default function App() {
       <ComposeProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Textos legales: PÚBLICOS, sin login (LSSI art. 10, RGPD 12-13) */}
+        <Route path="/legal/:doc" element={<LegalPage />} />
 
         {/* Vista de diseño sin login (revisión de apariencia) */}
         <Route path="/preview" element={<AppShell />}>
@@ -110,21 +115,24 @@ export default function App() {
 
         <Route element={<RequireAuth />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route element={<AppShell />}>
-            <Route index element={<FeedPage />} />
-            <Route path="explore" element={<ExplorePage />} />
-            <Route path="library" element={<LibraryPage />} />
-            <Route path="book" element={<ClubBookRedirect />} />
-            <Route path="book/:bookId" element={<BookPage />} />
-            <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
-            <Route path="thread/:discussionId" element={<ThreadPage />} />
-            <Route path="club" element={<ClubPage />} />
-            <Route path="club/manage" element={<ClubManagePage />} />
-            <Route path="me" element={<ProfilePage />} />
-            <Route path="u/:username" element={<UserProfilePage />} />
-            <Route path="author/:authorId" element={<AuthorPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="admin" element={<AdminPage />} />
+          {/* TermsGate: exige aceptación vigente de términos (RGPD art. 7) */}
+          <Route element={<TermsGate />}>
+            <Route element={<AppShell />}>
+              <Route index element={<FeedPage />} />
+              <Route path="explore" element={<ExplorePage />} />
+              <Route path="library" element={<LibraryPage />} />
+              <Route path="book" element={<ClubBookRedirect />} />
+              <Route path="book/:bookId" element={<BookPage />} />
+              <Route path="book/:bookId/chapter/:number" element={<ChapterPage />} />
+              <Route path="thread/:discussionId" element={<ThreadPage />} />
+              <Route path="club" element={<ClubPage />} />
+              <Route path="club/manage" element={<ClubManagePage />} />
+              <Route path="me" element={<ProfilePage />} />
+              <Route path="u/:username" element={<UserProfilePage />} />
+              <Route path="author/:authorId" element={<AuthorPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="admin" element={<AdminPage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

@@ -38,6 +38,18 @@ function Logo() {
   )
 }
 
+/** Enlaces legales permanentes (LSSI art. 10; auditoría P0-1). */
+function LegalLinks() {
+  return (
+    <nav className="legal-links label-small" aria-label="Información legal">
+      <NavLink to="/legal/privacidad">Privacidad</NavLink>
+      <NavLink to="/legal/terminos">Términos</NavLink>
+      <NavLink to="/legal/cookies">Cookies</NavLink>
+      <NavLink to="/legal/aviso-legal">Aviso legal</NavLink>
+    </nav>
+  )
+}
+
 const DRAWER_LINKS = [
   { to: '/', icon: 'home', label: 'Inicio' },
   { to: '/explore', icon: 'travel_explore', label: 'Explorar' },
@@ -175,6 +187,7 @@ export default function AppShell() {
           <span className="shell-version label-small">
             Tsundoku Zero v{__APP_VERSION__} · beta
           </span>
+          <LegalLinks />
         </div>
       </aside>
 
@@ -254,6 +267,7 @@ export default function AppShell() {
               <span className="shell-version label-small">
                 Tsundoku Zero v{__APP_VERSION__} · beta
               </span>
+              <LegalLinks />
             </div>
           </nav>
         </div>

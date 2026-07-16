@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
@@ -35,6 +35,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [invite, setInvite] = useState('')
+  // RGPD art. 7 + LOPDGDD art. 7: aceptación expresa y edad mínima (14)
+  const [accepted, setAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -56,6 +58,13 @@ export default function LoginPage() {
 
     if (mode === 'signup' && invite.trim() !== INVITE_CODE) {
       setError('Código de invitación incorrecto.')
+      return
+    }
+
+    if (mode === 'signup' && !accepted) {
+      setError(
+        'Para crear la cuenta debes aceptar los términos y declarar que tienes al menos 14 años.',
+      )
       return
     }
 
@@ -122,18 +131,52 @@ export default function LoginPage() {
           }
         />
         {isSignup && (
-          <md-outlined-text-field
-            label="Código de invitación"
-            required
-            value={invite}
-            supporting-text="Pídeselo a quien te invitó al club"
-            onInput={(e) =>
-              setInvite((e.currentTarget as HTMLInputElement).value)
-            }
-          />
+          <>
+            <md-outlined-text-field
+              label="Código de invitación"
+              required
+              value={invite}
+              supporting-text="Pídeselo a quien te invitó al club"
+              onInput={(e) =>
+                setInvite((e.currentTarget as HTMLInputElement).value)
+              }
+            />
+            <button
+              type="button"
+              className={`consent-toggle body-small${accepted ? ' active' : ''}`}
+              aria-pressed={accepted}
+              onClick={() => setAccepted((v) => !v)}
+            >
+              <span className="material-symbols-rounded">
+                {accepted ? 'check_circle' : 'radio_button_unchecked'}
+              </span>
+              <span>
+                He leído y acepto los{' '}
+                <Link
+                  to="/legal/terminos"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Términos y condiciones
+                </Link>{' '}
+                y la{' '}
+                <Link
+                  to="/legal/privacidad"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Política de privacidad
+                </Link>
+                , y declaro tener al menos 14 años.
+              </span>
+            </button>
+          </>
         )}
 
-        <md-filled-button type="submit" disabled={busy || undefined}>
+        <md-filled-button
+          type="submit"
+          disabled={busy || (isSignup && !accepted) || undefined}
+        >
           {busy ? 'Un momento…' : isSignup ? 'Crear cuenta' : 'Entrar'}
         </md-filled-button>
 
@@ -167,6 +210,13 @@ export default function LoginPage() {
             </md-outlined-button>
           </>
         )}
+
+        <nav className="legal-links label-small" aria-label="Información legal">
+          <Link to="/legal/privacidad">Privacidad</Link>
+          <Link to="/legal/terminos">Términos</Link>
+          <Link to="/legal/cookies">Cookies</Link>
+          <Link to="/legal/aviso-legal">Aviso legal</Link>
+        </nav>
       </form>
     </main>
   )

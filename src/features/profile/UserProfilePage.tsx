@@ -6,6 +6,7 @@ import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
+import ReportButton from '../../components/ReportButton'
 import { timeAgo } from '../../lib/time'
 import type { Profile } from '../../lib/database.types'
 import './profile.css'
@@ -183,6 +184,14 @@ export default function UserProfilePage() {
             Seguir
           </md-filled-button>
         )}
+        <span className="profile-report label-small">
+          <ReportButton
+            targetType="profile"
+            targetId={person.id}
+            reportedUserId={person.id}
+            excerpt={person.bio}
+          />
+        </span>
       </div>
 
       {posts.length > 0 && (
@@ -193,7 +202,15 @@ export default function UserProfilePage() {
               <div key={p.id} className="idea-row" style={{ cursor: 'default' }}>
                 {p.title && <span className="title-small serif">{p.title}</span>}
                 <span className="body-medium idea-row__body">{p.body}</span>
-                <span className="body-small on-surface-variant">{p.createdAt}</span>
+                <span className="body-small on-surface-variant post-row__meta">
+                  {p.createdAt}
+                  <ReportButton
+                    targetType="post"
+                    targetId={p.id}
+                    reportedUserId={person.id}
+                    excerpt={p.body}
+                  />
+                </span>
               </div>
             ))}
           </div>

@@ -49,12 +49,19 @@ export default function BookView({
   return (
     <section className="book">
       <Card className="book-head" tone="default">
-        <BookCover
-          title={data.title}
-          author={data.author}
-          coverUrl={data.coverUrl}
-          size="lg"
-        />
+        <div className="book-head__coverwrap">
+          <BookCover
+            title={data.title}
+            author={data.author}
+            coverUrl={data.coverUrl}
+            size="lg"
+          />
+          {data.coverUrl && data.coverSource && (
+            <span className="book-cover-credit label-small on-surface-variant">
+              Portada: {data.coverSource}
+            </span>
+          )}
+        </div>
         <div className="book-head__info">
           <h1 className="headline-small serif book-head__title">{data.title}</h1>
           <p className="body-medium on-surface-variant">

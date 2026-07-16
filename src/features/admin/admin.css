@@ -194,3 +194,14 @@
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
 }
+
+/* ===== Pestaña Legal: datos del titular (LSSI art. 10) ===== */
+.admin-legal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.admin-legal__field .admin-input {
+  width: 100%;
+}

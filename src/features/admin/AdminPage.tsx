@@ -12,10 +12,15 @@ import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
 import { timeAgo } from '../../lib/time'
 import { KIND_LABEL } from '../book/chapterTypes'
-import type { Book, DiscussionKind } from '../../lib/database.types'
+import {
+  LEGAL_SETTING_KEYS,
+  LEGAL_ORDER,
+  LEGAL_DOCS,
+} from '../legal/legalContent'
+import type { Book, DiscussionKind, Report } from '../../lib/database.types'
 import './admin.css'
 
-type Tab = 'summary' | 'users' | 'content' | 'books'
+type Tab = 'summary' | 'users' | 'content' | 'reports' | 'books' | 'legal'
 
 export default function AdminPage() {
   const { isSuperAdmin, loading } = useAuth()
@@ -33,7 +38,9 @@ export default function AdminPage() {
             ['summary', 'Resumen'],
             ['users', 'Usuarios'],
             ['content', 'Moderación'],
+            ['reports', 'Denuncias'],
             ['books', 'Libros'],
+            ['legal', 'Legal'],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -49,7 +56,9 @@ export default function AdminPage() {
       {tab === 'summary' && <SummaryTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'content' && <ContentTab />}
+      {tab === 'reports' && <ReportsTab />}
       {tab === 'books' && <BooksTab />}
+      {tab === 'legal' && <LegalTab />}
     </section>
   )
 }
@@ -350,6 +359,370 @@ function ContentTab() {
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+/* ===================== Denuncias (DSA arts. 16-17) ===================== */
+
+const REASON_LABEL: Record<string, string> = {
+  illegal: 'Contenido ilegal',
+  harassment: 'Acoso u odio',
+  spoiler: 'Spoiler malintencionado',
+  spam: 'Spam',
+  ip: 'Propiedad intelectual',
+  other: 'Otro',
+}
+
+const TARGET_LABEL: Record<string, string> = {
+  discussion: 'idea',
+  comment: 'respuesta',
+  post: 'entrada de muro',
+  review: 'reseña',
+  profile: 'perfil',
+}
+
+interface ReportRow extends Report {
+  reporterName: string
+  reportedName: string
+}
+
+function ReportsTab() {
+  const [items, setItems] = useState<ReportRow[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [notes, setNotes] = useState<Record<string, string>>({})
+  const [showResolved, setShowResolved] = useState(false)
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) {
+      setError(
+        /reports|relation/i.test(error.message)
+          ? 'Falta ejecutar la migración 018 en Supabase (tabla de denuncias).'
+          : error.message,
+      )
+      return
+    }
+    const list = data ?? []
+    const ids = [
+      ...new Set(
+        list.flatMap((r) => [r.reporter_id, r.reported_user_id]).filter(Boolean),
+      ),
+    ] as string[]
+    const { data: people } = ids.length
+      ? await supabase.from('profiles').select('id, display_name').in('id', ids)
+      : { data: [] }
+    const nameById = new Map((people ?? []).map((p) => [p.id, p.display_name]))
+    setItems(
+      list.map((r) => ({
+        ...r,
+        reporterName: r.reporter_id
+          ? (nameById.get(r.reporter_id) ?? 'Usuario eliminado')
+          : 'Anónimo',
+        reportedName: r.reported_user_id
+          ? (nameById.get(r.reported_user_id) ?? 'Usuario eliminado')
+          : '—',
+      })),
+    )
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  /** Retira el contenido denunciado y resuelve con motivo (DSA art. 17). */
+  const actionReport = async (r: ReportRow) => {
+    const note = (notes[r.id] ?? '').trim()
+    if (
+      !window.confirm(
+        `¿Retirar esta ${TARGET_LABEL[r.target_type]} de ${r.reportedName}? El autor recibirá el motivo.`,
+      )
+    )
+      return
+    setBusyId(r.id)
+    setError(null)
+    let e: { message: string } | null = null
+    if (r.target_type === 'discussion') {
+      e = (await supabase.rpc('admin_delete_discussion', { target: r.target_id })).error
+    } else if (r.target_type === 'comment') {
+      e = (await supabase.rpc('admin_delete_comment', { target: r.target_id })).error
+    } else if (r.target_type === 'post') {
+      e = (await supabase.rpc('admin_delete_post', { target: r.target_id })).error
+    } else if (r.target_type === 'review') {
+      const [book, user] = r.target_id.split(':')
+      e = (await supabase.rpc('admin_delete_review', { book, target_user: user })).error
+    }
+    // 'profile': no hay contenido que borrar; gestionar en la pestaña Usuarios
+    if (e) {
+      setError(e.message)
+      setBusyId(null)
+      return
+    }
+    const { error: e2 } = await supabase.rpc('admin_resolve_report', {
+      report: r.id,
+      new_status: 'actioned',
+      note: note || null,
+    })
+    if (e2) setError(e2.message)
+    setBusyId(null)
+    await load()
+  }
+
+  const dismissReport = async (r: ReportRow) => {
+    setBusyId(r.id)
+    setError(null)
+    const { error: e } = await supabase.rpc('admin_resolve_report', {
+      report: r.id,
+      new_status: 'dismissed',
+      note: (notes[r.id] ?? '').trim() || null,
+    })
+    if (e) setError(e.message)
+    setBusyId(null)
+    await load()
+  }
+
+  if (items === null) return <Spinner error={error} />
+
+  const open = items.filter((r) => r.status === 'open')
+  const resolved = items.filter((r) => r.status !== 'open')
+  const visible = showResolved ? resolved : open
+
+  return (
+    <div className="admin-list">
+      {error && <p className="admin-error body-medium">{error}</p>}
+      <p className="body-small on-surface-variant">
+        Mecanismo de notificación y acción (DSA art. 16). Al retirar
+        contenido, el autor recibe una notificación con el motivo (art. 17).
+      </p>
+      <div className="admin-tabs" style={{ marginTop: 0 }}>
+        <button
+          className={`admin-tab label-large${!showResolved ? ' active' : ''}`}
+          onClick={() => setShowResolved(false)}
+        >
+          Abiertas ({open.length})
+        </button>
+        <button
+          className={`admin-tab label-large${showResolved ? ' active' : ''}`}
+          onClick={() => setShowResolved(true)}
+        >
+          Resueltas ({resolved.length})
+        </button>
+      </div>
+
+      {visible.length === 0 && (
+        <p className="body-medium on-surface-variant">
+          {showResolved ? 'Nada resuelto todavía.' : 'No hay denuncias pendientes. 🎉'}
+        </p>
+      )}
+
+      {visible.map((r) => (
+        <div key={r.id} className="admin-card">
+          <div className="admin-card__meta body-small on-surface-variant">
+            <b>{REASON_LABEL[r.reason] ?? r.reason}</b> ·{' '}
+            {TARGET_LABEL[r.target_type] ?? r.target_type} de{' '}
+            <b>{r.reportedName}</b> · denunciado por {r.reporterName} ·{' '}
+            {timeAgo(r.created_at)}
+            {r.status !== 'open' &&
+              ` · ${r.status === 'actioned' ? 'retirado' : 'desestimado'}`}
+          </div>
+          {r.excerpt && (
+            <p className="body-medium admin-card__body">«{r.excerpt}»</p>
+          )}
+          {r.details && (
+            <p className="body-small on-surface-variant">
+              Detalles: {r.details}
+            </p>
+          )}
+          {r.status === 'open' ? (
+            <>
+              <textarea
+                className="admin-edit body-small"
+                rows={2}
+                placeholder="Motivo para el autor (obligatorio si retiras; DSA art. 17)…"
+                value={notes[r.id] ?? ''}
+                onChange={(e) =>
+                  setNotes((n) => ({ ...n, [r.id]: e.target.value }))
+                }
+              />
+              <div className="admin-card__actions">
+                <md-text-button
+                  disabled={busyId === r.id || undefined}
+                  onClick={() => void dismissReport(r)}
+                >
+                  Desestimar
+                </md-text-button>
+                {r.target_type !== 'profile' && (
+                  <md-filled-button
+                    disabled={
+                      busyId === r.id || !(notes[r.id] ?? '').trim() || undefined
+                    }
+                    onClick={() => void actionReport(r)}
+                  >
+                    Retirar y avisar
+                  </md-filled-button>
+                )}
+              </div>
+            </>
+          ) : (
+            r.resolution_note && (
+              <p className="body-small on-surface-variant">
+                Resolución: {r.resolution_note}
+              </p>
+            )
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ===================== Legal (datos del titular) ===================== */
+
+const LEGAL_FIELDS: {
+  field: keyof typeof LEGAL_SETTING_KEYS
+  label: string
+  hint?: string
+}[] = [
+  { field: 'ownerName', label: 'Nombre y apellidos o razón social *' },
+  { field: 'nif', label: 'NIF / CIF *' },
+  { field: 'address', label: 'Domicilio completo *' },
+  {
+    field: 'contactEmail',
+    label: 'Email de contacto *',
+    hint: 'También punto de contacto DSA. Mejor un buzón dedicado (legal@…), no personal.',
+  },
+  {
+    field: 'privacyEmail',
+    label: 'Email de privacidad (opcional)',
+    hint: 'Si se deja vacío, se usa el de contacto.',
+  },
+  {
+    field: 'registry',
+    label: 'Inscripción registral (solo sociedades)',
+    hint: 'Registro Mercantil, tomo, folio, hoja. Vacío = la línea no se muestra.',
+  },
+]
+
+/**
+ * Datos del titular para los textos legales (LSSI art. 10; migr. 019).
+ * Se guardan en app_settings (lectura pública) y sustituyen los tokens
+ * de /legal/* al renderizar. Guardar re-estampa la fecha de publicación.
+ */
+function LegalTab() {
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('app_settings')
+      .select('key, value')
+      .then(({ data, error }) => {
+        if (error) {
+          setError(
+            /app_settings|relation/i.test(error.message)
+              ? 'Falta ejecutar la migración 019 en Supabase (tabla app_settings).'
+              : error.message,
+          )
+        } else {
+          const byKey = new Map((data ?? []).map((r) => [r.key, r.value]))
+          const v: Record<string, string> = {}
+          for (const { field } of LEGAL_FIELDS)
+            v[field] = byKey.get(LEGAL_SETTING_KEYS[field]) ?? ''
+          setValues(v)
+        }
+        setLoaded(true)
+      })
+  }, [])
+
+  const save = async () => {
+    const required = ['ownerName', 'nif', 'address', 'contactEmail'] as const
+    const missing = required.filter((f) => !(values[f] ?? '').trim())
+    if (missing.length) {
+      setError('Faltan campos obligatorios (los marcados con *).')
+      setNotice(null)
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    const today = new Date().toISOString().slice(0, 10)
+    const rows = [
+      ...LEGAL_FIELDS.map(({ field }) => ({
+        key: LEGAL_SETTING_KEYS[field],
+        value: (values[field] ?? '').trim(),
+      })),
+      // guardar = publicar: se estampa la fecha de «Última actualización»
+      { key: LEGAL_SETTING_KEYS.updatedAt, value: today },
+    ]
+    const { error: e } = await supabase
+      .from('app_settings')
+      .upsert(rows, { onConflict: 'key' })
+    setBusy(false)
+    if (e) {
+      setError(
+        /app_settings|relation/i.test(e.message)
+          ? 'Falta ejecutar la migración 019 en Supabase (tabla app_settings).'
+          : e.message,
+      )
+      return
+    }
+    setNotice(
+      'Guardado. Los textos legales ya muestran estos datos (fecha de publicación: hoy).',
+    )
+  }
+
+  if (!loaded) return <Spinner error={error} />
+
+  return (
+    <div className="admin-list">
+      {error && <p className="admin-error body-medium">{error}</p>}
+      {notice && <p className="body-small admin-card__body">✅ {notice}</p>}
+      <p className="body-small on-surface-variant">
+        Identidad del prestador (LSSI art. 10). Estos datos son públicos: se
+        insertan en el Aviso legal, la Privacidad, las Cookies y los Términos.
+        Mientras falte alguno, en las páginas se ve el token […] sin rellenar.
+      </p>
+      <div className="admin-card">
+        {LEGAL_FIELDS.map(({ field, label, hint }) => (
+          <label key={field} className="admin-legal__field label-medium">
+            {label}
+            <input
+              className="admin-input body-medium"
+              value={values[field] ?? ''}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, [field]: e.target.value }))
+              }
+            />
+            {hint && (
+              <span className="body-small on-surface-variant">{hint}</span>
+            )}
+          </label>
+        ))}
+        <div className="admin-card__actions">
+          <md-filled-button disabled={busy || undefined} onClick={() => void save()}>
+            Guardar y publicar
+          </md-filled-button>
+        </div>
+      </div>
+      <p className="body-small on-surface-variant">
+        Revisa el resultado:{' '}
+        {LEGAL_ORDER.map((slug, i) => (
+          <span key={slug}>
+            {i > 0 && ' · '}
+            <a href={`/legal/${slug}`} target="_blank" rel="noreferrer">
+              {LEGAL_DOCS[slug].short}
+            </a>
+          </span>
+        ))}
+      </p>
     </div>
   )
 }

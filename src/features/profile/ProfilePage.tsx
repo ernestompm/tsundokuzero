@@ -47,6 +47,10 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  // Derechos RGPD: supresión (art. 17) y portabilidad (art. 20)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteText, setDeleteText] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   /** Sube la foto de perfil: recorte cuadrado a 512px → Storage → perfil. */
   const changePhoto = async (file: File) => {
@@ -241,6 +245,51 @@ export default function ProfilePage() {
     if (!window.confirm('¿Eliminar esta entrada de tu muro?')) return
     await supabase.from('posts').delete().eq('id', id)
     await load()
+  }
+
+  /** Portabilidad (RGPD art. 20): descarga JSON con todos tus datos. */
+  const exportData = async () => {
+    setExporting(true)
+    setError(null)
+    const { data, error: e } = await supabase.rpc('export_my_data')
+    setExporting(false)
+    if (e) {
+      setError(
+        /export_my_data|function/i.test(e.message)
+          ? 'Falta ejecutar la migración 018 en Supabase para activar la exportación.'
+          : e.message,
+      )
+      return
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `tsundoku-zero-datos-${profile?.username ?? 'usuario'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /** Supresión (RGPD art. 17): borra cuenta, contenido y avatar. */
+  const deleteAccount = async () => {
+    if (!profile || deleteText.trim() !== profile.username) return
+    setBusy(true)
+    setError(null)
+    const { error: e } = await supabase.rpc('delete_own_account')
+    if (e) {
+      setBusy(false)
+      setError(
+        /delete_own_account|function/i.test(e.message)
+          ? 'Falta ejecutar la migración 018 en Supabase para activar el borrado de cuenta.'
+          : e.message,
+      )
+      return
+    }
+    // La cuenta ya no existe: cerrar sesión local e ir al login
+    await supabase.auth.signOut().catch(() => {})
+    navigate('/login', { replace: true })
   }
 
   const saveEdit = async () => {
@@ -486,6 +535,87 @@ export default function ProfilePage() {
           Cerrar sesión
         </md-outlined-button>
       </div>
+
+      {/* ===== Tus datos (RGPD arts. 17 y 20) ===== */}
+      <h2 className="title-small profile-sec">Tus datos</h2>
+      <div className="profile-data">
+        <button
+          className="profile-data__row"
+          disabled={exporting}
+          onClick={() => void exportData()}
+        >
+          <span className="material-symbols-rounded">download</span>
+          <span className="profile-data__text">
+            <span className="body-medium">
+              {exporting ? 'Preparando…' : 'Descargar mis datos'}
+            </span>
+            <span className="body-small on-surface-variant">
+              Copia en JSON de tu perfil, lecturas, ideas y reseñas
+              (portabilidad).
+            </span>
+          </span>
+        </button>
+
+        {confirmingDelete ? (
+          <div className="profile-data__danger">
+            <p className="body-medium">
+              Esto borra <b>para siempre</b> tu cuenta, tu contenido, tu foto
+              y tus datos. No se puede deshacer. Escribe{' '}
+              <b>{profile?.username}</b> para confirmar:
+            </p>
+            <input
+              className="profile-input body-medium"
+              placeholder={profile?.username ?? ''}
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+            />
+            <div className="profile-edit__actions">
+              <md-text-button
+                onClick={() => {
+                  setConfirmingDelete(false)
+                  setDeleteText('')
+                }}
+              >
+                Cancelar
+              </md-text-button>
+              <md-filled-button
+                class="profile-data__deletebtn"
+                disabled={
+                  busy || deleteText.trim() !== profile?.username || undefined
+                }
+                onClick={() => void deleteAccount()}
+              >
+                Eliminar mi cuenta
+              </md-filled-button>
+            </div>
+          </div>
+        ) : (
+          <button
+            className="profile-data__row profile-data__row--danger"
+            onClick={() => setConfirmingDelete(true)}
+          >
+            <span className="material-symbols-rounded">delete_forever</span>
+            <span className="profile-data__text">
+              <span className="body-medium">Eliminar mi cuenta</span>
+              <span className="body-small on-surface-variant">
+                Borra tu cuenta y todo tu contenido de forma permanente
+                (derecho de supresión).
+              </span>
+            </span>
+          </button>
+        )}
+      </div>
+
+      <nav
+        className="legal-links label-small"
+        aria-label="Información legal"
+        style={{ marginTop: 20 }}
+      >
+        <Link to="/legal/privacidad">Privacidad</Link>
+        <Link to="/legal/terminos">Términos</Link>
+        <Link to="/legal/cookies">Cookies</Link>
+        <Link to="/legal/aviso-legal">Aviso legal</Link>
+      </nav>
     </section>
   )
 }

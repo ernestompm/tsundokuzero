@@ -18,6 +18,17 @@
     0 1px 2px rgba(0, 0, 0, 0.12),
     0 6px 16px rgba(0, 0, 0, 0.12);
 }
+.author-head__photowrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+/* Crédito de la foto (LPI): discreto bajo la imagen */
+.author-photo-credit {
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
 .author-head__initial {
   display: inline-grid;
   place-items: center;

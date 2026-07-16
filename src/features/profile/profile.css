@@ -149,3 +149,62 @@
   gap: 10px;
   margin-top: 16px;
 }
+
+/* Denunciar perfil (bajo el botón de seguir) */
+.profile-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ===== Tus datos: exportación y supresión (RGPD arts. 17 y 20) ===== */
+.profile-data {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-data__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-data__row .material-symbols-rounded {
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+
+.profile-data__row--danger .material-symbols-rounded {
+  color: var(--md-sys-color-error);
+}
+
+.profile-data__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-data__danger {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px solid var(--md-sys-color-error);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.profile-data__deletebtn {
+  --md-filled-button-container-color: var(--md-sys-color-error);
+  --md-filled-button-label-text-color: var(--md-sys-color-on-error);
+}
