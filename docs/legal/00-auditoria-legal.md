@@ -86,9 +86,39 @@ La buena noticia: la arquitectura es inusualmente limpia en privacidad (sin trac
 
 **Prioridad de remediación:** ver [orden de trabajo](05-orden-de-trabajo-dev.md). Textos legales listos para integrar: [Aviso legal](01-aviso-legal.md) · [Privacidad](02-politica-privacidad.md) · [Cookies](03-politica-cookies.md) · [Términos](04-terminos-condiciones.md).
 
-**Acciones no técnicas pendientes del titular:**
+**Acciones no técnicas pendientes del titular:** *(ver también el addendum de seguimiento al final)*
 1. Completar los placeholders `[…]` de los textos legales (identidad, NIF, domicilio, email de contacto — se recomienda un buzón dedicado tipo `legal@` / `privacidad@`, no un email personal).
 2. Elaborar el registro de actividades de tratamiento (art. 30 RGPD) — plantilla en el anexo de la orden de trabajo.
 3. Descargar y archivar los DPA de Supabase y Vercel; confirmar en el dashboard de Supabase que la región del proyecto es UE.
 4. Valorar registro de marca «Tsundoku Zero».
 5. Designar el punto de contacto DSA (puede ser el mismo buzón).
+
+---
+
+## Addendum — Auditoría de seguimiento (16/07/2026, tarde)
+
+Verificación sobre la web desplegada (`tsundokuzero.vercel.app`, commit `9c70553`) y la base de datos de producción.
+
+### Verificado y conforme ✅
+
+| Hallazgo original | Estado verificado |
+|---|---|
+| A1 Textos legales | ✅ `/legal/aviso-legal`, `/legal/privacidad`, `/legal/cookies`, `/legal/terminos` **públicos y en producción**, enlazados desde login, shell y perfil |
+| A3 Google Fonts | ✅ **Único host externo en producción: `rigiljswurolsockpkfv.supabase.co`** (encargado documentado). Cero peticiones a Google |
+| A2 Consentimiento/edad | ✅ Código en producción; tabla `consents` creada (migr. 018 ejecutada) |
+| A4/A11 Supresión y portabilidad | ✅ En producción (Perfil → Tus datos) con backend activo |
+| D1-D3 DSA | ✅ Botón de denuncia, cola de moderación y notificación motivada en producción |
+| B1-B3 Cookies | ✅ Página informativa publicada; sigue sin necesitarse banner |
+| C1/C2/C5 PI | ✅ Trazabilidad de portadas/sinopsis y crédito de foto de autor activos |
+| A8/P1-10 | ✅ Trigger con email personal eliminado de la BD (persiste en historial git — decisión pendiente) |
+
+### Pendiente para el cierre 🔴→🟡
+
+1. **🔴 BLOQUEANTE — Identificación del prestador (LSSI art. 10):** la tabla `app_settings` está **vacía** → las páginas legales en producción muestran los tokens `[NOMBRE O RAZÓN SOCIAL]`, `[NIF]`, etc. **Acción: Administración → Legal → rellenar y «Guardar y publicar» (2 min).** Hasta entonces, el incumplimiento del art. 10 LSSI persiste formalmente.
+2. 🟡 Re-ejecutar `seed_author_matt_haig.sql` (citas corregidas) — no verificable sin sesión; confirmar.
+3. 🟡 P1-7 (validación de invitación en servidor) y P2-12…16 de la orden de trabajo.
+4. 🟡 No técnicos: archivar DPA de Supabase/Vercel, confirmar región UE del proyecto, registro de actividades de tratamiento, buzón dedicado (`legal@`), valorar marca y limpieza del historial git.
+
+### Dictamen de seguimiento
+
+La plataforma ha pasado de «sin capa legal alguna» a un estado de **cumplimiento sustancial verificado en producción**. Queda **una única acción bloqueante**, no técnica y de 2 minutos: completar la identidad del titular desde el panel de administración. Cerrada esa acción (y confirmado el punto 2), el servicio queda en situación defendible para operar la beta abierta, con los puntos 3-4 como plan de mejora.
