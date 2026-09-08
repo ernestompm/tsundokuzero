@@ -85,6 +85,12 @@ function describe(
         body: `${who} compartió un pensamiento nuevo 💭`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
       }
+    case 'captain':
+      return {
+        title: 'Tsundoku Zero',
+        body: 'Relevo en el club: hay nuevo capitán o capitana ⚓',
+        url: '/club',
+      }
     default:
       return {
         title: 'Tsundoku Zero',

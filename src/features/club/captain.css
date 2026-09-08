@@ -1,0 +1,103 @@
+/* Reparto de la capitanía (migr. 029) */
+.capcard__ahora {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  margin-bottom: 10px;
+}
+.capcard__ahora-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.capcard__siguiente {
+  margin: 0 2px 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.capcard__lab {
+  margin: 16px 2px 8px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.capcard__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.capcard__explica {
+  margin: 8px 2px 0;
+}
+
+.capcard__fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.capcard__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.capcard__num {
+  max-width: 120px;
+  font-size: 16px;
+}
+
+.capcard__acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.capcard__gente {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.capcard__persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+.capcard__persona:hover {
+  background: var(--md-sys-color-surface-container);
+}
+.capcard__persona-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.capcard__insignia {
+  padding: 4px 10px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  white-space: nowrap;
+}
+
+.capcard__ok,
+.capcard__error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+.capcard__ok {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.capcard__error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}

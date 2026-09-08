@@ -16,7 +16,7 @@
 -- =====================================================================
 
 begin;
-select plan(36);
+select plan(43);
 
 -- ---------- 1 · RLS activo ----------
 select ok(
@@ -36,6 +36,13 @@ select ok(
   'add_book_chapter(uuid, text)',
   'rate_book(uuid, int, text, int, int, int, int)',
   'add_book_smart(text, text, text, text, text, text, text, text, int, text[], text)',
+  'assign_captain(uuid, uuid)',
+  'set_captain(uuid)',
+  'set_captain_policy(text, text, text, int, int)',
+  'rotate_captain_if_due()',
+  'premiere_reviews()',
+  'captain_term_end(uuid)',
+  'next_captain_id(uuid)',
   'captain_books_left()',
   'club_kick_member(uuid, uuid)',
   'transfer_captaincy(uuid, uuid)',

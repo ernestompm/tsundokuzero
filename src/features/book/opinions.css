@@ -107,3 +107,8 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* El estreno: reseñas selladas hasta que termina el club (migr. 029) */
+.opinions__premiere p + p {
+  margin-top: 6px;
+}

@@ -1,0 +1,110 @@
+/* El mapa del libro (migr. 029). Niebla de guerra: el calor solo se
+   pinta en el territorio ya leído. */
+
+.bookmap {
+  margin-top: var(--tz-space-3);
+  padding: 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+}
+.bookmap__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bookmap__band {
+  position: relative;
+  /* sitio arriba para los avatares */
+  padding-top: 30px;
+}
+.bookmap__svg {
+  display: block;
+  width: 100%;
+  height: 34px;
+  border-radius: var(--md-sys-shape-corner-small);
+  overflow: hidden;
+}
+.bookmap__fog {
+  fill: var(--md-sys-color-surface-container-highest);
+}
+.bookmap__heat {
+  fill: var(--md-sys-color-primary);
+}
+.bookmap__edge {
+  fill: var(--md-sys-color-on-surface);
+  opacity: 0.55;
+}
+
+.bookmap__readers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+}
+.bookmap__pin {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.bookmap__pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 26px;
+  width: 2px;
+  height: 6px;
+  margin-left: -1px;
+  background: var(--md-sys-color-outline);
+}
+.bookmap__pin.me::after {
+  background: var(--md-sys-color-primary);
+  width: 3px;
+  margin-left: -1.5px;
+}
+.bookmap__pin.me {
+  z-index: 2;
+}
+.bookmap__pin.me .avatar {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+  border-radius: 50%;
+}
+.bookmap__mas {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.bookmap__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bookmap__leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bookmap__muestra {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+}
+.bookmap__muestra--leido {
+  background: var(--md-sys-color-primary);
+  opacity: 0.55;
+}
+.bookmap__muestra--niebla {
+  background: var(--md-sys-color-surface-container-highest);
+}

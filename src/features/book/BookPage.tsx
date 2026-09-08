@@ -41,7 +41,7 @@ export default function BookPage() {
         // Vista enmascarada: `review` llega null si no has terminado el libro
         supabase
           .from('book_reviews')
-          .select('user_id, rating, review, has_review, d_think, d_flow, d_feel, d_recommend')
+          .select('user_id, rating, review, has_review, premiered, d_think, d_flow, d_feel, d_recommend')
           .eq('book_id', bookId),
       ])
     if (!book) {
@@ -86,6 +86,46 @@ export default function BookPage() {
           .in('id', visibleReviews.map((r) => r.user_id))
       : { data: [] }
     const nameById = new Map((reviewers ?? []).map((p) => [p.id, p.display_name]))
+
+    // Dónde va cada miembro del club en este libro (mapa, migr. 029).
+    // Las posiciones no son spoiler; el calor del mapa sí lo filtra la vista.
+    const { data: miClub } = await supabase
+      .from('club_members')
+      .select('club_id')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .maybeSingle()
+
+    let readers: BookViewData['readers'] = []
+    if (miClub) {
+      const { data: miembros } = await supabase
+        .from('club_members')
+        .select('user_id')
+        .eq('club_id', miClub.club_id)
+      const ids = (miembros ?? []).map((m) => m.user_id)
+      if (ids.length > 0) {
+        const [{ data: perfiles }, { data: avances }] = await Promise.all([
+          supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids),
+          supabase
+            .from('reading_progress')
+            .select('user_id, current_chapter')
+            .eq('book_id', bookId)
+            .in('user_id', ids),
+        ])
+        const avancePorId = new Map(
+          (avances ?? []).map((a) => [a.user_id, a.current_chapter]),
+        )
+        readers = (perfiles ?? [])
+          .filter((p) => avancePorId.has(p.id))
+          .map((p) => ({
+            id: p.id,
+            name: p.display_name,
+            avatar: p.avatar_url,
+            chapter: avancePorId.get(p.id) ?? 0,
+            isMe: p.id === session.user.id,
+          }))
+      }
+    }
 
     // Media del club por dimensión: null si nadie la ha puntuado (migr. 028)
     const media = (k: 'd_think' | 'd_flow' | 'd_feel' | 'd_recommend') => {
@@ -141,6 +181,9 @@ export default function BookPage() {
         review: r.review as string,
       })),
       hiddenReviews,
+      // Todas las filas traen el mismo valor: es propiedad del libro
+      premiered: ratingRows[0]?.premiered ?? true,
+      readers,
     })
   }, [session, bookId])
 

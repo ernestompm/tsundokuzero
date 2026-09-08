@@ -11,6 +11,7 @@ import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, BookCover } from '../../components/ui'
 import BookForm from '../../components/BookForm'
 import PollComposer from './PollComposer'
+import CaptainCard from './CaptainCard'
 import PageHeader from '../../components/PageHeader'
 import type { Book, Club } from '../../lib/database.types'
 import './club.css'
@@ -467,6 +468,9 @@ export default function ClubManagePage() {
           </p>
         )}
       </div>
+
+      {/* Capitanía: modo, duración y nombramiento a mano (migr. 029) */}
+      <CaptainCard club={club} members={members} onChanged={() => void load()} />
 
       {/* Votación */}
       <div className="manage-card">

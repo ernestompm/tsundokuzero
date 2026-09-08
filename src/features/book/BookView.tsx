@@ -6,6 +6,7 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/filled-tonal-button.js'
 import { BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
+import BookMap from './BookMap'
 import {
   RatingBarsCompare,
   RatingBarsInput,
@@ -300,11 +301,24 @@ export default function BookView({
           <h2 className="title-small book-sec__title">Reseñas del club</h2>
           {data.status !== 'finished' && data.hiddenReviews > 0 ? (
             <Card tone="outlined" className="review-locked">
-              <span className="material-symbols-rounded" aria-hidden="true">lock</span>
+              <span className="material-symbols-rounded" aria-hidden="true">
+                lock
+              </span>
               <p className="body-medium">
-                Hay {data.hiddenReviews}{' '}
-                {data.hiddenReviews === 1 ? 'reseña' : 'reseñas'} del club, pero
-                pueden contener spoilers. <b>Termina el libro</b> para leerlas.
+                {!data.premiered ? (
+                  <>
+                    Hay {data.hiddenReviews}{' '}
+                    {data.hiddenReviews === 1 ? 'reseña escrita' : 'reseñas escritas'}, pero
+                    se abren todas <b>a la vez</b>, cuando termine el club. Así nadie
+                    lee condicionado por lo que dijo otro.
+                  </>
+                ) : (
+                  <>
+                    Hay {data.hiddenReviews}{' '}
+                    {data.hiddenReviews === 1 ? 'reseña' : 'reseñas'} del club, pero
+                    pueden contener spoilers. Termina el libro para leerlas.
+                  </>
+                )}
               </p>
             </Card>
           ) : (
@@ -329,6 +343,17 @@ export default function BookView({
           <span slot="icon" className="material-symbols-rounded" aria-hidden="true">forum</span>
           Conversación de tu capítulo
         </md-filled-button>
+      )}
+
+      {/* El mapa del libro: dónde va el club y por dónde ha ardido la
+          conversación, con niebla en el territorio que aún no has leído */}
+      {data.readers.length > 0 && (
+        <BookMap
+          totalChapters={data.totalChapters}
+          myChapter={data.currentChapter}
+          heat={new Map(data.chapters.map((c) => [c.number, c.commentCount]))}
+          readers={data.readers}
+        />
       )}
 
       <div className="book-sec">

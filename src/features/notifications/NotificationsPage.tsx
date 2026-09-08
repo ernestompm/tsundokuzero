@@ -66,8 +66,8 @@ export default function NotificationsPage() {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'Se ha desbloqueado una respuesta a tu mensaje'
         } else if (n.type === 'book_done') {
-          to = n.book_id ? `/book/${n.book_id}` : '/club'
-          detail = '¡El club ha terminado el libro! Deja tu reseña'
+          to = n.book_id ? `/book/${n.book_id}/opinions` : '/club'
+          detail = '¡El club ha terminado! Se abren todas las reseñas'
         } else if (n.type === 'moderation') {
           // DSA art. 17: motivación de la decisión de moderación
           to = '/legal/terminos'
@@ -80,6 +80,9 @@ export default function NotificationsPage() {
         } else if (n.type === 'reaction') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'reaccionó a tu idea'
+        } else if (n.type === 'captain') {
+          to = '/club'
+          detail = 'Relevo de capitanía en el club'
         } else if (n.type === 'new_idea') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'compartió un pensamiento nuevo'

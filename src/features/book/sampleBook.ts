@@ -45,6 +45,14 @@ export const SAMPLE_BOOK: BookViewData = {
   myReview: null,
   myDimensions: { d_think: 5, d_flow: 3, d_feel: 5, d_recommend: 4 },
   clubDimensions: { d_think: 4.3, d_flow: 4.1, d_feel: 4.6, d_recommend: 4.2 },
+  premiered: true,
+  readers: [
+    { id: 'e', name: 'Ernesto', avatar: null, chapter: 8, isMe: true },
+    { id: 'm', name: 'Marina Álvarez', avatar: null, chapter: 21, isMe: false },
+    { id: 'c', name: 'Carlos Ruiz', avatar: null, chapter: 21, isMe: false },
+    { id: 'l', name: 'Lucía Prat', avatar: null, chapter: 46, isMe: false },
+    { id: 'j', name: 'Jorge Sanz', avatar: null, chapter: 3, isMe: false },
+  ],
   canRate: true,
   status: 'finished',
   reviews: [

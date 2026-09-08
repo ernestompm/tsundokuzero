@@ -38,4 +38,14 @@ export interface BookViewData {
   reviews: { name: string; rating: number; review: string }[]
   /** nº de reseñas ocultas por no haber terminado (para el aviso) */
   hiddenReviews: number
+  /** el club ya abrió las reseñas de este libro (migr. 029) */
+  premiered: boolean
+  /** dónde va cada miembro del club en este libro (mapa, migr. 029) */
+  readers: {
+    id: string
+    name: string
+    avatar: string | null
+    chapter: number
+    isMe: boolean
+  }[]
 }

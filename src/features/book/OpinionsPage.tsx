@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
+import '@material/web/button/outlined-button.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover, Card } from '../../components/ui'
@@ -34,6 +35,11 @@ interface Datos {
   club: Dimensions
   mine: Dimensions | null
   yaTerminado: boolean
+  /** el club ya abrió las reseñas (migr. 029) */
+  premiered: boolean
+  /** cuánta gente del club falta por terminar */
+  faltan: number
+  soyCapitan: boolean
   opiniones: Opinion[]
 }
 
@@ -67,7 +73,7 @@ export default function OpinionsPage() {
         .maybeSingle(),
       supabase
         .from('book_reviews')
-        .select('user_id, rating, review, has_review, d_think, d_flow, d_feel, d_recommend, created_at')
+        .select('user_id, rating, review, has_review, premiered, d_think, d_flow, d_feel, d_recommend, created_at')
         .eq('book_id', bookId)
         .order('created_at', { ascending: false }),
     ])
@@ -93,6 +99,28 @@ export default function OpinionsPage() {
         ).data
       : []
     const byId = new Map((perfiles ?? []).map((p) => [p.id, p]))
+
+    // ¿Cuánta gente del club falta por terminar? Es lo que retiene el estreno.
+    const { data: miClub } = await supabase
+      .from('club_members')
+      .select('club_id, role')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .maybeSingle()
+
+    let faltan = 0
+    if (miClub) {
+      const [{ data: miembros }, { data: acabados }] = await Promise.all([
+        supabase.from('club_members').select('user_id').eq('club_id', miClub.club_id),
+        supabase
+          .from('reading_progress')
+          .select('user_id')
+          .eq('book_id', bookId)
+          .eq('status', 'finished'),
+      ])
+      const idsAcabados = new Set((acabados ?? []).map((a) => a.user_id))
+      faltan = (miembros ?? []).filter((m) => !idsAcabados.has(m.user_id)).length
+    }
 
     const reparto = [0, 0, 0, 0, 0]
     for (const r of lista) if (r.rating >= 1 && r.rating <= 5) reparto[r.rating - 1]++
@@ -121,6 +149,9 @@ export default function OpinionsPage() {
           }
         : null,
       yaTerminado: progreso?.status === 'finished',
+      premiered: lista[0]?.premiered ?? true,
+      faltan,
+      soyCapitan: miClub?.role === 'captain',
       opiniones: lista.map((r) => {
         const p = byId.get(r.user_id)
         return {
@@ -146,6 +177,13 @@ export default function OpinionsPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  /** Escape del capitán: abre las reseñas sin esperar al rezagado. */
+  const estrenar = async () => {
+    const { error } = await supabase.rpc('premiere_reviews')
+    if (error) setError(friendlyError(error, 'No se pudo estrenar las reseñas.'))
+    else await load()
+  }
 
   if (error) {
     return (
@@ -240,7 +278,36 @@ export default function OpinionsPage() {
             Reseñas {escritas.length > 0 ? `(${escritas.length})` : ''}
           </h2>
 
-          {!data.yaTerminado && selladas > 0 && (
+          {!data.premiered && selladas > 0 && (
+            <Card tone="outlined" className="opinions__lock opinions__premiere">
+              <span className="material-symbols-rounded" aria-hidden="true">
+                lock
+              </span>
+              <div>
+                <p className="body-medium">
+                  <b>El estreno.</b> Hay {selladas}{' '}
+                  {selladas === 1 ? 'reseña escrita' : 'reseñas escritas'} y se abren
+                  todas a la vez, cuando termine el club. Así nadie lee condicionado
+                  por lo que dijo otro.
+                </p>
+                <p className="body-small on-surface-variant">
+                  {data.faltan > 0
+                    ? `Falta ${data.faltan} ${data.faltan === 1 ? 'persona' : 'personas'} por terminar.`
+                    : 'Ya habéis terminado todos: el estreno está al caer.'}
+                </p>
+                {data.soyCapitan && (
+                  <md-outlined-button
+                    style={{ marginTop: 10 }}
+                    onClick={() => void estrenar()}
+                  >
+                    Estrenar ahora
+                  </md-outlined-button>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {data.premiered && !data.yaTerminado && selladas > 0 && (
             <Card tone="outlined" className="opinions__lock">
               <span className="material-symbols-rounded" aria-hidden="true">
                 lock

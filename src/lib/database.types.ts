@@ -57,6 +57,8 @@ export type ClubReading = {
   proposed_by: string | null
   started_at: string
   closed_at: string | null
+  /** cuándo se abrieron las reseñas del club (migr. 029) */
+  premiered_at: string | null
 }
 
 export type Author = {
@@ -97,6 +99,7 @@ export type NotificationType =
   | 'moderation'
   | 'reaction'
   | 'new_idea'
+  | 'captain'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -117,6 +120,8 @@ export type NotificationPrefsRow = {
   book_done: boolean
   reaction: boolean
   new_idea: boolean
+  /** relevo de capitanía (migr. 029) */
+  captain: boolean
 }
 
 export type Notification = {
@@ -240,6 +245,13 @@ export type Club = {
   slug: string
   description: string | null
   current_book_id: string | null
+  /** política de capitanía (migr. 029) */
+  captain_mode: 'manual' | 'random' | 'rotation'
+  captain_term: 'time' | 'book'
+  captain_term_unit: 'day' | 'month' | 'year'
+  captain_term_count: number
+  captain_max_days: number | null
+  captain_term_ends_at: string | null
   created_at: string
 }
 
@@ -362,6 +374,8 @@ export type Database = {
           d_recommend: number | null
           created_at: string
           has_review: boolean
+          /** false = el club aún no ha estrenado las reseñas (migr. 029) */
+          premiered: boolean
           review: string | null
         }
         Relationships: []
@@ -437,6 +451,20 @@ export type Database = {
         }[]
       }
       close_club_reading: { Args: Record<string, never>; Returns: undefined }
+      premiere_reviews: { Args: Record<string, never>; Returns: undefined }
+      rotate_captain_if_due: { Args: Record<string, never>; Returns: string | null }
+      set_captain: { Args: { p_user: string }; Returns: undefined }
+      next_captain_id: { Args: { p_club: string }; Returns: string | null }
+      set_captain_policy: {
+        Args: {
+          p_mode: 'manual' | 'random' | 'rotation'
+          p_term: 'time' | 'book'
+          p_unit?: 'day' | 'month' | 'year'
+          p_count?: number
+          p_max_days?: number | null
+        }
+        Returns: undefined
+      }
       start_club_bis: { Args: { p_book: string }; Returns: string }
       create_poll_with_books: {
         Args: { p_title: string; p_books: unknown; p_closes_at?: string | null }

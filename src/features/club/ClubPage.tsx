@@ -95,6 +95,14 @@ export default function ClubPage() {
     }
     setClub(clubData)
 
+    // Relevo de capitanía vencido (migr. 029): se comprueba al abrir el
+    // club, sin planificador. Si cambia el capitán, se recarga.
+    const { data: nuevoCapitan } = await supabase.rpc('rotate_captain_if_due')
+    if (nuevoCapitan) {
+      void load()
+      return
+    }
+
     const [{ data: bookData }, { data: memberRows }, { data: poll }] =
       await Promise.all([
         clubData.current_book_id
