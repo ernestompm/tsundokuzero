@@ -34,14 +34,20 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
     setError(null)
     setTargets([])
 
-    // Libros que estás leyendo (capítulo >= 1) = destinos posibles del anclaje.
+    // Destinos posibles: lo que lees ahora primero y lo terminado después.
+    // Antes entraba todo mezclado y las fichas se apilaban sin orden.
     const { data: progress } = await supabase
       .from('reading_progress')
-      .select('book_id, current_chapter')
+      .select('book_id, current_chapter, status')
       .eq('user_id', session.user.id)
       .gte('current_chapter', 1)
+      .in('status', ['reading', 'finished'])
       .order('updated_at', { ascending: false })
-    const rows = progress ?? []
+    const rows = (progress ?? []).sort((a, b) => {
+      const fa = a.status === 'finished' ? 1 : 0
+      const fb = b.status === 'finished' ? 1 : 0
+      return fa - fb // los que estás leyendo, arriba
+    })
     if (rows.length === 0) {
       setTargets([])
       return
@@ -49,23 +55,32 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
     const bookIds = rows.map((r) => r.book_id)
     const [{ data: books }, { data: clubs }, { data: chapters }] =
       await Promise.all([
-        supabase.from('books').select('id, title').in('id', bookIds),
+        supabase.from('books').select('id, title, author, cover_url').in('id', bookIds),
         supabase.from('clubs').select('id, current_book_id').in('current_book_id', bookIds),
         supabase.from('chapters').select('book_id, number, label').in('book_id', bookIds),
       ])
-    const titleById = new Map((books ?? []).map((b) => [b.id, b.title]))
+    const bookById = new Map((books ?? []).map((b) => [b.id, b]))
     const clubByBook = new Map((clubs ?? []).map((c) => [c.current_book_id, c.id]))
     const labelByKey = new Map(
       (chapters ?? []).map((c) => [`${c.book_id}/${c.number}`, c.label]),
     )
     setTargets(
-      rows.map((r) => ({
-        bookId: r.book_id,
-        bookTitle: titleById.get(r.book_id) ?? '',
-        chapterNumber: r.current_chapter,
-        chapterLabel: labelByKey.get(`${r.book_id}/${r.current_chapter}`) ?? null,
-        clubId: clubByBook.get(r.book_id) ?? null,
-      })),
+      rows.flatMap((r) => {
+        const b = bookById.get(r.book_id)
+        if (!b) return []
+        return [
+          {
+            bookId: r.book_id,
+            bookTitle: b.title,
+            bookAuthor: b.author,
+            coverUrl: b.cover_url,
+            chapterNumber: r.current_chapter,
+            chapterLabel: labelByKey.get(`${r.book_id}/${r.current_chapter}`) ?? null,
+            clubId: clubByBook.get(r.book_id) ?? null,
+            finished: r.status === 'finished',
+          },
+        ]
+      }),
     )
   }, [session])
 

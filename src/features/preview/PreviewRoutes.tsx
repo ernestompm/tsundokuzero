@@ -66,9 +66,32 @@ export default function PreviewRoutes() {
                 {
                   bookId: 'sample',
                   bookTitle: 'La Biblioteca de la Medianoche',
+                  bookAuthor: 'Matt Haig',
+                  coverUrl: null,
                   chapterNumber: 18,
                   chapterLabel: 'El tablero de ajedrez',
                   clubId: 'club',
+                  finished: false,
+                },
+                {
+                  bookId: 'sample2',
+                  bookTitle: 'Stoner',
+                  bookAuthor: 'John Williams',
+                  coverUrl: null,
+                  chapterNumber: 5,
+                  chapterLabel: null,
+                  clubId: null,
+                  finished: false,
+                },
+                {
+                  bookId: 'sample3',
+                  bookTitle: 'Matadero cinco',
+                  bookAuthor: 'Kurt Vonnegut',
+                  coverUrl: null,
+                  chapterNumber: 10,
+                  chapterLabel: null,
+                  clubId: null,
+                  finished: true,
                 },
               ]}
               onPublish={() => {}}

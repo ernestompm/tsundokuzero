@@ -375,18 +375,28 @@ export default function ClubPage() {
         <p className="body-small on-surface-variant">
           {members.length} {members.length === 1 ? 'miembro' : 'miembros'}
         </p>
-        {/* El servidor deja entrar al capitán Y al administrador, pero el
-            botón solo lo veía el capitán: el admin tenía que saberse la
-            dirección de memoria. */}
-        {(iAmCaptain || isSuperAdmin) && (
-          <md-outlined-button
-            className="club-manage-btn"
-            onClick={() => navigate('/club/manage')}
-          >
-            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">settings</span>
-            {iAmCaptain ? 'Gestionar club' : 'Gestionar club (admin)'}
-          </md-outlined-button>
-        )}
+        {/* Dos puertas distintas: el capitán gobierna la lectura, el
+            administrador configura el club. */}
+        <div className="club-head__acciones">
+          {(iAmCaptain || isSuperAdmin) && (
+            <md-outlined-button
+              className="club-manage-btn"
+              onClick={() => navigate('/club/capitania')}
+            >
+              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
+              Capitanía
+            </md-outlined-button>
+          )}
+          {isSuperAdmin && (
+            <md-outlined-button
+              className="club-manage-btn"
+              onClick={() => navigate('/club/admin')}
+            >
+              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">settings</span>
+              Administrar
+            </md-outlined-button>
+          )}
+        </div>
       </div>
 
       {book && (
@@ -541,10 +551,10 @@ export default function ClubPage() {
         </div>
       )}
 
-      {iAmCaptain && !pollState && (
+      {(iAmCaptain || isSuperAdmin) && !pollState && (
         <md-outlined-button
           className="club-manage-btn"
-          onClick={() => navigate('/club/manage')}
+          onClick={() => navigate('/club/capitania')}
         >
           <span slot="icon" className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
           Proponer nueva votación

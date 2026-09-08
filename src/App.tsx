@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import '@material/web/progress/circular-progress.js'
 import { AuthProvider } from './auth/AuthContext'
 import { ComposeProvider } from './components/ComposeProvider'
@@ -16,7 +16,8 @@ import ClubBookRedirect from './features/book/ClubBookRedirect'
 import ChapterPage from './features/book/ChapterPage'
 import ThreadPage from './features/book/ThreadPage'
 import ClubPage from './features/club/ClubPage'
-import ClubManagePage from './features/club/ClubManagePage'
+import CaptainPage from './features/club/CaptainPage'
+import ClubAdminPage from './features/club/ClubAdminPage'
 import ProfilePage from './features/profile/ProfilePage'
 import UserProfilePage from './features/profile/UserProfilePage'
 import AuthorPage from './features/author/AuthorPage'
@@ -81,7 +82,13 @@ export default function App() {
                     />
                     <Route path="thread/:discussionId" element={<ThreadPage />} />
                     <Route path="club" element={<ClubPage />} />
-                    <Route path="club/manage" element={<ClubManagePage />} />
+                    <Route path="club/capitania" element={<CaptainPage />} />
+                    <Route path="club/admin" element={<ClubAdminPage />} />
+                    {/* Enlaces antiguos a la gestión unificada */}
+                    <Route
+                      path="club/manage"
+                      element={<Navigate to="/club/capitania" replace />}
+                    />
                     <Route path="me" element={<ProfilePage />} />
                     <Route path="u/:username" element={<UserProfilePage />} />
                     <Route path="author/:authorId" element={<AuthorPage />} />

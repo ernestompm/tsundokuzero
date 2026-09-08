@@ -114,13 +114,13 @@ function SummaryTab() {
           )}
         </div>
       ))}
-      <Link className="admin-tile admin-tile--link" to="/club/manage">
+      <Link className="admin-tile admin-tile--link" to="/club/admin">
         <span className="material-symbols-rounded admin-tile__icon" aria-hidden="true">
           settings
         </span>
         <span className="title-small">Gestionar el club</span>
         <span className="body-small on-surface-variant">
-          Capitanía, libro del mes, votaciones y miembros
+          Datos, capitanía, miembros e invitación
         </span>
       </Link>
     </div>

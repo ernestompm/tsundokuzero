@@ -1,0 +1,45 @@
+/* Capitanía: cómo va el club */
+.capitan__resumen {
+  margin-bottom: 12px;
+}
+.capitan__avances {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+.capitan__avance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.capitan__avance-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.capitan__avance-barra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.capitan__avance-cap {
+  flex: none;
+  min-width: 78px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.capitan__admin {
+  background: var(--md-sys-color-surface-container-low);
+}
+.capitan__enlace {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--md-sys-color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
