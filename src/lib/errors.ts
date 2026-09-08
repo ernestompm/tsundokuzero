@@ -33,6 +33,13 @@ const MAP: [RegExp, string][] = [
     'No tienes permiso para hacer esto.',
   ],
   [/duplicate key/i, 'Eso ya existe: revisa que no esté repetido.'],
+  // Función que aún no existe en la base de datos: falta una migración.
+  // Mensaje explícito (mismo patrón que los avisos de Admin) para no
+  // dejar al usuario con un «inténtalo de nuevo» que nunca funcionará.
+  [
+    /could not find the function|schema cache/i,
+    'Esta función todavía no está activa en el servidor. Falta ejecutar la última migración en Supabase.',
+  ],
   // Mensajes propios de las RPC (ya en español): se muestran tal cual.
   [/termina el libro para poder rese/i, 'Termina el libro para poder reseñarlo.'],
   [/entre 1 y 5 estrellas/i, 'Elige entre 1 y 5 estrellas.'],
