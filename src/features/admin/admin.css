@@ -186,3 +186,14 @@
   gap: var(--tz-space-1);
   margin-bottom: 12px;
 }
+
+/* Acceso a la gestión del club desde el resumen */
+.admin-tile--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--md-sys-motion-duration-short) ease;
+}
+.admin-tile--link:hover {
+  background: var(--md-sys-color-surface-container-high);
+}

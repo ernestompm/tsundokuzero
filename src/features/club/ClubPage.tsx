@@ -63,7 +63,7 @@ function voterNames(voters: { name: string }[]): string {
 }
 
 export default function ClubPage() {
-  const { session } = useAuth()
+  const { session, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
   const confirm = useConfirm()
   const [club, setClub] = useState<Club | null>(null)
@@ -375,13 +375,16 @@ export default function ClubPage() {
         <p className="body-small on-surface-variant">
           {members.length} {members.length === 1 ? 'miembro' : 'miembros'}
         </p>
-        {iAmCaptain && (
+        {/* El servidor deja entrar al capitán Y al administrador, pero el
+            botón solo lo veía el capitán: el admin tenía que saberse la
+            dirección de memoria. */}
+        {(iAmCaptain || isSuperAdmin) && (
           <md-outlined-button
             className="club-manage-btn"
             onClick={() => navigate('/club/manage')}
           >
             <span slot="icon" className="material-symbols-rounded" aria-hidden="true">settings</span>
-            Gestionar club
+            {iAmCaptain ? 'Gestionar club' : 'Gestionar club (admin)'}
           </md-outlined-button>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
@@ -114,6 +114,15 @@ function SummaryTab() {
           )}
         </div>
       ))}
+      <Link className="admin-tile admin-tile--link" to="/club/manage">
+        <span className="material-symbols-rounded admin-tile__icon" aria-hidden="true">
+          settings
+        </span>
+        <span className="title-small">Gestionar el club</span>
+        <span className="body-small on-surface-variant">
+          Capitanía, libro del mes, votaciones y miembros
+        </span>
+      </Link>
     </div>
   )
 }
