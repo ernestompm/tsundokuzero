@@ -33,6 +33,10 @@ const MAP: [RegExp, string][] = [
     'No tienes permiso para hacer esto.',
   ],
   [/duplicate key/i, 'Eso ya existe: revisa que no esté repetido.'],
+  // Mensajes propios de las RPC (ya en español): se muestran tal cual.
+  [/termina el libro para poder rese/i, 'Termina el libro para poder reseñarlo.'],
+  [/entre 1 y 5 estrellas/i, 'Elige entre 1 y 5 estrellas.'],
+  [/rese.a es demasiado larga/i, 'La reseña es demasiado larga (máximo 4000 caracteres).'],
   [/jwt|refresh token|session/i, 'Tu sesión ha caducado. Vuelve a entrar.'],
 ]
 

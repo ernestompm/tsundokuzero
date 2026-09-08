@@ -41,6 +41,8 @@ export type Book = {
   /** procedencia de la portada/sinopsis (LPI, migr. 018) */
   cover_source: string | null
   synopsis_source: string | null
+  /** ISBN normalizado (migr. 026): clave de deduplicado del catálogo */
+  isbn: string | null
 }
 
 export type Author = {
@@ -382,6 +384,26 @@ export type Database = {
       add_book_chapter: {
         Args: { book: string; title: string }
         Returns: number
+      }
+      rate_book: {
+        Args: { p_book: string; p_rating: number; p_review?: string | null }
+        Returns: { rating: number; review: string | null }[]
+      }
+      add_book_smart: {
+        Args: {
+          p_title: string
+          p_author: string
+          p_isbn?: string | null
+          p_cover_url?: string | null
+          p_cover_source?: string | null
+          p_synopsis?: string | null
+          p_synopsis_source?: string | null
+          p_buy_url?: string | null
+          p_total_chapters?: number | null
+          p_chapter_labels?: string[] | null
+          p_status?: 'want' | 'reading' | null
+        }
+        Returns: { book_id: string; created: boolean }[]
       }
       transfer_captaincy: {
         Args: { club: string; new_captain: string }

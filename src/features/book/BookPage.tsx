@@ -180,15 +180,13 @@ export default function BookPage() {
   const rate = async (n: number, review: string | null): Promise<boolean> => {
     if (!session || !data) return false
     setBusy(true)
-    const { error } = await supabase.from('book_ratings').upsert(
-      {
-        book_id: data.bookId,
-        user_id: session.user.id,
-        rating: n,
-        review: review ?? data.myReview,
-      },
-      { onConflict: 'book_id,user_id' },
-    )
+    // Por RPC (migr. 025): el upsert directo fallaba con «permission denied»
+    // porque `review` es una columna sin SELECT para el cliente (gate 014).
+    const { error } = await supabase.rpc('rate_book', {
+      p_book: data.bookId,
+      p_rating: n,
+      p_review: review ?? data.myReview,
+    })
     if (error) {
       setActionError(friendlyError(error, 'No se pudo guardar la reseña. Inténtalo de nuevo.'))
       setBusy(false)
@@ -231,6 +229,7 @@ export default function BookPage() {
       onOpenChapter={(n) => navigate(`/book/${data.bookId}/chapter/${n}`)}
       onRate={rate}
       onAddToShelf={addToShelf}
+      onMarkFinished={() => void setChapter(data.totalChapters)}
     />
   )
 }

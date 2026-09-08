@@ -16,7 +16,7 @@
 -- =====================================================================
 
 begin;
-select plan(31);
+select plan(35);
 
 -- ---------- 1 · RLS activo ----------
 select ok(
@@ -34,6 +34,8 @@ select ok(
   'anon NO puede ejecutar ' || f
 ) from unnest(array[
   'add_book_chapter(uuid, text)',
+  'rate_book(uuid, int, text)',
+  'add_book_smart(text, text, text, text, text, text, text, text, int, text[], text)',
   'captain_books_left()',
   'club_kick_member(uuid, uuid)',
   'transfer_captaincy(uuid, uuid)',
@@ -73,6 +75,16 @@ select ok(
       and policyname = 'discussions_select_gate'
   ),
   'La política discussions_select_gate existe'
+);
+
+-- ---------- 6 · Gate de reseñas (migr. 014 + 025) ----------
+select ok(
+  not has_column_privilege('authenticated', 'public.book_ratings', 'review', 'select'),
+  'authenticated NO lee book_ratings.review directamente (solo vía book_reviews)'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.rate_book(uuid, int, text)', 'execute'),
+  'authenticated SÍ puede guardar su reseña por rate_book'
 );
 
 select * from finish();
