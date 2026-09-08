@@ -11,6 +11,7 @@ import ThreadView from '../book/ThreadView'
 import { SAMPLE_THREAD } from '../book/sampleThread'
 import AuthorPreview from '../author/AuthorPreview'
 import AddBookSheet from '../../components/AddBookSheet'
+import PollComposer from '../club/PollComposer'
 
 /**
  * Vistas de diseño con datos de muestra (sin login), para revisar la
@@ -76,6 +77,17 @@ export default function PreviewRoutes() {
           }
         />
         <Route path="author" element={<AuthorPreview />} />
+        <Route
+          path="poll"
+          element={
+            <section style={{ maxWidth: 720, margin: '0 auto' }}>
+              <h1 className="headline-medium serif" style={{ marginBottom: 16 }}>
+                Votación del próximo libro
+              </h1>
+              <PollComposer onCreated={() => {}} onCancel={() => {}} />
+            </section>
+          }
+        />
         <Route
           path="add-book"
           element={

@@ -214,3 +214,24 @@ export function defaultBuyUrl(book: Pick<ExternalBook, 'isbn' | 'title' | 'autho
   const k = book.isbn ?? `${book.title} ${book.author}`.trim()
   return k ? `https://www.amazon.es/s?k=${encodeURIComponent(k)}` : ''
 }
+
+/**
+ * Resuelve varias líneas de texto a libros, en paralelo. Cada línea puede
+ * ser un ISBN o un título, con o sin autor. Lo usa el compositor de
+ * votaciones: el capitán pega tres ISBN y salen tres fichas.
+ *
+ * Devuelve una entrada por línea, con `book` a null si no se encontró,
+ * para poder decirle al capitán exactamente cuál falló.
+ */
+export async function resolveBookLines(
+  lines: string[],
+  signal?: AbortSignal,
+): Promise<{ line: string; book: ExternalBook | null }[]> {
+  const limpias = lines.map((l) => l.trim()).filter(Boolean).slice(0, 8)
+  return Promise.all(
+    limpias.map(async (line) => {
+      const found = await searchExternalBooks(line, signal)
+      return { line, book: found[0] ?? null }
+    }),
+  )
+}

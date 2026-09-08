@@ -10,6 +10,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, BookCover } from '../../components/ui'
 import BookForm from '../../components/BookForm'
+import PollComposer from './PollComposer'
 import PageHeader from '../../components/PageHeader'
 import type { Book, Club } from '../../lib/database.types'
 import './club.css'
@@ -44,11 +45,13 @@ export default function ClubManagePage() {
   const [description, setDescription] = useState('')
 
   // Crear votación: se eligen LIBROS DEL CATÁLOGO (2–5)
-  const [pollTitle, setPollTitle] = useState('')
-  const [pollBookIds, setPollBookIds] = useState<string[]>([])
 
   // Cuota de la capitanía (3 libros por mandato)
   const [booksLeft, setBooksLeft] = useState<number | null>(null)
+  // Capítulos provisionales (migr. 027): un libro creado como candidato de
+  // una votación entra con un número estimado que hay que confirmar antes
+  // de leerlo, o el candado anti-spoiler trabaja con datos falsos.
+  const [chaptersDraft, setChaptersDraft] = useState('')
   const [addingBook, setAddingBook] = useState(false)
 
   const load = useCallback(async () => {
@@ -202,6 +205,28 @@ export default function ClubManagePage() {
     setBusy(false)
   }
 
+  const confirmChapters = async () => {
+    if (!currentBook) return
+    const n = parseInt(chaptersDraft, 10)
+    if (!Number.isFinite(n) || n < 1 || n > 500) {
+      setBanner({ kind: 'info', text: 'Escribe cuántos capítulos tiene, entre 1 y 500.' })
+      return
+    }
+    setBusy(true)
+    const { error } = await supabase.rpc('set_book_chapters', {
+      p_book: currentBook.id,
+      p_total: n,
+    })
+    if (error)
+      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo guardar el número de capítulos.') })
+    else {
+      setBanner({ kind: 'info', text: 'Capítulos confirmados. Ya se puede leer con el candado bien puesto.' })
+      setChaptersDraft('')
+    }
+    setBusy(false)
+    await load()
+  }
+
   const discardPoll = async () => {
     if (!openPoll) return
     // Auditoría M-04: diálogo propio en lugar de window.confirm
@@ -254,66 +279,6 @@ export default function ClubManagePage() {
     setBusy(false)
   }
 
-  const createPoll = async () => {
-    const title = pollTitle.trim()
-    const chosen = books.filter((b) => pollBookIds.includes(b.id))
-    if (!title || chosen.length < 2) {
-      // Auditoría M-04: aviso inline (tono neutro) en lugar de window.alert
-      setBanner({
-        kind: 'info',
-        text: 'Pon un título y elige al menos 2 libros del catálogo (máx. 5). Si falta un libro, créalo primero.',
-      })
-      return
-    }
-    setBanner(null)
-    setBusy(true)
-    const { data: poll, error } = await supabase
-      .from('polls')
-      .insert({ club_id: club.id, title, created_by: session!.user.id })
-      .select()
-      .single()
-    if (!error && poll) {
-      const { error: optsError } = await supabase.from('poll_options').insert(
-        chosen.map((b) => ({
-          poll_id: poll.id,
-          book_id: b.id,
-          book_title: b.title,
-          book_author: b.author,
-        })),
-      )
-      // Auditoría A-04: sin esto quedaba una votación vacía y en silencio
-      if (optsError) {
-        setBanner({
-          kind: 'error',
-          text: friendlyError(
-            optsError,
-            'La votación se creó sin sus libros. Descártala y vuelve a intentarlo.',
-          ),
-        })
-      } else {
-        setPollTitle('')
-        setPollBookIds([])
-      }
-    } else if (error) {
-      // Auditoría A-04
-      setBanner({
-        kind: 'error',
-        text: friendlyError(error, 'No se pudo crear la votación. Inténtalo de nuevo.'),
-      })
-    }
-    await load()
-    setBusy(false)
-  }
-
-  const togglePollBook = (id: string) => {
-    setPollBookIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : prev.length >= 5
-          ? prev
-          : [...prev, id],
-    )
-  }
 
   const currentBook = books.find((b) => b.id === club.current_book_id)
 
@@ -381,6 +346,35 @@ export default function ClubManagePage() {
             </span>
           </div>
         )}
+        {currentBook && currentBook.chapters_confirmed === false && (
+          <div className="manage-chapters-warn">
+            <p className="body-medium">
+              <b>{currentBook.title}</b> entró como candidato de una votación, así que
+              sus capítulos son provisionales. Confírmalos antes de que el club empiece:
+              el candado anti-spoiler depende de ese número.
+            </p>
+            <div className="manage-chapters-warn__row">
+              <input
+                className="tz-input body-medium"
+                type="number"
+                min={1}
+                max={500}
+                inputMode="numeric"
+                placeholder="Nº de capítulos"
+                aria-label={`Número de capítulos de ${currentBook.title}`}
+                value={chaptersDraft}
+                onChange={(e) => setChaptersDraft(e.target.value)}
+              />
+              <md-filled-button
+                disabled={busy || !chaptersDraft.trim() || undefined}
+                onClick={() => void confirmChapters()}
+              >
+                Confirmar
+              </md-filled-button>
+            </div>
+          </div>
+        )}
+
         <p className="body-small on-surface-variant">Cambiar por:</p>
         <div className="manage-book-picker">
           {books.map((b) => (
@@ -431,50 +425,17 @@ export default function ClubManagePage() {
           </>
         ) : (
           <>
-            {/* Auditoría A-08: input con etiqueta accesible */}
-            <input
-              className="tz-input body-medium"
-              placeholder="Título — p. ej. «Libro de septiembre»"
-              aria-label="Título de la votación"
-              value={pollTitle}
-              onChange={(e) => setPollTitle(e.target.value)}
-            />
             <p className="body-small on-surface-variant">
-              Elige de 2 a 5 libros del catálogo ({pollBookIds.length}{' '}
-              seleccionados). ¿Falta el libro que quieres proponer? Créalo
-              primero en «Libros de tu capitanía».
+              Pega los ISBN o los títulos y la votación se abre sola. Los libros
+              que no estén en el catálogo se crean por el camino.
             </p>
-            <div className="manage-book-picker">
-              {books
-                .filter((b) => b.id !== club.current_book_id)
-                .map((b) => (
-                  <button
-                    key={b.id}
-                    className={`manage-book${pollBookIds.includes(b.id) ? ' active' : ''}`}
-                    disabled={busy || undefined}
-                    onClick={() => togglePollBook(b.id)}
-                  >
-                    <BookCover
-                      title={b.title}
-                      author={b.author}
-                      coverUrl={b.cover_url}
-                      size="sm"
-                    />
-                    <span className="label-small manage-book__title">
-                      {b.title}
-                    </span>
-                  </button>
-                ))}
-            </div>
-            <div className="club-poll__form-actions">
-              <span style={{ flex: 1 }} />
-              <md-filled-button
-                disabled={busy || pollBookIds.length < 2 || undefined}
-                onClick={() => void createPoll()}
-              >
-                Abrir votación ({pollBookIds.length})
-              </md-filled-button>
-            </div>
+            <PollComposer
+              onCreated={() => {
+                setBanner({ kind: 'info', text: 'Votación abierta. El club ya tiene el aviso.' })
+                void load()
+              }}
+              onCancel={() => setBanner(null)}
+            />
           </>
         )}
       </div>

@@ -43,6 +43,8 @@ export type Book = {
   synopsis_source: string | null
   /** ISBN normalizado (migr. 026): clave de deduplicado del catálogo */
   isbn: string | null
+  /** false = capítulos provisionales (candidato de votación, migr. 027) */
+  chapters_confirmed: boolean
 }
 
 export type Author = {
@@ -388,6 +390,14 @@ export type Database = {
       rate_book: {
         Args: { p_book: string; p_rating: number; p_review?: string | null }
         Returns: { rating: number; review: string | null }[]
+      }
+      create_poll_with_books: {
+        Args: { p_title: string; p_books: unknown; p_closes_at?: string | null }
+        Returns: string
+      }
+      set_book_chapters: {
+        Args: { p_book: string; p_total: number }
+        Returns: number
       }
       add_book_smart: {
         Args: {

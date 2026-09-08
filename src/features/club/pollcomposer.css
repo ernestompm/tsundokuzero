@@ -1,0 +1,96 @@
+.pollc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-space-3);
+}
+.pollc__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.pollc__field .tz-input {
+  font-size: 16px; /* sin zoom en Safari iOS */
+}
+.pollc__paste {
+  resize: vertical;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.pollc__when input {
+  max-width: 200px;
+}
+
+.pollc__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pollc__cand {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+}
+.pollc__cand-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pollc__note {
+  margin-top: 5px;
+  padding: 7px 10px;
+}
+.pollc__remove {
+  flex: none;
+  background: none;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+.pollc__remove:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+.pollc__remove .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.pollc__add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pollc__add .tz-input {
+  flex: 1;
+  font-size: 16px;
+}
+
+.pollc__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pollc__warn {
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.pollc__error {
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}

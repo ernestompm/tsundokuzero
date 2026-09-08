@@ -303,3 +303,22 @@
   flex-direction: column;
   min-width: 0;
 }
+
+/* Capítulos provisionales de un libro que llegó por votación (migr. 027) */
+.manage-chapters-warn {
+  margin: 4px 0 12px;
+  padding: 14px 16px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.manage-chapters-warn__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.manage-chapters-warn__row input {
+  max-width: 160px;
+  font-size: 16px;
+}
