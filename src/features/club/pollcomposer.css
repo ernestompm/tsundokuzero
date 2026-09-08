@@ -1,58 +1,185 @@
+/* Crear la votación del próximo libro */
+
 .pollc {
   display: flex;
   flex-direction: column;
   gap: var(--tz-space-3);
 }
-.pollc__field {
+
+/* ---- Buscador ---- */
+.pollc__buscar {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--md-sys-color-on-surface-variant);
+  align-items: center;
 }
-.pollc__field .tz-input {
+.pollc__lupa {
+  position: absolute;
+  left: 16px;
+  color: var(--md-sys-color-on-surface-variant);
+  pointer-events: none;
+}
+.pollc__input {
+  width: 100%;
+  padding: 14px 46px;
+  border-radius: var(--md-sys-shape-corner-full);
   font-size: 16px; /* sin zoom en Safari iOS */
 }
-.pollc__paste {
-  resize: vertical;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 15px;
-  line-height: 1.7;
+.pollc__input:disabled {
+  opacity: 0.55;
 }
-.pollc__when input {
-  max-width: 200px;
+.pollc__spin {
+  position: absolute;
+  right: 16px;
+  --md-circular-progress-size: 20px;
+}
+.pollc__pista {
+  margin: -6px 2px 0;
 }
 
-.pollc__list {
+/* ---- Resultados vivos ---- */
+.pollc__res {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.pollc__res-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pollc__res-item:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+.pollc__res-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pollc__res-txt .serif {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pollc__mas {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-size: 20px;
+}
+
+/* ---- Candidatos ---- */
+.pollc__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pollc__vacio {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+}
+.pollc__vacio .material-symbols-rounded {
+  color: var(--md-sys-color-primary);
+  font-size: 28px;
+}
+.pollc__vacio p {
+  margin: 0;
+}
+
+.pollc__lista {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .pollc__cand {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-low);
+}
+.pollc__cand-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pollc__num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-variant-numeric: tabular-nums;
 }
 .pollc__cand-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 .pollc__note {
-  margin-top: 5px;
-  padding: 7px 10px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 16px;
+}
+.pollc__pitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  width: fit-content;
+  white-space: nowrap;
+  padding: 6px 14px 6px 10px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.pollc__pitch .material-symbols-rounded {
+  font-size: 16px;
 }
 .pollc__remove {
   flex: none;
   background: none;
   border: none;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -66,20 +193,47 @@
   font-size: 20px;
 }
 
-.pollc__add {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+/* ---- Nombre y cierre ---- */
+.pollc__ajustes {
+  padding: 14px 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-high);
 }
-.pollc__add .tz-input {
-  flex: 1;
+.pollc__ajustes p {
+  margin: 0;
+}
+.pollc__cambiar {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--md-sys-color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pollc__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.pollc__campo .tz-input {
   font-size: 16px;
 }
+.pollc__fecha {
+  max-width: 200px;
+}
 
+/* ---- Pie ---- */
 .pollc__actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pollc__faltan {
+  white-space: nowrap;
 }
 
 .pollc__warn {

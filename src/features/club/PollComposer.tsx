@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
+import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
 import {
@@ -14,13 +15,13 @@ import {
 import { BookCover } from '../../components/ui'
 import './pollcomposer.css'
 
+const MAX = 5
+const MIN = 2
+
 interface Candidato {
   key: string
-  /** ficha del libro, venga del catálogo o de fuera */
   book: ExternalBook
-  /** ya estaba en el catálogo: no se creará nada nuevo */
   enCatalogo: boolean
-  /** pitch del capitán, opcional */
   note: string
 }
 
@@ -28,8 +29,7 @@ interface Candidato {
 function tituloPorDefecto() {
   const d = new Date()
   d.setMonth(d.getMonth() + 1)
-  const mes = d.toLocaleDateString('es-ES', { month: 'long' })
-  return `Libro de ${mes}`
+  return `Libro de ${d.toLocaleDateString('es-ES', { month: 'long' })}`
 }
 
 /** Domingo que viene, en formato yyyy-mm-dd para el input date. */
@@ -39,15 +39,30 @@ function domingoQueViene() {
   return d.toISOString().slice(0, 10)
 }
 
+function enPalabras(iso: string) {
+  if (!iso) return 'sin fecha de cierre'
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 /**
- * Compositor de votaciones en un paso: el capitán pega los ISBN o los
- * títulos, uno por línea, y salen las fichas listas para abrir la
- * encuesta. Antes había que dar de alta cada libro en el catálogo por
- * separado, y por eso el club acabó votando por WhatsApp.
+ * Crear la votación del próximo libro.
  *
- * El alta y la votación las hace el servidor en una transacción
- * (RPC create_poll_with_books, migr. 027), que deduplica contra el
- * catálogo y avisa a todos los miembros.
+ * DISEÑO. La primera versión era un formulario: pegabas ISBN en un campo
+ * de texto monoespaciado, pulsabas «buscar» y luego rellenabas casillas.
+ * Eso es pensar como una base de datos. El capitán no tiene tres ISBN en
+ * la cabeza, tiene tres libros.
+ *
+ * Ahora hay un buscador vivo arriba, resultados con su portada y un botón
+ * de añadir, y debajo la lista de candidatos como fichas de libro. El
+ * nombre de la votación y la fecha de cierre vienen puestos y se cuentan
+ * en una frase, no en dos campos; se cambian solo si hace falta.
+ *
+ * Pegar varios ISBN de golpe sigue funcionando: si el texto pegado trae
+ * saltos de línea, se resuelven todos a la vez.
  */
 export default function PollComposer({
   onCreated,
@@ -57,23 +72,28 @@ export default function PollComposer({
   onCancel: () => void
 }) {
   const [title, setTitle] = useState(tituloPorDefecto())
-  const [raw, setRaw] = useState('')
-  const [candidatos, setCandidatos] = useState<Candidato[]>([])
-  const [noEncontrados, setNoEncontrados] = useState<string[]>([])
-  const [extra, setExtra] = useState('')
   const [closesAt, setClosesAt] = useState(domingoQueViene())
+  const [verAjustes, setVerAjustes] = useState(false)
+
+  const [q, setQ] = useState('')
+  const [resultados, setResultados] = useState<{ book: ExternalBook; enCatalogo: boolean }[]>([])
   const [buscando, setBuscando] = useState(false)
+  const [candidatos, setCandidatos] = useState<Candidato[]>([])
+  const [pitchAbierto, setPitchAbierto] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
 
-  /** Busca primero en el catálogo propio: así no se duplican fichas. */
-  const enCatalogo = async (linea: string): Promise<ExternalBook | null> => {
-    const isbn = asIsbn(linea)
-    const like = `%${linea.replace(/[,()%]/g, ' ').trim()}%`
+  const abortRef = useRef<AbortController | null>(null)
+
+  /** Ficha del catálogo propio, para no duplicar libros ya existentes. */
+  const buscarEnCatalogo = async (texto: string): Promise<ExternalBook | null> => {
+    const isbn = asIsbn(texto)
+    const like = `%${texto.replace(/[,()%]/g, ' ').trim()}%`
     const { data } = await supabase
       .from('books')
       .select('id, title, author, isbn, cover_url, cover_source, synopsis, buy_url')
-      .or(isbn ? `isbn.eq.${isbn},title.ilike.${like}` : `title.ilike.${like}`)
+      .or(isbn ? `isbn.eq.${isbn},title.ilike.${like}` : `title.ilike.${like},author.ilike.${like}`)
       .limit(1)
     const b = data?.[0]
     if (!b) return null
@@ -92,70 +112,95 @@ export default function PollComposer({
     }
   }
 
-  const añadir = (book: ExternalBook, yaEsta: boolean) => {
+  const yaEsta = (lista: Candidato[], b: ExternalBook) =>
+    lista.some(
+      (c) =>
+        `${c.book.title.toLowerCase()}|${c.book.author.toLowerCase()}` ===
+        `${b.title.toLowerCase()}|${b.author.toLowerCase()}`,
+    )
+
+  const añadir = (b: ExternalBook, enCatalogo: boolean) => {
+    setError(null)
     setCandidatos((cur) => {
-      const clave = `${book.title.toLowerCase()}|${book.author.toLowerCase()}`
-      if (cur.some((c) => `${c.book.title.toLowerCase()}|${c.book.author.toLowerCase()}` === clave))
-        return cur
-      if (cur.length >= 5) return cur
-      return [...cur, { key: book.key + cur.length, book, enCatalogo: yaEsta, note: '' }]
+      if (cur.length >= MAX || yaEsta(cur, b)) return cur
+      return [...cur, { key: `${b.key}-${cur.length}`, book: b, enCatalogo, note: '' }]
     })
+    setQ('')
+    setResultados([])
   }
 
-  const buscarPegados = async () => {
-    const lineas = raw.split('\n').map((l) => l.trim()).filter(Boolean)
-    if (lineas.length === 0) return
+  // Búsqueda viva mientras escribes
+  useEffect(() => {
+    const term = q.trim()
+    abortRef.current?.abort()
+    if (term.length < 2 || term.includes('\n')) {
+      setResultados([])
+      setBuscando(false)
+      return
+    }
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
     setBuscando(true)
-    setError(null)
-    setNoEncontrados([])
+    const t = setTimeout(async () => {
+      const [local, fuera] = await Promise.all([
+        buscarEnCatalogo(term),
+        searchExternalBooks(term, ctrl.signal),
+      ])
+      if (ctrl.signal.aborted) return
+      const lista: { book: ExternalBook; enCatalogo: boolean }[] = []
+      if (local) lista.push({ book: local, enCatalogo: true })
+      for (const b of fuera) {
+        if (!b.title || !b.author) continue
+        const clave = `${b.title.toLowerCase()}|${b.author.toLowerCase()}`
+        if (local && clave === `${local.title.toLowerCase()}|${local.author.toLowerCase()}`) continue
+        lista.push({ book: b, enCatalogo: false })
+        if (lista.length >= 6) break
+      }
+      setResultados(lista)
+      setBuscando(false)
+    }, 320)
+    return () => {
+      clearTimeout(t)
+      ctrl.abort()
+    }
+  }, [q])
 
-    // El catálogo manda: si ya está, se reutiliza esa ficha
+  /** Pegar varias líneas de golpe sigue siendo posible. */
+  const pegarVarios = async (texto: string) => {
+    const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean)
+    if (lineas.length < 2) return false
+    setBuscando(true)
+    setAviso(null)
+    setQ('')
     const locales = await Promise.all(
-      lineas.map(async (l) => ({ line: l, book: await enCatalogo(l) })),
+      lineas.map(async (l) => ({ line: l, book: await buscarEnCatalogo(l) })),
     )
     const pendientes = locales.filter((x) => !x.book).map((x) => x.line)
     const fuera = pendientes.length ? await resolveBookLines(pendientes) : []
     const porLinea = new Map(fuera.map((f) => [f.line, f.book]))
-
     const fallidos: string[] = []
     for (const { line, book } of locales) {
       if (book) {
         añadir(book, true)
         continue
       }
-      const externo = porLinea.get(line) ?? null
-      if (externo && externo.title && externo.author) añadir(externo, false)
+      const ext = porLinea.get(line)
+      if (ext?.title && ext.author) añadir(ext, false)
       else fallidos.push(line)
     }
-    setNoEncontrados(fallidos)
-    setRaw('')
+    if (fallidos.length)
+      setAviso(`No encontré ${fallidos.map((f) => `«${f}»`).join(', ')}. Búscalos por título.`)
     setBuscando(false)
-  }
-
-  const añadirUno = async () => {
-    const t = extra.trim()
-    if (!t) return
-    setBuscando(true)
-    setError(null)
-    const local = await enCatalogo(t)
-    if (local) {
-      añadir(local, true)
-    } else {
-      const found = await searchExternalBooks(t)
-      if (found[0]?.title && found[0]?.author) añadir(found[0], false)
-      else setNoEncontrados((n) => [...n, t])
-    }
-    setExtra('')
-    setBuscando(false)
+    return true
   }
 
   const abrir = async () => {
-    if (!title.trim()) {
-      setError('Ponle un título a la votación.')
+    if (candidatos.length < MIN) {
+      setError(`Elige al menos ${MIN} libros para que haya algo que votar.`)
       return
     }
-    if (candidatos.length < 2) {
-      setError('Hacen falta al menos 2 libros para votar.')
+    if (!title.trim()) {
+      setError('La votación necesita un nombre.')
       return
     }
     setBusy(true)
@@ -184,73 +229,118 @@ export default function PollComposer({
     onCreated()
   }
 
+  const faltan = MIN - candidatos.length
+
   return (
     <div className="pollc">
-      <label className="label-medium pollc__field">
-        Título de la votación
+      {/* ---------- Buscador, siempre arriba ---------- */}
+      <div className="pollc__buscar">
+        <span className="material-symbols-rounded pollc__lupa" aria-hidden="true">
+          search
+        </span>
         <input
-          className="tz-input body-medium"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          className="tz-input body-large pollc__input"
+          placeholder="Busca un libro por título, autor o ISBN…"
+          aria-label="Buscar un libro para proponerlo"
+          value={q}
+          disabled={candidatos.length >= MAX}
+          onChange={(e) => setQ(e.target.value)}
+          onPaste={(e) => {
+            const texto = e.clipboardData.getData('text')
+            if (texto.includes('\n')) {
+              e.preventDefault()
+              void pegarVarios(texto)
+            }
+          }}
         />
-      </label>
+        {buscando && <md-circular-progress indeterminate class="pollc__spin" />}
+      </div>
+
+      {candidatos.length >= MAX ? (
+        <p className="body-small on-surface-variant pollc__pista">
+          Ya tienes {MAX} libros, que son los que caben en una votación. Quita alguno
+          para cambiarlo.
+        </p>
+      ) : (
+        <p className="body-small on-surface-variant pollc__pista">
+          Escribe y elige. Si tienes los ISBN a mano, pégalos todos de golpe.
+        </p>
+      )}
+
+      {/* ---------- Resultados vivos ---------- */}
+      {resultados.length > 0 && (
+        <div className="pollc__res">
+          {resultados.map(({ book, enCatalogo }) => (
+            <button
+              key={book.key}
+              type="button"
+              className="pollc__res-item"
+              onClick={() => añadir(book, enCatalogo)}
+            >
+              <BookCover
+                title={book.title}
+                author={book.author}
+                coverUrl={book.coverUrl}
+                size="sm"
+              />
+              <span className="pollc__res-txt">
+                <span className="title-small serif">{book.title}</span>
+                <span className="body-small on-surface-variant">
+                  {book.author}
+                  {book.year ? ` · ${book.year}` : ''}
+                  {enCatalogo ? ' · ya en el catálogo' : ''}
+                </span>
+              </span>
+              <span className="material-symbols-rounded pollc__mas" aria-hidden="true">
+                add
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {aviso && (
+        <p className="body-small pollc__warn" role="status">
+          {aviso}
+        </p>
+      )}
+
+      {/* ---------- Los candidatos ---------- */}
+      <div className="pollc__cabecera">
+        <h3 className="title-small">Los candidatos</h3>
+        <span className="label-medium on-surface-variant">
+          {candidatos.length} de {MAX}
+        </span>
+      </div>
 
       {candidatos.length === 0 ? (
-        <>
-          <label className="label-medium pollc__field">
-            Los libros que propones
-            <textarea
-              className="tz-input body-medium pollc__paste"
-              rows={4}
-              placeholder={'9788466345347\n9788433998248\nStoner, John Williams'}
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-            />
-            <span className="body-small on-surface-variant">
-              Un ISBN o un título por línea. Los busca por ti y crea las fichas que
-              falten, sin que tengas que pasar por el catálogo.
-            </span>
-          </label>
-          <div className="pollc__actions">
-            <md-text-button onClick={onCancel}>Cancelar</md-text-button>
-            <span style={{ flex: 1 }} />
-            <md-filled-button
-              disabled={buscando || !raw.trim() || undefined}
-              onClick={() => void buscarPegados()}
-            >
-              {buscando ? 'Buscando…' : 'Buscar los libros'}
-            </md-filled-button>
-          </div>
-        </>
+        <div className="pollc__vacio">
+          <span className="material-symbols-rounded" aria-hidden="true">
+            how_to_vote
+          </span>
+          <p className="body-medium on-surface-variant">
+            Todavía no has propuesto ninguno. Busca arriba los libros entre los que
+            quieres que elija el club.
+          </p>
+        </div>
       ) : (
-        <>
-          <div className="pollc__list">
-            {candidatos.map((c, i) => (
-              <div key={c.key} className="pollc__cand">
+        <div className="pollc__lista">
+          {candidatos.map((c, i) => (
+            <div key={c.key} className="pollc__cand">
+              <div className="pollc__cand-fila">
+                <span className="pollc__num label-medium">{i + 1}</span>
                 <BookCover
                   title={c.book.title}
                   author={c.book.author}
                   coverUrl={c.book.coverUrl}
-                  size="sm"
+                  size="md"
                 />
                 <div className="pollc__cand-main">
                   <span className="title-small serif">{c.book.title}</span>
                   <span className="body-small on-surface-variant">
                     {c.book.author}
                     {c.book.year ? ` · ${c.book.year}` : ''}
-                    {c.enCatalogo ? ' · ya en el catálogo' : ''}
                   </span>
-                  <input
-                    className="tz-input body-small pollc__note"
-                    placeholder="Por qué lo propones, opcional"
-                    aria-label={`Por qué propones ${c.book.title}`}
-                    value={c.note}
-                    onChange={(e) =>
-                      setCandidatos((cur) =>
-                        cur.map((x, j) => (j === i ? { ...x, note: e.target.value } : x)),
-                      )
-                    }
-                  />
                 </div>
                 <button
                   type="button"
@@ -258,67 +348,96 @@ export default function PollComposer({
                   aria-label={`Quitar ${c.book.title}`}
                   onClick={() => setCandidatos((cur) => cur.filter((_, j) => j !== i))}
                 >
-                  <span className="material-symbols-rounded" aria-hidden="true">
-                    close
-                  </span>
+                  <span className="material-symbols-rounded" aria-hidden="true">close</span>
                 </button>
               </div>
-            ))}
-          </div>
 
-          {candidatos.length < 5 && (
-            <div className="pollc__add">
+              {/* El motivo va en su propia línea: en un móvil no cabe al
+                  lado de la portada sin partirse en dos. */}
+              {pitchAbierto === c.key || c.note ? (
+                <input
+                  className="tz-input body-small pollc__note"
+                  placeholder="Por qué lo propones…"
+                  aria-label={`Por qué propones ${c.book.title}`}
+                  autoFocus={pitchAbierto === c.key && !c.note}
+                  value={c.note}
+                  onChange={(e) =>
+                    setCandidatos((cur) =>
+                      cur.map((x, j) => (j === i ? { ...x, note: e.target.value } : x)),
+                    )
+                  }
+                  onBlur={() => setPitchAbierto(null)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="pollc__pitch label-medium"
+                  onClick={() => setPitchAbierto(c.key)}
+                >
+                  <span className="material-symbols-rounded" aria-hidden="true">edit</span>
+                  Añadir un motivo
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ---------- Nombre y cierre: una frase, no dos campos ---------- */}
+      <div className="pollc__ajustes">
+        {verAjustes ? (
+          <>
+            <label className="label-medium pollc__campo">
+              Cómo se llama
               <input
                 className="tz-input body-medium"
-                placeholder="Añadir otro: ISBN o título…"
-                aria-label="Añadir otro libro a la votación"
-                value={extra}
-                onChange={(e) => setExtra(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && void añadirUno()}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
-              <md-outlined-button
-                disabled={buscando || !extra.trim() || undefined}
-                onClick={() => void añadirUno()}
-              >
-                Añadir
-              </md-outlined-button>
-            </div>
-          )}
+            </label>
+            <label className="label-medium pollc__campo">
+              Se vota hasta
+              <input
+                className="tz-input body-medium pollc__fecha"
+                type="date"
+                value={closesAt}
+                onChange={(e) => setClosesAt(e.target.value)}
+              />
+            </label>
+            <md-text-button onClick={() => setVerAjustes(false)}>Listo</md-text-button>
+          </>
+        ) : (
+          <p className="body-medium">
+            Se llamará <b>{title || 'sin nombre'}</b> y se vota hasta el{' '}
+            <b>{enPalabras(closesAt)}</b>.{' '}
+            <button type="button" className="pollc__cambiar" onClick={() => setVerAjustes(true)}>
+              Cambiar
+            </button>
+          </p>
+        )}
+      </div>
 
-          <label className="label-medium pollc__field pollc__when">
-            Se vota hasta
-            <input
-              className="tz-input body-medium"
-              type="date"
-              value={closesAt}
-              onChange={(e) => setClosesAt(e.target.value)}
-            />
-          </label>
-
-          <div className="pollc__actions">
-            <md-text-button onClick={onCancel}>Cancelar</md-text-button>
-            <span style={{ flex: 1 }} />
-            <md-filled-button
-              disabled={busy || candidatos.length < 2 || undefined}
-              onClick={() => void abrir()}
-            >
-              {busy ? 'Abriendo…' : `Abrir votación (${candidatos.length})`}
-            </md-filled-button>
-          </div>
-        </>
-      )}
-
-      {noEncontrados.length > 0 && (
-        <p className="body-small pollc__warn" role="status">
-          No encontré {noEncontrados.map((n) => `«${n}»`).join(', ')}. Prueba con el
-          ISBN o escribe el título con el autor.
-        </p>
-      )}
       {error && (
         <p className="body-medium pollc__error" role="alert">
           {error}
         </p>
       )}
+
+      <div className="pollc__actions">
+        <md-text-button onClick={onCancel}>Cancelar</md-text-button>
+        <span style={{ flex: 1 }} />
+        <span className="body-small on-surface-variant pollc__faltan">
+          {faltan > 0
+            ? `Elige ${faltan} más`
+            : `El club elegirá entre ${candidatos.length}`}
+        </span>
+        <md-filled-button
+          disabled={busy || candidatos.length < MIN || undefined}
+          onClick={() => void abrir()}
+        >
+          {busy ? 'Abriendo…' : 'Abrir la votación'}
+        </md-filled-button>
+      </div>
     </div>
   )
 }

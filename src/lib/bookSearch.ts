@@ -145,9 +145,20 @@ export async function searchExternalBooks(
       ? `https://openlibrary.org/search.json?isbn=${isbn}&limit=5&fields=key,title,author_name,isbn,cover_i,first_publish_year,number_of_pages_median`
       : `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8&fields=key,title,author_name,isbn,cover_i,first_publish_year,number_of_pages_median`
     const ol = await json<{ docs?: OlDoc[] }>(url, signal)
+    // Open Library busca también dentro del texto, así que devuelve cosas
+    // sin relación con lo que has escrito. Se exige que el título o el
+    // autor compartan alguna palabra larga con la búsqueda.
+    const palabras = normalize(q)
+      .split(' ')
+      .filter((w) => w.length >= 4)
     for (const d of ol?.docs ?? []) {
       const b = fromOpenLibrary(d)
-      if (b) results.push(b)
+      if (!b) continue
+      if (!isbn && palabras.length > 0) {
+        const heno = normalize(`${b.title} ${b.author}`)
+        if (!palabras.some((w) => heno.includes(w))) continue
+      }
+      results.push(b)
     }
   }
 
