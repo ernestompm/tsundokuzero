@@ -80,3 +80,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.explore-addlink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--md-sys-color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}

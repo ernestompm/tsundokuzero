@@ -822,6 +822,7 @@ function LegalTab() {
 /* ===================== Libros ===================== */
 
 function BooksTab() {
+  const confirm = useConfirm()
   const [books, setBooks] = useState<Book[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -870,6 +871,21 @@ function BooksTab() {
       if (error)
         setError(friendlyError(error, 'No se pudo cambiar el libro del club.')) // auditoría A-04
     }
+    setBusy(false)
+    await load()
+  }
+
+  const removeBook = async (b: Book) => {
+    const ok = await confirm({
+      title: `¿Eliminar «${b.title}» del catálogo?`,
+      message:
+        'Se borran sus capítulos, conversaciones, progresos y reseñas de todos los lectores. No se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
+    setBusy(true)
+    const { error } = await supabase.from('books').delete().eq('id', b.id)
+    if (error) setError(friendlyError(error, 'No se pudo eliminar el libro.'))
     setBusy(false)
     await load()
   }
@@ -1024,6 +1040,13 @@ function BooksTab() {
             <div className="admin-book__row">
               <md-text-button disabled={busy || undefined} onClick={() => void setClubBook(b.id)}>
                 Hacer libro del club
+              </md-text-button>
+              <md-text-button
+                disabled={busy || undefined}
+                className="admin-danger"
+                onClick={() => void removeBook(b)}
+              >
+                Eliminar
               </md-text-button>
             </div>
           </div>

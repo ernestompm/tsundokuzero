@@ -103,8 +103,17 @@ export default function HomeView({
     <div className="home">
       {/* ===== Cabecera grande (móvil): fecha + «Hoy», estilo iOS ===== */}
       <header className="home-today">
-        <span className="label-medium home-today__date">{todayLabel()}</span>
-        <h1 className="home-today__title serif">Hoy</h1>
+        <div className="home-today__text">
+          <span className="label-medium home-today__date">{todayLabel()}</span>
+          <h1 className="home-today__title serif">Hoy</h1>
+        </div>
+        {/* La Biblioteca no cabe en la tab bar: acceso directo desde Inicio */}
+        <Link to="/library" className="home-today__lib label-large" aria-label="Mi biblioteca">
+          <span className="material-symbols-rounded" aria-hidden="true">
+            auto_stories
+          </span>
+          Biblioteca
+        </Link>
       </header>
 
       {/* ===== Hero (escritorio): lectura actual + tu actividad ===== */}
@@ -389,8 +398,17 @@ export function HomeSkeleton() {
   return (
     <div className="home" aria-busy>
       <header className="home-today">
-        <span className="label-medium home-today__date">{todayLabel()}</span>
-        <h1 className="home-today__title serif">Hoy</h1>
+        <div className="home-today__text">
+          <span className="label-medium home-today__date">{todayLabel()}</span>
+          <h1 className="home-today__title serif">Hoy</h1>
+        </div>
+        {/* La Biblioteca no cabe en la tab bar: acceso directo desde Inicio */}
+        <Link to="/library" className="home-today__lib label-large" aria-label="Mi biblioteca">
+          <span className="material-symbols-rounded" aria-hidden="true">
+            auto_stories
+          </span>
+          Biblioteca
+        </Link>
       </header>
       <div className="skel" style={{ height: 118, borderRadius: 24, marginBottom: 12 }} />
       <div className="skel" style={{ height: 58, borderRadius: 999, marginBottom: 24 }} />

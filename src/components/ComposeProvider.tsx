@@ -121,7 +121,8 @@ export function ComposeProvider({ children }: { children: ReactNode }) {
         onClose={() => setOpen(false)}
         onGoToBook={() => {
           setOpen(false)
-          navigate('/library')
+          // Sin lecturas: directo a la hoja «Añadir libro» (?add=1)
+          navigate(targets.length === 0 ? '/library?add=1' : '/library')
         }}
       />
     </Ctx.Provider>

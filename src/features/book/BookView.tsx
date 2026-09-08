@@ -18,6 +18,8 @@ interface Props {
   onOpenChapter: (n: number) => void
   /** puede devolver éxito/fallo; `void` sigue valiendo (previews) */
   onRate?: (n: number, review: string | null) => Promise<boolean> | void
+  /** marca el libro como terminado (último capítulo) y abre la reseña */
+  onMarkFinished?: () => void
   onAddToShelf?: (status: 'want' | 'reading') => void
 }
 
@@ -29,6 +31,7 @@ export default function BookView({
   onOpenChapter,
   onRate,
   onAddToShelf,
+  onMarkFinished,
 }: Props) {
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [reviewDraft, setReviewDraft] = useState(data.myReview ?? '')
@@ -178,6 +181,16 @@ export default function BookView({
             </a>
           )}
         </Card>
+      )}
+
+      {/* Leyendo: terminar sin arrastrar el slider hasta el final */}
+      {data.status === 'reading' && onMarkFinished && (
+        <div className="book-shelf-actions">
+          <md-outlined-button onClick={onMarkFinished}>
+            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">check_circle</span>
+            Lo he terminado
+          </md-outlined-button>
+        </div>
       )}
 
       {/* Añadir a la biblioteca si no está */}

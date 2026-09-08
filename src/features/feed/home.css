@@ -7,9 +7,32 @@
 /* ===================== «Hoy» (cabecera grande, solo móvil) ===================== */
 .home-today {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 16px;
+}
+.home-today__text {
+  display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 2px 16px;
+}
+.home-today__lib {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 12px;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  cursor: pointer;
+  font: inherit;
+}
+.home-today__lib .material-symbols-rounded {
+  font-size: 20px;
 }
 .home-today__date {
   text-transform: uppercase;

@@ -162,8 +162,8 @@ export default function ComposeSheet({
 
         {targets.length === 0 && (
           <p className="body-small on-surface-variant" style={{ marginTop: 8 }}>
-            Para publicar una idea anclada a un libro, marca primero tu progreso
-            en la biblioteca. Mientras, puedes escribir una entrada general.
+            Para anclar una idea a un libro, añade primero a tu biblioteca el que
+            estás leyendo. Mientras, puedes escribir una entrada general.
           </p>
         )}
 
@@ -171,7 +171,9 @@ export default function ComposeSheet({
 
         <div className="sheet__actions">
           {onGoToBook && (
-            <md-text-button onClick={onGoToBook}>Mi biblioteca</md-text-button>
+            <md-text-button onClick={onGoToBook}>
+              {targets.length === 0 ? 'Añadir libro' : 'Mi biblioteca'}
+            </md-text-button>
           )}
           <span style={{ flex: 1 }} />
           <md-text-button onClick={onClose}>Cancelar</md-text-button>

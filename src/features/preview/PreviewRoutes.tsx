@@ -10,6 +10,7 @@ import { SAMPLE_CHAPTER } from '../book/sampleChapter'
 import ThreadView from '../book/ThreadView'
 import { SAMPLE_THREAD } from '../book/sampleThread'
 import AuthorPreview from '../author/AuthorPreview'
+import AddBookSheet from '../../components/AddBookSheet'
 
 /**
  * Vistas de diseño con datos de muestra (sin login), para revisar la
@@ -75,6 +76,15 @@ export default function PreviewRoutes() {
           }
         />
         <Route path="author" element={<AuthorPreview />} />
+        <Route
+          path="add-book"
+          element={
+            <>
+              <BookView data={SAMPLE_BOOK} onSetChapter={() => {}} onOpenChapter={() => {}} />
+              <AddBookSheet open onClose={() => {}} initialQuery="" />
+            </>
+          }
+        />
         <Route
           path="thread"
           element={

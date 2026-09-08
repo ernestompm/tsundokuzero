@@ -1,0 +1,124 @@
+.library__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.library__error {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+.library__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.library__empty {
+  text-align: center;
+  padding: 28px 20px;
+}
+.library__empty-icon {
+  font-size: 40px;
+  color: var(--md-sys-color-primary);
+  display: block;
+  margin: 0 auto 8px;
+}
+.library__empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---- Fila de libro ---- */
+.lib-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lib-item__main {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+.lib-item__main:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 4px;
+}
+.lib-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+}
+.lib-item__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.lib-item__progress {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lib-item__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-sys-color-primary);
+  margin-top: 4px;
+}
+.lib-item__done .material-symbols-rounded {
+  font-size: 16px;
+}
+
+.lib-item__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+.lib-item__remove {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+.lib-item__remove:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+.lib-item__remove:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lib-item__remove .material-symbols-rounded {
+  font-size: 20px;
+}
+
+@media (max-width: 480px) {
+  .lib-item__actions md-text-button,
+  .lib-item__actions md-filled-tonal-button {
+    --md-text-button-container-height: 32px;
+    --md-filled-tonal-button-container-height: 32px;
+  }
+}

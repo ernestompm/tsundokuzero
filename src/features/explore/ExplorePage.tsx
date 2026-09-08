@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover, SectionHeader } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
+import AddBookSheet from '../../components/AddBookSheet'
+import '@material/web/button/filled-tonal-button.js'
 import './explore.css'
 
 interface PersonRow {
@@ -35,6 +37,7 @@ export default function ExplorePage() {
     const fromBar = searchParams.get('q')
     if (fromBar != null) setQ(fromBar)
   }, [searchParams])
+  const [adding, setAdding] = useState(false)
   const [people, setPeople] = useState<PersonRow[] | null>(null)
   const [books, setBooks] = useState<BookRow[] | null>(null)
   const [following, setFollowing] = useState<Set<string>>(new Set())
@@ -120,7 +123,18 @@ export default function ExplorePage() {
 
   return (
     <section className="explore">
-      <PageHeader title="Explorar" sub="Libros, autores y lectores del club" />
+      <PageHeader
+        title="Explorar"
+        sub="Libros, autores y lectores del club"
+        action={
+          <md-filled-tonal-button onClick={() => setAdding(true)}>
+            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
+              add
+            </span>
+            Añadir libro
+          </md-filled-tonal-button>
+        }
+      />
       <input
         className="tz-input explore-search body-large"
         placeholder="Busca libros, autores o personas…"
@@ -140,9 +154,16 @@ export default function ExplorePage() {
           {books.length === 0 ? (
             <p className="body-medium on-surface-variant">
               {/* auditoría B-01: sin consulta no hay «ningún resultado» */}
-              {q.trim()
-                ? `Ningún libro coincide con «${q.trim()}».`
-                : 'Busca por título, autor o lector.'}
+              {q.trim() ? (
+                <>
+                  Ningún libro del catálogo coincide con «{q.trim()}».{' '}
+                  <button type="button" className="explore-addlink" onClick={() => setAdding(true)}>
+                    Añádelo tú
+                  </button>
+                </>
+              ) : (
+                'Busca por título, autor o lector.'
+              )}
             </p>
           ) : (
             <div className="explore-books">
@@ -203,6 +224,8 @@ export default function ExplorePage() {
           )}
         </>
       )}
+
+      <AddBookSheet open={adding} onClose={() => setAdding(false)} initialQuery={q.trim()} />
     </section>
   )
 }
