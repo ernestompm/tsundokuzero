@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { Avatar } from './ui'
 import { useAuth } from '../auth/AuthContext'
 import { useCompose } from './ComposeProvider'
+import ReleaseNotes from './ReleaseNotes'
 import { useModalBehavior } from './modal'
 import { isDarkActive, setThemeMode } from '../theme/theme'
 import './AppShell.css'
@@ -75,6 +76,8 @@ export default function AppShell() {
   const [dark, setDark] = useState(isDarkActive)
   const [unread, setUnread] = useState(0)
   const [drawer, setDrawer] = useState(false)
+  // Novedades: se abren solas una vez por versión, o a mano desde el pie
+  const [verNovedades, setVerNovedades] = useState(false)
   const [topQuery, setTopQuery] = useState('')
   // Drawer accesible (auditoría C-02): Escape, focus trap y restauración
   const drawerRef = useModalBehavior(drawer, () => setDrawer(false))
@@ -216,9 +219,14 @@ export default function AppShell() {
             </span>
             <span className="label-large">{dark ? 'Tema claro' : 'Tema oscuro'}</span>
           </button>
-          <span className="shell-version label-small">
+          <button
+            type="button"
+            className="shell-version label-small shell-version--btn"
+            onClick={() => setVerNovedades(true)}
+            title="Ver las novedades de esta versión"
+          >
             Tsundoku Zero v{__APP_VERSION__} · beta
-          </span>
+          </button>
           <LegalLinks />
         </div>
       </aside>
@@ -316,9 +324,17 @@ export default function AppShell() {
                 </span>
                 <span className="label-large">Cerrar sesión</span>
               </button>
-              <span className="shell-version label-small">
+              <button
+                type="button"
+                className="shell-version label-small shell-version--btn"
+                onClick={() => {
+                  setDrawer(false)
+                  setVerNovedades(true)
+                }}
+                title="Ver las novedades de esta versión"
+              >
                 Tsundoku Zero v{__APP_VERSION__} · beta
-              </span>
+              </button>
               <LegalLinks />
             </div>
           </nav>
@@ -414,6 +430,14 @@ export default function AppShell() {
           <NavItem key={to} to={to} icon={icon} label={label} />
         ))}
       </nav>
+
+      {/* Novedades de la versión: automáticas la primera vez, y a demanda
+          desde la versión del pie del menú */}
+      <ReleaseNotes
+        key={verNovedades ? 'manual' : 'auto'}
+        forceOpen={verNovedades}
+        onClose={() => setVerNovedades(false)}
+      />
     </div>
   )
 }

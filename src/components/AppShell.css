@@ -452,3 +452,17 @@
   place-items: center;
   pointer-events: none;
 }
+
+/* La versión del pie abre las novedades */
+.shell-version--btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.shell-version--btn:hover {
+  text-decoration: underline;
+}

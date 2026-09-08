@@ -1,0 +1,78 @@
+/* Aviso de novedades al entrar. Hereda .sheet/.sheet-scrim de ComposeSheet.css */
+
+.relnotes {
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+.relnotes__head {
+  padding-bottom: 4px;
+}
+.relnotes__version {
+  display: inline-block;
+  padding: 4px 12px;
+  margin-bottom: 10px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.relnotes__head h2 {
+  margin: 0 0 6px;
+}
+
+.relnotes__lista {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scrollbar-width: thin;
+}
+
+.relnotes__item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.relnotes__icon {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.relnotes__icon .material-symbols-rounded {
+  font-size: 20px;
+}
+.relnotes__texto {
+  min-width: 0;
+}
+.relnotes__texto h3 {
+  margin: 0 0 3px;
+}
+.relnotes__texto p {
+  margin: 0;
+}
+
+.relnotes__pie {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0 calc(20px + env(safe-area-inset-bottom));
+  margin-top: 4px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--md-sys-color-surface-container-high) 24%
+  );
+}
