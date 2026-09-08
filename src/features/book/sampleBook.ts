@@ -43,6 +43,8 @@ export const SAMPLE_BOOK: BookViewData = {
   ratingCount: 6,
   myRating: 4,
   myReview: null,
+  myDimensions: { d_think: 5, d_flow: 3, d_feel: 5, d_recommend: 4 },
+  clubDimensions: { d_think: 4.3, d_flow: 4.1, d_feel: 4.6, d_recommend: 4.2 },
   canRate: true,
   status: 'finished',
   reviews: [

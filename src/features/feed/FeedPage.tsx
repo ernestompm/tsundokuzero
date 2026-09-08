@@ -404,9 +404,21 @@ export default function FeedPage() {
         arr.push(d)
         byBook.set(d.book_id, arr)
       }
+      // Un libro que ya terminaste deja de ser «conversación activa» salvo
+      // que siga habiendo movimiento reciente. Antes, una lectura cerrada
+      // hace meses seguía figurando como viva para siempre.
+      const HACE_POCO = Date.now() - 14 * 24 * 60 * 60 * 1000
+      const terminados = new Set(
+        progressList.filter((p) => p.status === 'finished').map((p) => p.book_id),
+      )
+
       for (const [bookId, items] of byBook) {
         const book = bookById.get(bookId)
         if (!book) continue
+        if (terminados.has(bookId)) {
+          const vivo = items.some((d) => new Date(d.created_at).getTime() > HACE_POCO)
+          if (!vivo) continue
+        }
         const people = [...new Set(items.map((d) => d.author_id))].map(
           (id) => ({
             name: nameById.get(id) ?? '·',

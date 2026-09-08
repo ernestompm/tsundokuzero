@@ -322,3 +322,103 @@
   max-width: 160px;
   font-size: 16px;
 }
+
+/* Cerrar lectura y pedir el bis (migr. 028) */
+.manage-reading-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+}
+.manage-bis {
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+}
+.manage-bis .manage-book-picker {
+  margin-top: 12px;
+}
+
+/* Historial de lecturas y hoja de capitanía (migr. 028) */
+.club-sec {
+  margin: var(--tz-space-4) 0 10px;
+}
+.club-sec__sub {
+  margin: -6px 0 12px;
+}
+
+.club-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.club-read {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+  text-decoration: none;
+  color: inherit;
+}
+.club-read:hover {
+  background: var(--md-sys-color-surface-container);
+}
+.club-read__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.club-read__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.club-read__bis,
+.club-read__now {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--md-sys-shape-corner-full);
+  white-space: nowrap;
+}
+.club-read__bis {
+  background: var(--md-sys-color-tertiary-container, var(--md-sys-color-secondary-container));
+  color: var(--md-sys-color-on-tertiary-container, var(--md-sys-color-on-secondary-container));
+  font-style: italic;
+}
+.club-read__now {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.club-captains {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.club-captain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+}
+.club-captain__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.club-captain__nota {
+  flex: none;
+  font-size: 26px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-sys-color-primary);
+}

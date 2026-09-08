@@ -78,6 +78,17 @@ export default function PreviewRoutes() {
         />
         <Route path="author" element={<AuthorPreview />} />
         <Route
+          path="opinions"
+          element={
+            <BookView
+              data={SAMPLE_BOOK}
+              onSetChapter={() => {}}
+              onOpenChapter={() => {}}
+              onRate={async () => true}
+            />
+          }
+        />
+        <Route
           path="poll"
           element={
             <section style={{ maxWidth: 720, margin: '0 auto' }}>

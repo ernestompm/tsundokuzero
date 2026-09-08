@@ -16,7 +16,7 @@
 -- =====================================================================
 
 begin;
-select plan(35);
+select plan(36);
 
 -- ---------- 1 · RLS activo ----------
 select ok(
@@ -25,7 +25,7 @@ select ok(
 ) from unnest(array[
   'profiles', 'discussions', 'discussion_comments', 'posts', 'polls',
   'poll_votes', 'reading_progress', 'book_ratings', 'reports', 'consents',
-  'blocks', 'notifications', 'private_settings'
+  'blocks', 'notifications', 'private_settings', 'club_readings'
 ]) as t;
 
 -- ---------- 2 · anon NO ejecuta RPC privilegiadas ----------
@@ -34,7 +34,7 @@ select ok(
   'anon NO puede ejecutar ' || f
 ) from unnest(array[
   'add_book_chapter(uuid, text)',
-  'rate_book(uuid, int, text)',
+  'rate_book(uuid, int, text, int, int, int, int)',
   'add_book_smart(text, text, text, text, text, text, text, text, int, text[], text)',
   'captain_books_left()',
   'club_kick_member(uuid, uuid)',
@@ -83,7 +83,7 @@ select ok(
   'authenticated NO lee book_ratings.review directamente (solo vía book_reviews)'
 );
 select ok(
-  has_function_privilege('authenticated', 'public.rate_book(uuid, int, text)', 'execute'),
+  has_function_privilege('authenticated', 'public.rate_book(uuid, int, text, int, int, int, int)', 'execute'),
   'authenticated SÍ puede guardar su reseña por rate_book'
 );
 

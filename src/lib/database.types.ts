@@ -47,6 +47,18 @@ export type Book = {
   chapters_confirmed: boolean
 }
 
+/** Historial de lecturas del club (migr. 028) */
+export type ClubReading = {
+  id: string
+  club_id: string
+  book_id: string
+  /** 'main' = lectura del mes; 'bis' = la extra cuando el club va sobrado */
+  kind: 'main' | 'bis'
+  proposed_by: string | null
+  started_at: string
+  closed_at: string | null
+}
+
 export type Author = {
   id: string
   name: string
@@ -283,6 +295,7 @@ export type Database = {
         'id' | 'created_at' | 'created_by'
       >
       chapters: TableDef<Chapter, 'book_id' | 'number', 'id'>
+      club_readings: TableDef<ClubReading, 'club_id' | 'book_id', 'id' | 'started_at'>
       reading_progress: TableDef<ReadingProgress, 'user_id' | 'book_id', 'updated_at'>
       discussions: TableDef<
         Discussion,
@@ -324,12 +337,29 @@ export type Database = {
       blocks: TableDef<Block, 'blocker_id' | 'blocked_id', 'created_at'>
     }
     Views: {
+      /** hoja de capitanía (migr. 028) */
+      club_captain_record: {
+        Row: {
+          club_id: string
+          user_id: string
+          libros: number
+          bises: number
+          media_estrellas: number | null
+          lecturas_terminadas: number
+        }
+        Relationships: []
+      }
       /** reseñas: review=null hasta que TERMINAS el libro (o es tuya) */
       book_reviews: {
         Row: {
           book_id: string
           user_id: string
           rating: number
+          /** dimensiones (migr. 028): no son spoiler, se leen siempre */
+          d_think: number | null
+          d_flow: number | null
+          d_feel: number | null
+          d_recommend: number | null
           created_at: string
           has_review: boolean
           review: string | null
@@ -388,9 +418,26 @@ export type Database = {
         Returns: number
       }
       rate_book: {
-        Args: { p_book: string; p_rating: number; p_review?: string | null }
-        Returns: { rating: number; review: string | null }[]
+        Args: {
+          p_book: string
+          p_rating: number
+          p_review?: string | null
+          p_think?: number | null
+          p_flow?: number | null
+          p_feel?: number | null
+          p_recommend?: number | null
+        }
+        Returns: {
+          rating: number
+          review: string | null
+          d_think: number | null
+          d_flow: number | null
+          d_feel: number | null
+          d_recommend: number | null
+        }[]
       }
+      close_club_reading: { Args: Record<string, never>; Returns: undefined }
+      start_club_bis: { Args: { p_book: string }; Returns: string }
       create_poll_with_books: {
         Args: { p_title: string; p_books: unknown; p_closes_at?: string | null }
         Returns: string

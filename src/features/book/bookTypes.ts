@@ -1,3 +1,5 @@
+import type { Dimensions } from '../../components/RatingBars'
+
 export interface BookChapter {
   number: number
   label: string | null
@@ -24,6 +26,10 @@ export interface BookViewData {
   ratingCount: number
   myRating: number | null
   myReview: string | null
+  /** tus 4 dimensiones (migr. 028), todas opcionales */
+  myDimensions: Dimensions
+  /** media del club en cada dimensión, null si nadie la ha puntuado */
+  clubDimensions: Dimensions
   /** puede valorar: tiene el libro terminado */
   canRate: boolean
   /** estado de lectura: null si el libro no está en tu biblioteca */

@@ -52,6 +52,9 @@ export default function ClubManagePage() {
   // una votación entra con un número estimado que hay que confirmar antes
   // de leerlo, o el candado anti-spoiler trabaja con datos falsos.
   const [chaptersDraft, setChaptersDraft] = useState('')
+  // «El bis» (migr. 028): la lectura extra que se pide cuando el club se
+  // ventila el libro del mes antes de tiempo.
+  const [pidiendoBis, setPidiendoBis] = useState(false)
   const [addingBook, setAddingBook] = useState(false)
 
   const load = useCallback(async () => {
@@ -203,6 +206,36 @@ export default function ClubManagePage() {
       })
     await load()
     setBusy(false)
+  }
+
+  const cerrarLectura = async () => {
+    const ok = await confirm({
+      title: '¿Cerrar la lectura del club?',
+      message:
+        'El libro pasa al historial y deja de aparecer como conversación activa. Lo leído y lo hablado se conserva.',
+      confirmLabel: 'Cerrar lectura',
+    })
+    if (!ok) return
+    setBusy(true)
+    const { error } = await supabase.rpc('close_club_reading')
+    if (error)
+      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo cerrar la lectura.') })
+    else setBanner({ kind: 'info', text: 'Lectura cerrada. Ya está en el historial del club.' })
+    setBusy(false)
+    await load()
+  }
+
+  const pedirBis = async (bookId: string) => {
+    setBusy(true)
+    const { error } = await supabase.rpc('start_club_bis', { p_book: bookId })
+    if (error)
+      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo abrir el bis.') })
+    else {
+      setBanner({ kind: 'info', text: '¡Bis en marcha! Es la lectura extra de este mes.' })
+      setPidiendoBis(false)
+    }
+    setBusy(false)
+    await load()
   }
 
   const confirmChapters = async () => {
@@ -371,6 +404,45 @@ export default function ClubManagePage() {
               >
                 Confirmar
               </md-filled-button>
+            </div>
+          </div>
+        )}
+
+        {currentBook && (
+          <div className="manage-reading-actions">
+            <md-outlined-button disabled={busy || undefined} onClick={() => void cerrarLectura()}>
+              Cerrar la lectura
+            </md-outlined-button>
+            <md-text-button
+              disabled={busy || undefined}
+              onClick={() => setPidiendoBis((v) => !v)}
+            >
+              {pidiendoBis ? 'Cancelar el bis' : 'Pedir el bis'}
+            </md-text-button>
+          </div>
+        )}
+
+        {pidiendoBis && (
+          <div className="manage-bis">
+            <p className="body-medium">
+              <b>El bis</b> es la lectura extra de este mes, la que se pide cuando el
+              club se ha ventilado el libro antes de tiempo. Elige cuál y queda
+              registrado como tal en el historial.
+            </p>
+            <div className="manage-book-picker">
+              {books
+                .filter((b) => b.id !== club.current_book_id)
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    className="manage-book"
+                    disabled={busy || undefined}
+                    onClick={() => void pedirBis(b.id)}
+                  >
+                    <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
+                    <span className="label-small manage-book__title">{b.title}</span>
+                  </button>
+                ))}
             </div>
           </div>
         )}

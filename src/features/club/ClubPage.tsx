@@ -22,6 +22,28 @@ interface Member {
   chapter: number
 }
 
+/** Una lectura pasada del club (migr. 028) */
+interface Lectura {
+  bookId: string
+  title: string
+  author: string
+  coverUrl: string | null
+  kind: 'main' | 'bis'
+  closedAt: string | null
+  media: number | null
+}
+
+/** Hoja de capitanía: qué propuso cada uno y cómo le fue */
+interface Capitania {
+  userId: string
+  name: string
+  avatar: string | null
+  libros: number
+  bises: number
+  media: number | null
+  terminadas: number
+}
+
 interface PollState {
   poll: Poll
   options: (PollOption & {
@@ -48,6 +70,8 @@ export default function ClubPage() {
   const [book, setBook] = useState<Book | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [pollState, setPollState] = useState<PollState | null>(null)
+  const [historial, setHistorial] = useState<Lectura[]>([])
+  const [capitanias, setCapitanias] = useState<Capitania[]>([])
   const [busy, setBusy] = useState(false)
   // Estado de carga explícito (auditoría C-03): sin él, «no hay club»
   // dejaba el spinner girando para siempre.
@@ -125,6 +149,79 @@ export default function ClubPage() {
           a.role === 'captain' ? -1 : b.role === 'captain' ? 1 : b.chapter - a.chapter,
         ),
     )
+
+    // ---- Historial de lecturas y hoja de capitanía (migr. 028) ----
+    const { data: lecturas } = await supabase
+      .from('club_readings')
+      .select('book_id, kind, closed_at, started_at')
+      .eq('club_id', clubData.id)
+      .order('started_at', { ascending: false })
+      .limit(24)
+
+    const idsLibros = [...new Set((lecturas ?? []).map((l) => l.book_id))]
+    if (idsLibros.length > 0) {
+      const [{ data: libros }, { data: notas }] = await Promise.all([
+        supabase.from('books').select('id, title, author, cover_url').in('id', idsLibros),
+        supabase.from('book_reviews').select('book_id, rating').in('book_id', idsLibros),
+      ])
+      const libroPorId = new Map((libros ?? []).map((b) => [b.id, b]))
+      const notasPorLibro = new Map<string, number[]>()
+      for (const n of notas ?? []) {
+        const arr = notasPorLibro.get(n.book_id) ?? []
+        arr.push(n.rating)
+        notasPorLibro.set(n.book_id, arr)
+      }
+      setHistorial(
+        (lecturas ?? []).flatMap((l) => {
+          const b = libroPorId.get(l.book_id)
+          if (!b) return []
+          const ns = notasPorLibro.get(l.book_id) ?? []
+          return [
+            {
+              bookId: l.book_id,
+              title: b.title,
+              author: b.author,
+              coverUrl: b.cover_url,
+              kind: l.kind,
+              closedAt: l.closed_at,
+              media: ns.length ? ns.reduce((a, c) => a + c, 0) / ns.length : null,
+            },
+          ]
+        }),
+      )
+    } else {
+      setHistorial([])
+    }
+
+    const { data: hojas } = await supabase
+      .from('club_captain_record')
+      .select('user_id, libros, bises, media_estrellas, lecturas_terminadas')
+      .eq('club_id', clubData.id)
+    if (hojas && hojas.length > 0) {
+      const perfiles = new Map(
+        ((
+          await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url')
+            .in('id', hojas.map((h) => h.user_id))
+        ).data ?? []).map((p) => [p.id, p]),
+      )
+      setCapitanias(
+        hojas
+          .map((h) => ({
+            userId: h.user_id,
+            name: perfiles.get(h.user_id)?.display_name ?? 'Capitán',
+            avatar: perfiles.get(h.user_id)?.avatar_url ?? null,
+            libros: h.libros,
+            bises: h.bises,
+            media: h.media_estrellas,
+            terminadas: h.lecturas_terminadas,
+          }))
+          .sort((a, b) => (b.media ?? 0) - (a.media ?? 0)),
+      )
+    } else {
+      setCapitanias([])
+    }
 
     if (poll) {
       const [{ data: options }, { data: votes }] = await Promise.all([
@@ -447,6 +544,74 @@ export default function ClubPage() {
         Miembros
         {book ? ' · avance' : ''}
       </h2>
+      {/* Lo que hemos leído: el club tiene memoria (migr. 028) */}
+      {historial.length > 0 && (
+        <>
+          <h2 className="title-small club-sec">Lo que hemos leído</h2>
+          <div className="club-history">
+            {historial.map((l) => (
+              <Link
+                key={`${l.bookId}-${l.closedAt ?? 'abierta'}`}
+                to={`/book/${l.bookId}/opinions`}
+                className="club-read"
+              >
+                <BookCover
+                  title={l.title}
+                  author={l.author}
+                  coverUrl={l.coverUrl}
+                  size="sm"
+                />
+                <span className="club-read__main">
+                  <span className="title-small serif club-read__title">{l.title}</span>
+                  <span className="body-small on-surface-variant">
+                    {l.author}
+                    {l.media != null ? ` · ${l.media.toFixed(1)} ★` : ' · sin valorar'}
+                  </span>
+                </span>
+                {l.kind === 'bis' && (
+                  <span className="label-small club-read__bis" title="Lectura extra del mes">
+                    el bis
+                  </span>
+                )}
+                {l.closedAt === null && (
+                  <span className="label-small club-read__now">leyendo</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Hoja de capitanía: qué propuso cada uno y cómo le fue */}
+      {capitanias.length > 0 && (
+        <>
+          <h2 className="title-small club-sec">Hoja de capitanía</h2>
+          <p className="body-small on-surface-variant club-sec__sub">
+            Se cuentan las estrellas, pero también cuánta gente terminó el libro:
+            acertar no es solo gustar.
+          </p>
+          <div className="club-captains">
+            {capitanias.map((c) => (
+              <div key={c.userId} className="club-captain">
+                <Avatar name={c.name} url={c.avatar} size={38} />
+                <span className="club-captain__main">
+                  <span className="title-small">{c.name}</span>
+                  <span className="body-small on-surface-variant">
+                    {c.libros} {c.libros === 1 ? 'libro' : 'libros'}
+                    {c.bises > 0 ? ` · ${c.bises} bis` : ''}
+                    {` · ${c.terminadas} ${c.terminadas === 1 ? 'lectura terminada' : 'lecturas terminadas'}`}
+                  </span>
+                </span>
+                <span className="club-captain__nota serif">
+                  {c.media != null ? c.media.toFixed(1) : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h2 className="title-small club-sec">Miembros</h2>
       <div className="club-members">
         {members.map((m) => (
           <div key={m.id} className="club-member">

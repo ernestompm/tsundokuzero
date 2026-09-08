@@ -1,0 +1,109 @@
+/* Página de opiniones de un libro (migr. 028) */
+
+.opinions__resumen {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+@media (max-width: 520px) {
+  .opinions__resumen {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+.opinions__nota {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.opinions__media {
+  display: block;
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.opinions__reparto {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.opinions__barra {
+  display: grid;
+  grid-template-columns: 14px 1fr 24px;
+  align-items: center;
+  gap: 8px;
+}
+.opinions__barra-n,
+.opinions__barra-c {
+  color: var(--md-sys-color-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+.opinions__barra-c {
+  text-align: right;
+}
+.opinions__barra-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-highest);
+  overflow: hidden;
+}
+.opinions__barra-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary);
+}
+
+.opinions__dims {
+  margin-top: var(--tz-space-3);
+}
+.opinions__dims-sub {
+  margin: 2px 0 14px;
+}
+
+.opinions__sec {
+  margin: var(--tz-space-4) 0 10px;
+}
+
+.opinions__lock {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.opinions__lock .material-symbols-rounded {
+  color: var(--md-sys-color-primary);
+}
+
+.opinions__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.opinion__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.opinion__quien {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+.opinion__nombres {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.opinion__texto {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

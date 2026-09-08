@@ -1,0 +1,89 @@
+/* Valoración por dimensiones (migr. 028) */
+
+.rbars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- Editor ---------- */
+.rbars--input .rbars__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'label hint' 'segs segs';
+  gap: 4px 10px;
+  align-items: center;
+}
+.rbars__label {
+  grid-area: label;
+}
+.rbars__hint {
+  grid-area: hint;
+  text-align: right;
+}
+.rbars__segments {
+  grid-area: segs;
+  display: flex;
+  gap: 4px;
+}
+.rbars__seg {
+  flex: 1;
+  height: 12px;
+  border: none;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-highest);
+  cursor: pointer;
+  transition: background var(--md-sys-motion-duration-short) ease;
+}
+.rbars__seg:hover {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-surface-container-highest));
+}
+.rbars__seg.filled {
+  background: var(--md-sys-color-primary);
+}
+
+/* ---------- Comparativa: club contra tú ---------- */
+.rbars--compare {
+  gap: 12px;
+}
+.rbars__crow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rbars__chead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.rbars__num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rbars__track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-highest);
+  overflow: visible;
+}
+.rbars__fill {
+  height: 100%;
+  border-radius: 999px;
+}
+.rbars__fill--club {
+  background: var(--md-sys-color-primary);
+}
+/* Tu nota: una marca vertical sobre la barra del club */
+.rbars__mark {
+  position: absolute;
+  top: -4px;
+  width: 3px;
+  height: 18px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--md-sys-color-tertiary, var(--md-sys-color-on-surface));
+  box-shadow: 0 0 0 2px var(--md-sys-color-surface);
+}

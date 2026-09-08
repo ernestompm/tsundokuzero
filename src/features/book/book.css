@@ -272,3 +272,23 @@
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
 }
+
+/* Comparativa de dimensiones del club (migr. 028) */
+.book-dims {
+  margin-top: var(--tz-space-3);
+}
+.book-dims__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.book-dims__link {
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.book-dims__link:hover {
+  text-decoration: underline;
+}

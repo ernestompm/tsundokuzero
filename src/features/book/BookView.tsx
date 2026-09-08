@@ -6,6 +6,11 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/filled-tonal-button.js'
 import { BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
+import {
+  RatingBarsCompare,
+  RatingBarsInput,
+  type Dimensions,
+} from '../../components/RatingBars'
 import type { BookViewData } from './bookTypes'
 import './book.css'
 
@@ -17,7 +22,11 @@ interface Props {
   onSetChapter: (n: number) => void
   onOpenChapter: (n: number) => void
   /** puede devolver éxito/fallo; `void` sigue valiendo (previews) */
-  onRate?: (n: number, review: string | null) => Promise<boolean> | void
+  onRate?: (
+    n: number,
+    review: string | null,
+    dims: Dimensions,
+  ) => Promise<boolean> | void
   /** marca el libro como terminado (último capítulo) y abre la reseña */
   onMarkFinished?: () => void
   onAddToShelf?: (status: 'want' | 'reading') => void
@@ -35,6 +44,7 @@ export default function BookView({
 }: Props) {
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [reviewDraft, setReviewDraft] = useState(data.myReview ?? '')
+  const [dims, setDims] = useState<Dimensions>(data.myDimensions)
   const [pendingStars, setPendingStars] = useState(data.myRating ?? 0)
   // auditoría A-03: confirmación inline «Reseña guardada», autodescartable
   const [justSaved, setJustSaved] = useState(false)
@@ -221,6 +231,8 @@ export default function BookView({
             onRate={(n) => setPendingStars(n)}
             size={30}
           />
+          {/* Por qué te gustó: la estrella sola no lo explica (migr. 028) */}
+          <RatingBarsInput value={dims} onChange={setDims} />
           <textarea
             className="tz-input book-review__text body-medium"
             rows={3}
@@ -234,12 +246,17 @@ export default function BookView({
               busy ||
               pendingStars === 0 ||
               (pendingStars === (data.myRating ?? 0) &&
-                reviewDraft.trim() === (data.myReview ?? '')) ||
+                reviewDraft.trim() === (data.myReview ?? '') &&
+                JSON.stringify(dims) === JSON.stringify(data.myDimensions)) ||
               undefined
             }
             onClick={() =>
               void (async () => {
-                const ok = await onRate(pendingStars, reviewDraft.trim() || null)
+                const ok = await onRate(
+                  pendingStars,
+                  reviewDraft.trim() || null,
+                  dims,
+                )
                 if (ok !== false) {
                   window.clearTimeout(savedTimer.current)
                   setJustSaved(true)
@@ -261,6 +278,19 @@ export default function BookView({
               Reseña guardada
             </span>
           )}
+        </Card>
+      )}
+
+      {/* Cómo lo vio el club, dimensión a dimensión */}
+      {data.ratingCount > 0 && (
+        <Card tone="soft" className="book-dims">
+          <div className="book-dims__head">
+            <h2 className="title-small">Cómo lo vio el club</h2>
+            <Link to={`/book/${data.bookId}/opinions`} className="label-large book-dims__link">
+              Ver todas las opiniones
+            </Link>
+          </div>
+          <RatingBarsCompare mine={data.myDimensions} club={data.clubDimensions} />
         </Card>
       )}
 

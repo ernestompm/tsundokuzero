@@ -6,6 +6,7 @@ import { friendlyError } from '../../lib/errors'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { useAuth } from '../../auth/AuthContext'
 import BookView from './BookView'
+import type { Dimensions } from '../../components/RatingBars'
 import type { BookViewData } from './bookTypes'
 
 export default function BookPage() {
@@ -40,7 +41,7 @@ export default function BookPage() {
         // Vista enmascarada: `review` llega null si no has terminado el libro
         supabase
           .from('book_reviews')
-          .select('user_id, rating, review, has_review')
+          .select('user_id, rating, review, has_review, d_think, d_flow, d_feel, d_recommend')
           .eq('book_id', bookId),
       ])
     if (!book) {
@@ -86,6 +87,14 @@ export default function BookPage() {
       : { data: [] }
     const nameById = new Map((reviewers ?? []).map((p) => [p.id, p.display_name]))
 
+    // Media del club por dimensión: null si nadie la ha puntuado (migr. 028)
+    const media = (k: 'd_think' | 'd_flow' | 'd_feel' | 'd_recommend') => {
+      const vals = ratingRows
+        .map((r) => r[k])
+        .filter((v): v is number => typeof v === 'number')
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+    }
+
     setData({
       bookId,
       title: book.title,
@@ -112,6 +121,18 @@ export default function BookPage() {
       ratingCount: ratingRows.length,
       myRating: mine?.rating ?? null,
       myReview: mine?.review ?? null,
+      myDimensions: {
+        d_think: mine?.d_think ?? null,
+        d_flow: mine?.d_flow ?? null,
+        d_feel: mine?.d_feel ?? null,
+        d_recommend: mine?.d_recommend ?? null,
+      },
+      clubDimensions: {
+        d_think: media('d_think'),
+        d_flow: media('d_flow'),
+        d_feel: media('d_feel'),
+        d_recommend: media('d_recommend'),
+      },
       canRate: progress?.status === 'finished',
       status: progress?.status ?? null,
       reviews: visibleReviews.map((r) => ({
@@ -177,7 +198,11 @@ export default function BookPage() {
   }
 
   // auditoría A-03: devuelve éxito/fallo para que la vista confirme el guardado
-  const rate = async (n: number, review: string | null): Promise<boolean> => {
+  const rate = async (
+    n: number,
+    review: string | null,
+    dims: Dimensions = {},
+  ): Promise<boolean> => {
     if (!session || !data) return false
     setBusy(true)
     // Por RPC (migr. 025): el upsert directo fallaba con «permission denied»
@@ -186,6 +211,10 @@ export default function BookPage() {
       p_book: data.bookId,
       p_rating: n,
       p_review: review ?? data.myReview,
+      p_think: dims.d_think ?? null,
+      p_flow: dims.d_flow ?? null,
+      p_feel: dims.d_feel ?? null,
+      p_recommend: dims.d_recommend ?? null,
     })
     if (error) {
       setActionError(friendlyError(error, 'No se pudo guardar la reseña. Inténtalo de nuevo.'))

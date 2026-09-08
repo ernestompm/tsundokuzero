@@ -11,6 +11,7 @@ import LoginPage from './auth/LoginPage'
 import OnboardingPage from './auth/OnboardingPage'
 import FeedPage from './features/feed/FeedPage'
 import BookPage from './features/book/BookPage'
+import OpinionsPage from './features/book/OpinionsPage'
 import ClubBookRedirect from './features/book/ClubBookRedirect'
 import ChapterPage from './features/book/ChapterPage'
 import ThreadPage from './features/book/ThreadPage'
@@ -73,6 +74,7 @@ export default function App() {
                     <Route path="library" element={<LibraryPage />} />
                     <Route path="book" element={<ClubBookRedirect />} />
                     <Route path="book/:bookId" element={<BookPage />} />
+                    <Route path="book/:bookId/opinions" element={<OpinionsPage />} />
                     <Route
                       path="book/:bookId/chapter/:number"
                       element={<ChapterPage />}
