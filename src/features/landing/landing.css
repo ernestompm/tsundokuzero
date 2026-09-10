@@ -526,3 +526,8 @@
     flex-direction: column;
   }
 }
+
+.landing-hero__sub--dos {
+  margin-top: 10px;
+  opacity: 0.85;
+}

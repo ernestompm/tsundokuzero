@@ -1,0 +1,192 @@
+/* Demostraciones de la landing: piezas reales de la app, no dibujos */
+
+.ldemo {
+  max-width: 900px;
+  margin: 0 auto var(--tz-space-6, 56px);
+  padding: 0 20px;
+}
+.ldemo__cabecera {
+  max-width: 640px;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+.ldemo__kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 14px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.ldemo__titulo {
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.15;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+.ldemo__sub {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.ldemo__caja {
+  padding: 22px;
+  border-radius: 26px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.ldemo__control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+}
+.ldemo__control input[type='range'] {
+  width: 100%;
+  accent-color: var(--md-sys-color-primary);
+}
+.ldemo__valor {
+  font-variant-numeric: tabular-nums;
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+}
+.ldemo__control--boton {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ---------- El estreno ---------- */
+.lestreno {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.lestreno__card {
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  transition:
+    transform 420ms var(--md-sys-motion-easing-emphasized, ease),
+    background 420ms ease;
+}
+.lestreno.abierto .lestreno__card {
+  background: var(--md-sys-color-surface-container-high);
+  transform: translateY(-3px);
+}
+.lestreno__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+  flex-wrap: wrap;
+}
+.lestreno__sello,
+.lestreno__texto {
+  margin: 0;
+}
+.lestreno__sello {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-style: italic;
+}
+.lestreno__sello .material-symbols-rounded {
+  font-size: 17px;
+}
+.lestreno__aviso {
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+}
+
+/* ---------- La mención que espera ---------- */
+.lmencion {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--md-sys-color-surface);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  transition: background 400ms ease, border-color 400ms ease;
+}
+.lmencion.abierta {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-style: solid;
+  border-color: transparent;
+}
+.lmencion__icono {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.lmencion__txt {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.lmencion__pie {
+  opacity: 0.75;
+}
+
+/* ---------- Trozos reales de la app ---------- */
+.lmocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.lmock {
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.lmock__titulo {
+  margin: 0 0 4px;
+}
+.lmock__sub {
+  display: block;
+  margin-bottom: 14px;
+}
+.lmock__reco {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+.lmock__reco > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.lmock__libro {
+  display: block;
+}
+.lmock__nota {
+  margin: 8px 0 0;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-style: italic;
+}
+.lmock__afinidad {
+  margin: 12px 0 8px;
+}

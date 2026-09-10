@@ -4,6 +4,12 @@ import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
 import { useAuth } from '../../auth/AuthContext'
 import { BookCover } from '../../components/ui'
+import {
+  EstrenoDemo,
+  MapaDemo,
+  MencionDemo,
+  MockupsDemo,
+} from './LandingDemos'
 import './landing.css'
 
 /**
@@ -13,6 +19,26 @@ import './landing.css'
  */
 
 const FEATURES = [
+  {
+    icon: 'travel_explore',
+    title: 'El mapa del libro',
+    body: 'Ves a todo el club repartido por el libro y por dónde ha ardido la conversación, pero solo hasta donde has leído tú. Lo demás, en niebla.',
+  },
+  {
+    icon: 'chat_bubble',
+    title: 'Menciones que esperan',
+    body: 'Nombra a alguien con una arroba. Si va por detrás, sabrá que pensaste en él y en qué capítulo, pero no qué dijiste: se le abre al llegar.',
+  },
+  {
+    icon: 'send',
+    title: 'Recomendar a una persona',
+    body: 'Este te va a encantar. Desde cualquier libro, con tu mensaje, a quien tú elijas del club. Le queda pendiente hasta que decida.',
+  },
+  {
+    icon: 'group',
+    title: 'En qué os parecéis leyendo',
+    body: 'Cuántos libros habéis terminado los dos, quién puntúa más alto y, la mejor parte, en cuál no os ponéis de acuerdo.',
+  },
   {
     icon: 'lock',
     title: 'Spoilers imposibles',
@@ -201,9 +227,13 @@ export default function LandingPage() {
             <em>sin que nadie te destripe el final.</em>
           </h1>
           <p className="body-large landing-hero__sub">
-            La red social donde tu club comenta cada libro capítulo a
-            capítulo. Cada conversación se desbloquea a <b>tu</b> ritmo:
-            escribir sin miedo, leer sin sustos.
+            La red social donde tu club comenta cada libro capítulo a capítulo.
+            Todo lo que se escribe queda anclado a su página y se te abre
+            cuando llegas: <b>escribir sin miedo, leer sin sustos</b>.
+          </p>
+          <p className="body-medium landing-hero__sub landing-hero__sub--dos">
+            Votáis el siguiente libro, veis por dónde va cada uno, os
+            recomendáis lecturas y las reseñas se estrenan todas a la vez.
           </p>
           <div className="landing-hero__cta">
             <md-filled-button onClick={() => navigate('/login')}>
@@ -259,6 +289,11 @@ export default function LandingPage() {
       {/* ===== Demo interactiva ===== */}
       <GateDemo />
 
+      {/* ===== Lo que solo pasa aquí, para tocarlo ===== */}
+      <MapaDemo />
+      <MencionDemo />
+      <EstrenoDemo />
+
       {/* ===== Manifiesto ===== */}
       <p className="landing-manifesto serif" data-reveal>
         Los libros se disfrutan más cuando se comparten —
@@ -293,6 +328,9 @@ export default function LandingPage() {
           ))}
         </div>
       </div>
+
+      {/* ===== Trozos reales de la app ===== */}
+      <MockupsDemo />
 
       {/* ===== Cómo funciona ===== */}
       <section className="landing-section" data-reveal>
