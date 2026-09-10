@@ -355,6 +355,19 @@ export type Database = {
       blocks: TableDef<Block, 'blocker_id' | 'blocked_id', 'created_at'>
     }
     Views: {
+      /** cuánta gente ha votado ya en cada votación (migr. 031) */
+      poll_progress: {
+        Row: {
+          poll_id: string
+          club_id: string
+          title: string
+          status: string
+          closes_at: string | null
+          miembros: number
+          votos: number
+        }
+        Relationships: []
+      }
       /** resumen del club para la tira de pertenencia (migr. 030) */
       club_summary: {
         Row: {
@@ -487,6 +500,8 @@ export type Database = {
       close_club_reading: { Args: Record<string, never>; Returns: undefined }
       premiere_reviews: { Args: Record<string, never>; Returns: undefined }
       start_next_reading: { Args: Record<string, never>; Returns: string }
+      finish_and_start_next: { Args: Record<string, never>; Returns: string | null }
+      close_poll_if_due: { Args: Record<string, never>; Returns: string | null }
       set_next_book: {
         Args: { p_book: string | null; p_starts_at?: string | null }
         Returns: undefined

@@ -12,7 +12,6 @@ import { Avatar, BookCover, ProgressBar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import BookMap, { type MapReader } from '../book/BookMap'
 import PollComposer from './PollComposer'
-import NextRead from './NextRead'
 import type { Book, Club } from '../../lib/database.types'
 import './club.css'
 import './captainpage.css'
@@ -20,22 +19,44 @@ import './captainpage.css'
 interface Avance {
   id: string
   name: string
-  username: string
   avatar: string | null
   chapter: number
   status: 'reading' | 'finished' | 'want' | null
   isMe: boolean
 }
 
+interface Votacion {
+  id: string
+  title: string
+  votos: number
+  miembros: number
+  closesAt: string | null
+}
+
+function fechaCorta(iso: string | null) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 /**
- * Capitanía: el puesto de mando del capitán. Solo lo que se hace mes a
- * mes con la lectura, sin ajustes ni administración.
+ * Capitanía: el puesto de mando del capitán.
  *
- *   · abrir y cerrar la votación del próximo libro
- *   · el libro de este mes: cambiarlo, cerrarlo, pedir el bis
- *   · cómo va el resto del club
+ * DISEÑO. Antes era un panel de control con diez botones sueltos y había
+ * que saberse el orden de las cosas. El ciclo del club es en realidad muy
+ * simple y siempre está en uno de cuatro momentos:
  *
- * La configuración del club vive aparte, en /club/admin.
+ *   sin nada  →  votando  →  elegido, sin empezar  →  leyendo  →  ...
+ *
+ * Así que la pantalla enseña en qué momento estás y CUÁL ES EL PASO
+ * SIGUIENTE, uno solo y destacado. El resto de acciones existen, pero
+ * viven detrás de «Más opciones» porque casi nunca hacen falta.
+ *
+ * La votación además ya no depende de que el capitán se acuerde: se cierra
+ * sola cuando vota el último o cuando llega su fecha (migr. 031).
  */
 export default function CaptainPage() {
   const { session, isSuperAdmin } = useAuth()
@@ -44,22 +65,25 @@ export default function CaptainPage() {
 
   const [club, setClub] = useState<Club | null>(null)
   const [book, setBook] = useState<Book | null>(null)
+  const [nextBook, setNextBook] = useState<Book | null>(null)
   const [books, setBooks] = useState<Book[]>([])
   const [avances, setAvances] = useState<Avance[]>([])
   const [heat, setHeat] = useState<Map<number, number>>(new Map())
-  const [openPoll, setOpenPoll] = useState<{ id: string; title: string } | null>(null)
+  const [votacion, setVotacion] = useState<Votacion | null>(null)
   const [allowed, setAllowed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
   const [chaptersDraft, setChaptersDraft] = useState('')
-  const [pidiendoBis, setPidiendoBis] = useState(false)
-  const [cambiandoLibro, setCambiandoLibro] = useState(false)
-  // Próxima lectura (migr. 030): elegida pero todavía sin abrir
-  const [eligiendoProxima, setEligiendoProxima] = useState(false)
+  const [masOpciones, setMasOpciones] = useState(false)
+  const [eligiendo, setEligiendo] = useState<'ninguno' | 'proxima' | 'ahora' | 'bis'>('ninguno')
   const [proximaFecha, setProximaFecha] = useState('')
 
   const load = useCallback(async () => {
     if (!session) return
+
+    // La votación puede haber vencido mientras nadie miraba (migr. 031)
+    await supabase.rpc('close_poll_if_due')
+
     const { data: c } = await supabase
       .from('clubs')
       .select('*')
@@ -76,26 +100,36 @@ export default function CaptainPage() {
       supabase.from('club_members').select('user_id, role').eq('club_id', c.id),
       supabase.from('books').select('*').order('title'),
       supabase
-        .from('polls')
-        .select('id, title')
+        .from('poll_progress')
+        .select('poll_id, title, votos, miembros, closes_at')
         .eq('club_id', c.id)
         .eq('status', 'open')
         .limit(1)
         .maybeSingle(),
     ])
     setBooks(bookRows ?? [])
-    setOpenPoll(poll ?? null)
     setBook((bookRows ?? []).find((b) => b.id === c.current_book_id) ?? null)
+    setNextBook((bookRows ?? []).find((b) => b.id === c.next_book_id) ?? null)
+    setVotacion(
+      poll
+        ? {
+            id: poll.poll_id,
+            title: poll.title,
+            votos: poll.votos,
+            miembros: poll.miembros,
+            closesAt: poll.closes_at,
+          }
+        : null,
+    )
 
     const roleById = new Map((memberRows ?? []).map((m) => [m.user_id, m.role]))
     setAllowed(roleById.get(session.user.id) === 'captain' || isSuperAdmin)
 
-    // ---- Cómo va el club en el libro de este mes ----
     const ids = (memberRows ?? []).map((m) => m.user_id)
     if (ids.length > 0 && c.current_book_id) {
       const [{ data: perfiles }, { data: progresos }, { data: discusiones }] =
         await Promise.all([
-          supabase.from('profiles').select('id, display_name, username, avatar_url').in('id', ids),
+          supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids),
           supabase
             .from('reading_progress')
             .select('user_id, current_chapter, status')
@@ -111,7 +145,6 @@ export default function CaptainPage() {
             return {
               id: p.id,
               name: p.display_name,
-              username: p.username,
               avatar: p.avatar_url,
               chapter: pr?.current_chapter ?? 0,
               status: (pr?.status ?? null) as Avance['status'],
@@ -143,109 +176,49 @@ export default function CaptainPage() {
     )
   }
 
-  const setBookDelMes = async (bookId: string) => {
-    setBanner(null)
+  const hecho = async (texto: string, fn: () => Promise<{ error: unknown }>) => {
     setBusy(true)
-    const { error } = await supabase
-      .from('clubs')
-      .update({ current_book_id: bookId })
-      .eq('id', club.id)
-    if (error)
-      setBanner({
-        kind: 'error',
-        text: friendlyError(error, 'No se pudo cambiar el libro del mes.'),
-      })
-    else setCambiandoLibro(false)
-    await load()
+    setBanner(null)
+    const { error } = await fn()
+    setBanner(
+      error
+        ? { kind: 'error', text: friendlyError(error, 'No se pudo completar la acción.') }
+        : { kind: 'info', text: texto },
+    )
     setBusy(false)
+    setEligiendo('ninguno')
+    await load()
   }
 
-  const fijarProxima = async (bookId: string | null) => {
-    setBusy(true)
-    setBanner(null)
-    const { error } = await supabase.rpc('set_next_book', {
-      p_book: bookId,
-      p_starts_at: proximaFecha ? new Date(proximaFecha + 'T09:00:00').toISOString() : null,
+  const terminarLectura = async () => {
+    const conSiguiente = !!nextBook
+    const ok = await confirm({
+      title: conSiguiente ? `¿Terminar y empezar «${nextBook!.title}»?` : '¿Terminar la lectura?',
+      message: conSiguiente
+        ? 'Se abren las reseñas del libro actual, pasa al historial y el club arranca el siguiente.'
+        : 'Se abren las reseñas de todos y el libro pasa al historial. Lo hablado se conserva.',
+      confirmLabel: conSiguiente ? 'Terminar y empezar' : 'Terminar',
     })
-    if (error)
-      setBanner({
-        kind: 'error',
-        text: friendlyError(error, 'No se pudo fijar la próxima lectura.'),
-      })
-    else {
-      setBanner({
-        kind: 'info',
-        text: bookId
-          ? 'Próxima lectura fijada. El club ya tiene el aviso para ir consiguiéndola.'
-          : 'Próxima lectura retirada.',
-      })
-      setEligiendoProxima(false)
-    }
-    setBusy(false)
-    await load()
+    if (!ok) return
+    await hecho(
+      conSiguiente ? `¡En marcha «${nextBook!.title}»!` : 'Lectura cerrada y reseñas abiertas.',
+      async () =>
+        conSiguiente
+          ? await supabase.rpc('finish_and_start_next')
+          : await supabase.rpc('close_club_reading'),
+    )
   }
 
   const empezarProxima = async () => {
     const ok = await confirm({
-      title: '¿Empezar ya la próxima lectura?',
-      message:
-        'Pasa a ser el libro del club. Si hay una lectura abierta, se cierra y se abren sus reseñas.',
+      title: `¿Empezar «${nextBook?.title}»?`,
+      message: 'Pasa a ser el libro del club y todos podrán marcar su progreso.',
       confirmLabel: 'Empezar',
     })
     if (!ok) return
-    setBusy(true)
-    const { error } = await supabase.rpc('start_next_reading')
-    setBanner(
-      error
-        ? { kind: 'error', text: friendlyError(error, 'No se pudo empezar la lectura.') }
-        : { kind: 'info', text: '¡En marcha! Ya es el libro del club.' },
+    await hecho('¡En marcha! Ya es el libro del club.', async () =>
+      supabase.rpc('start_next_reading'),
     )
-    setBusy(false)
-    await load()
-  }
-
-  const cerrarLectura = async () => {
-    const ok = await confirm({
-      title: '¿Cerrar la lectura del club?',
-      message:
-        'Se abren las reseñas de todos, el libro pasa al historial y deja de aparecer como conversación activa. Lo hablado se conserva.',
-      confirmLabel: 'Cerrar lectura',
-    })
-    if (!ok) return
-    setBusy(true)
-    const { error } = await supabase.rpc('close_club_reading')
-    setBanner(
-      error
-        ? { kind: 'error', text: friendlyError(error, 'No se pudo cerrar la lectura.') }
-        : { kind: 'info', text: 'Lectura cerrada y reseñas estrenadas.' },
-    )
-    setBusy(false)
-    await load()
-  }
-
-  const estrenar = async () => {
-    setBusy(true)
-    const { error } = await supabase.rpc('premiere_reviews')
-    setBanner(
-      error
-        ? { kind: 'error', text: friendlyError(error, 'No se pudo estrenar las reseñas.') }
-        : { kind: 'info', text: 'Reseñas abiertas para todo el club.' },
-    )
-    setBusy(false)
-    await load()
-  }
-
-  const pedirBis = async (bookId: string) => {
-    setBusy(true)
-    const { error } = await supabase.rpc('start_club_bis', { p_book: bookId })
-    if (error)
-      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo abrir el bis.') })
-    else {
-      setBanner({ kind: 'info', text: '¡Bis en marcha! Es la lectura extra de este mes.' })
-      setPidiendoBis(false)
-    }
-    setBusy(false)
-    await load()
   }
 
   const confirmarCapitulos = async () => {
@@ -255,55 +228,38 @@ export default function CaptainPage() {
       setBanner({ kind: 'info', text: 'Escribe cuántos capítulos tiene, entre 1 y 500.' })
       return
     }
-    setBusy(true)
-    const { error } = await supabase.rpc('set_book_chapters', { p_book: book.id, p_total: n })
-    if (error)
-      setBanner({
-        kind: 'error',
-        text: friendlyError(error, 'No se pudo guardar el número de capítulos.'),
-      })
-    else {
-      setBanner({ kind: 'info', text: 'Capítulos confirmados.' })
-      setChaptersDraft('')
-    }
-    setBusy(false)
-    await load()
+    setChaptersDraft('')
+    await hecho('Capítulos confirmados.', async () =>
+      supabase.rpc('set_book_chapters', { p_book: book.id, p_total: n }),
+    )
+  }
+
+  const cerrarVotacionYa = async () => {
+    if (!votacion) return
+    const ok = await confirm({
+      title: 'Cerrar la votación ahora',
+      message:
+        'Se cerraría sola al votar todos o al llegar su fecha. Si la cierras ya, gana la más votada hasta este momento.',
+      confirmLabel: 'Cerrar ahora',
+    })
+    if (!ok) return
+    await hecho('Votación cerrada. La ganadora es ya la próxima lectura.', async () =>
+      supabase.from('polls').update({ status: 'closed' }).eq('id', votacion.id),
+    )
   }
 
   const descartarVotacion = async () => {
-    if (!openPoll) return
+    if (!votacion) return
     const ok = await confirm({
-      title: 'Descartar votación',
-      message: `«${openPoll.title}» se borra sin aplicar ninguna ganadora. Podrás crear otra.`,
+      title: 'Descartar la votación',
+      message: `«${votacion.title}» se borra sin elegir ninguna ganadora. Podrás abrir otra.`,
       confirmLabel: 'Descartar',
       danger: true,
     })
     if (!ok) return
-    setBusy(true)
-    const { error } = await supabase.from('polls').delete().eq('id', openPoll.id)
-    if (error)
-      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo descartar la votación.') })
-    await load()
-    setBusy(false)
-  }
-
-  const cerrarVotacion = async () => {
-    if (!openPoll) return
-    const ok = await confirm({
-      title: 'Cerrar votación',
-      message: 'La opción más votada quedará como libro del club. ¿Continuar?',
-      confirmLabel: 'Cerrar votación',
-    })
-    if (!ok) return
-    setBusy(true)
-    const { error } = await supabase
-      .from('polls')
-      .update({ status: 'closed' })
-      .eq('id', openPoll.id)
-    if (error)
-      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo cerrar la votación.') })
-    await load()
-    setBusy(false)
+    await hecho('Votación descartada.', async () =>
+      supabase.from('polls').delete().eq('id', votacion.id),
+    )
   }
 
   const total = book?.total_chapters ?? 0
@@ -317,6 +273,32 @@ export default function CaptainPage() {
   const lectores: MapReader[] = avances
     .filter((a) => a.chapter > 0)
     .map((a) => ({ id: a.id, name: a.name, avatar: a.avatar, chapter: a.chapter, isMe: a.isMe }))
+
+  const elegibles = books.filter(
+    (b) => b.id !== club.current_book_id && b.id !== club.next_book_id,
+  )
+
+  /** Rejilla de portadas para elegir libro, compartida por los tres casos. */
+  const selector = (onPick: (id: string) => void) => (
+    <div className="manage-book-picker">
+      {elegibles.map((b) => (
+        <button
+          key={b.id}
+          className="manage-book"
+          disabled={busy || undefined}
+          onClick={() => onPick(b.id)}
+        >
+          <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
+          <span className="label-small manage-book__title">{b.title}</span>
+        </button>
+      ))}
+      {elegibles.length === 0 && (
+        <p className="body-small on-surface-variant">
+          No hay más libros en el catálogo. Añade uno desde tu biblioteca.
+        </p>
+      )}
+    </div>
+  )
 
   return (
     <section className="club-manage">
@@ -335,47 +317,9 @@ export default function CaptainPage() {
         </p>
       )}
 
-      {/* ============ 1 · La votación ============ */}
+      {/* ================= 1 · Lo que el club lee ahora ================= */}
       <div className="manage-card">
-        <h2 className="title-small manage-card__title">La votación del próximo libro</h2>
-        {openPoll ? (
-          <>
-            <p className="body-medium">
-              Hay una votación abierta: <b>{openPoll.title}</b>.
-            </p>
-            <p className="body-small on-surface-variant">
-              Cuando la cierres, la más votada pasa a ser el libro del club.
-            </p>
-            <div className="club-poll__form-actions">
-              <md-outlined-button disabled={busy || undefined} onClick={() => void descartarVotacion()}>
-                <span slot="icon" className="material-symbols-rounded" aria-hidden="true">delete</span>
-                Descartar
-              </md-outlined-button>
-              <md-filled-button disabled={busy || undefined} onClick={() => void cerrarVotacion()}>
-                Cerrar y aplicar ganadora
-              </md-filled-button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="body-small on-surface-variant">
-              Pega los ISBN o los títulos y la votación se abre sola. Los libros que no
-              estén en el catálogo se crean por el camino.
-            </p>
-            <PollComposer
-              onCreated={() => {
-                setBanner({ kind: 'info', text: 'Votación abierta. El club ya tiene el aviso.' })
-                void load()
-              }}
-              onCancel={() => setBanner(null)}
-            />
-          </>
-        )}
-      </div>
-
-      {/* ============ 2 · El libro de este mes ============ */}
-      <div className="manage-card">
-        <h2 className="title-small manage-card__title">El libro de este mes</h2>
+        <h2 className="title-small manage-card__title">Lo que leéis ahora</h2>
 
         {book ? (
           <>
@@ -387,15 +331,22 @@ export default function CaptainPage() {
                 <span className="on-surface-variant">
                   {book.author} · {book.total_chapters} capítulos
                 </span>
+                <br />
+                <span className="body-small on-surface-variant">
+                  {empezados === 0
+                    ? 'Todavía no ha empezado nadie'
+                    : terminados === avances.length
+                      ? 'Lo habéis terminado todos'
+                      : `${terminados} de ${avances.length} terminados · el grupo va por el ${mediaGrupo}`}
+                </span>
               </span>
             </div>
 
             {book.chapters_confirmed === false && (
               <div className="manage-chapters-warn">
                 <p className="body-medium">
-                  Los capítulos de <b>{book.title}</b> son provisionales, porque entró
-                  como candidato de una votación. Confírmalos: el candado anti-spoiler
-                  depende de ese número.
+                  Los capítulos son provisionales, porque el libro entró como candidato de
+                  una votación. Confírmalos: el candado anti-spoiler depende de ese número.
                 </p>
                 <div className="manage-chapters-warn__row">
                   <input
@@ -419,196 +370,289 @@ export default function CaptainPage() {
               </div>
             )}
 
-            <div className="manage-reading-actions">
-              <md-outlined-button disabled={busy || undefined} onClick={() => void cerrarLectura()}>
-                Cerrar la lectura
-              </md-outlined-button>
-              <md-text-button disabled={busy || undefined} onClick={() => void estrenar()}>
-                Abrir las reseñas ya
-              </md-text-button>
-              <md-text-button disabled={busy || undefined} onClick={() => setPidiendoBis((v) => !v)}>
-                {pidiendoBis ? 'Cancelar el bis' : 'Pedir el bis'}
-              </md-text-button>
-              <md-text-button disabled={busy || undefined} onClick={() => setCambiandoLibro((v) => !v)}>
-                {cambiandoLibro ? 'Cancelar' : 'Cambiar de libro'}
-              </md-text-button>
+            {/* El paso siguiente, uno solo y destacado */}
+            <div className="capitan__paso">
+              <md-filled-button disabled={busy || undefined} onClick={() => void terminarLectura()}>
+                {nextBook ? `Terminar y empezar «${nextBook.title}»` : 'Terminar la lectura'}
+              </md-filled-button>
+              <span className="body-small on-surface-variant">
+                {nextBook
+                  ? 'Se abren las reseñas de este y arranca el siguiente.'
+                  : 'Se abren las reseñas de todos y pasa al historial.'}
+              </span>
             </div>
+
+            <button
+              type="button"
+              className="capitan__mas label-medium"
+              onClick={() => setMasOpciones((v) => !v)}
+            >
+              {masOpciones ? 'Menos opciones' : 'Más opciones'}
+            </button>
+
+            {masOpciones && (
+              <div className="capitan__extras">
+                <md-text-button
+                  disabled={busy || undefined}
+                  onClick={() =>
+                    void hecho('Reseñas abiertas para todo el club.', async () =>
+                      supabase.rpc('premiere_reviews'),
+                    )
+                  }
+                >
+                  Abrir las reseñas ya
+                </md-text-button>
+                <md-text-button
+                  disabled={busy || undefined}
+                  onClick={() => setEligiendo(eligiendo === 'bis' ? 'ninguno' : 'bis')}
+                >
+                  Pedir el bis
+                </md-text-button>
+                <md-text-button
+                  disabled={busy || undefined}
+                  onClick={() => setEligiendo(eligiendo === 'ahora' ? 'ninguno' : 'ahora')}
+                >
+                  Cambiar de libro
+                </md-text-button>
+              </div>
+            )}
+
+            {eligiendo === 'bis' && (
+              <div className="manage-bis">
+                <p className="body-medium">
+                  <b>El bis</b> es la lectura extra de este mes, la que se pide cuando el
+                  club se ha ventilado el libro antes de tiempo.
+                </p>
+                {selector((id) =>
+                  void hecho('¡Bis en marcha!', async () =>
+                    supabase.rpc('start_club_bis', { p_book: id }),
+                  ),
+                )}
+              </div>
+            )}
+
+            {eligiendo === 'ahora' &&
+              selector((id) =>
+                void hecho('Libro del club cambiado.', async () =>
+                  supabase.from('clubs').update({ current_book_id: id }).eq('id', club.id),
+                ),
+              )}
           </>
         ) : (
-          <p className="body-medium on-surface-variant">
-            El club no tiene libro ahora mismo. Elige uno abajo o abre una votación.
-          </p>
-        )}
-
-        {pidiendoBis && (
-          <div className="manage-bis">
-            <p className="body-medium">
-              <b>El bis</b> es la lectura extra de este mes, la que se pide cuando el club
-              se ha ventilado el libro antes de tiempo. Queda marcada como tal en el
-              historial.
+          <>
+            <p className="body-medium on-surface-variant">
+              El club no está leyendo nada ahora mismo.
             </p>
-            <div className="manage-book-picker">
-              {books
-                .filter((b) => b.id !== club.current_book_id)
-                .map((b) => (
-                  <button
-                    key={b.id}
-                    className="manage-book"
-                    disabled={busy || undefined}
-                    onClick={() => void pedirBis(b.id)}
-                  >
-                    <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
-                    <span className="label-small manage-book__title">{b.title}</span>
-                  </button>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {(cambiandoLibro || !book) && (
-          <div className="manage-book-picker">
-            {books
-              .filter((b) => b.id !== club.current_book_id)
-              .map((b) => (
-                <button
-                  key={b.id}
-                  className="manage-book"
+            {nextBook ? (
+              <div className="capitan__paso">
+                <md-filled-button disabled={busy || undefined} onClick={() => void empezarProxima()}>
+                  Empezar «{nextBook.title}»
+                </md-filled-button>
+                <span className="body-small on-surface-variant">
+                  Ya lo habéis elegido. Solo falta arrancarlo.
+                </span>
+              </div>
+            ) : (
+              <div className="capitan__paso">
+                <md-outlined-button
                   disabled={busy || undefined}
-                  onClick={() => void setBookDelMes(b.id)}
+                  onClick={() => setEligiendo(eligiendo === 'ahora' ? 'ninguno' : 'ahora')}
                 >
-                  <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
-                  <span className="label-small manage-book__title">{b.title}</span>
-                </button>
-              ))}
-          </div>
+                  Elegir un libro directamente
+                </md-outlined-button>
+                <span className="body-small on-surface-variant">
+                  O abre una votación abajo y que lo decida el club.
+                </span>
+              </div>
+            )}
+            {eligiendo === 'ahora' &&
+              selector((id) =>
+                void hecho('Ya tenéis libro.', async () =>
+                  supabase.from('clubs').update({ current_book_id: id }).eq('id', club.id),
+                ),
+              )}
+          </>
         )}
       </div>
 
-      {/* ============ 3 · La próxima lectura ============ */}
+      {/* ================= 2 · Lo que viene después ================= */}
       <div className="manage-card">
-        <h2 className="title-small manage-card__title">La próxima lectura</h2>
-        <p className="body-small on-surface-variant">
-          El libro ya elegido que todavía no habéis abierto. Se enseña en el Inicio de
-          todos para que les dé tiempo a conseguirlo.
-        </p>
+        <h2 className="title-small manage-card__title">Lo que viene después</h2>
 
-        {club.next_book_id ? (
+        {votacion ? (
+          /* --- Votando --- */
           <>
-            <NextRead compacta />
-            <div className="manage-reading-actions">
-              <md-filled-button disabled={busy || undefined} onClick={() => void empezarProxima()}>
-                Empezar ya esta lectura
-              </md-filled-button>
+            <div className="capitan__votacion">
+              <span className="title-small">{votacion.title}</span>
+              <div className="capitan__votos">
+                <ProgressBar
+                  percent={
+                    votacion.miembros > 0
+                      ? Math.round((votacion.votos / votacion.miembros) * 100)
+                      : 0
+                  }
+                />
+                <span className="label-medium on-surface-variant">
+                  {votacion.votos} de {votacion.miembros}
+                </span>
+              </div>
+              <p className="body-small on-surface-variant">
+                Se cierra sola en cuanto vote todo el mundo
+                {votacion.closesAt ? `, y como muy tarde el ${fechaCorta(votacion.closesAt)}` : ''}.
+                No tienes que hacer nada.
+              </p>
+            </div>
+            <div className="capitan__extras">
+              <md-text-button disabled={busy || undefined} onClick={() => void cerrarVotacionYa()}>
+                Cerrarla ya
+              </md-text-button>
+              <md-text-button disabled={busy || undefined} onClick={() => void descartarVotacion()}>
+                Descartarla
+              </md-text-button>
+            </div>
+          </>
+        ) : nextBook ? (
+          /* --- Ya elegido, esperando a empezar --- */
+          <>
+            <div className="manage-current-book">
+              <BookCover
+                title={nextBook.title}
+                author={nextBook.author}
+                coverUrl={nextBook.cover_url}
+                size="md"
+              />
+              <span className="body-medium">
+                <b>{nextBook.title}</b>
+                <br />
+                <span className="on-surface-variant">{nextBook.author}</span>
+                <br />
+                <span className="body-small on-surface-variant">
+                  {club.next_starts_at
+                    ? `Se empieza el ${fechaCorta(club.next_starts_at)}`
+                    : 'Sin fecha de comienzo'}
+                </span>
+              </span>
+            </div>
+            <p className="body-small on-surface-variant">
+              Ya sale en el Inicio de todos para que les dé tiempo a conseguirlo.
+              {book ? ' Se arranca al terminar la lectura de ahora.' : ''}
+            </p>
+            <div className="capitan__extras">
               <md-text-button
                 disabled={busy || undefined}
-                onClick={() => setEligiendoProxima((v) => !v)}
+                onClick={() => setEligiendo(eligiendo === 'proxima' ? 'ninguno' : 'proxima')}
               >
-                {eligiendoProxima ? 'Cancelar' : 'Cambiarla'}
+                Cambiarla
               </md-text-button>
-              <md-text-button disabled={busy || undefined} onClick={() => void fijarProxima(null)}>
+              <md-text-button
+                disabled={busy || undefined}
+                onClick={() =>
+                  void hecho('Próxima lectura retirada.', async () =>
+                    supabase.rpc('set_next_book', { p_book: null }),
+                  )
+                }
+              >
                 Quitarla
               </md-text-button>
             </div>
+            {eligiendo === 'proxima' &&
+              selector((id) =>
+                void hecho('Próxima lectura cambiada.', async () =>
+                  supabase.rpc('set_next_book', { p_book: id, p_starts_at: null }),
+                ),
+              )}
           </>
         ) : (
-          <div className="manage-reading-actions">
-            <md-outlined-button
-              disabled={busy || undefined}
-              onClick={() => setEligiendoProxima((v) => !v)}
-            >
-              {eligiendoProxima ? 'Cancelar' : 'Elegir la próxima lectura'}
-            </md-outlined-button>
-          </div>
-        )}
-
-        {eligiendoProxima && (
-          <div className="manage-bis">
-            <label className="label-medium" style={{ display: 'block', marginBottom: 10 }}>
-              ¿Cuándo se empieza? Opcional
-              <input
-                className="tz-input body-medium"
-                type="date"
-                style={{ display: 'block', marginTop: 4, maxWidth: 200, fontSize: 16 }}
-                value={proximaFecha}
-                onChange={(e) => setProximaFecha(e.target.value)}
-              />
-            </label>
-            <div className="manage-book-picker">
-              {books
-                .filter((b) => b.id !== club.current_book_id)
-                .map((b) => (
-                  <button
-                    key={b.id}
-                    className={`manage-book${b.id === club.next_book_id ? ' active' : ''}`}
-                    disabled={busy || undefined}
-                    onClick={() => void fijarProxima(b.id)}
-                  >
-                    <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
-                    <span className="label-small manage-book__title">{b.title}</span>
-                  </button>
-                ))}
+          /* --- Nada decidido: abrir votación o elegir a dedo --- */
+          <>
+            <p className="body-small on-surface-variant">
+              Pega los ISBN o busca los títulos y la votación se abre sola. Se cerrará
+              cuando haya votado todo el club o al llegar su fecha.
+            </p>
+            <PollComposer
+              onCreated={() => {
+                setBanner({ kind: 'info', text: 'Votación abierta. El club ya tiene el aviso.' })
+                void load()
+              }}
+              onCancel={() => setBanner(null)}
+            />
+            <div className="capitan__extras">
+              <md-text-button
+                disabled={busy || undefined}
+                onClick={() => setEligiendo(eligiendo === 'proxima' ? 'ninguno' : 'proxima')}
+              >
+                O elegir la próxima sin votación
+              </md-text-button>
             </div>
-          </div>
+            {eligiendo === 'proxima' && (
+              <>
+                <label className="label-medium capitan__fecha">
+                  ¿Cuándo se empieza? Opcional
+                  <input
+                    className="tz-input body-medium"
+                    type="date"
+                    value={proximaFecha}
+                    onChange={(e) => setProximaFecha(e.target.value)}
+                  />
+                </label>
+                {selector((id) =>
+                  void hecho('Próxima lectura fijada.', async () =>
+                    supabase.rpc('set_next_book', {
+                      p_book: id,
+                      p_starts_at: proximaFecha
+                        ? new Date(proximaFecha + 'T09:00:00').toISOString()
+                        : null,
+                    }),
+                  ),
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
 
-      {/* ============ 4 · Cómo va el club ============ */}
-      <div className="manage-card">
-        <h2 className="title-small manage-card__title">Cómo va el club</h2>
+      {/* ================= 3 · Cómo va el club ================= */}
+      {book && (
+        <div className="manage-card">
+          <h2 className="title-small manage-card__title">Cómo va el club</h2>
 
-        {!book ? (
-          <p className="body-medium on-surface-variant">
-            Cuando el club tenga libro, aquí verás por dónde va cada uno.
-          </p>
-        ) : (
-          <>
-            <p className="body-medium capitan__resumen">
-              {terminados > 0 && `${terminados} de ${avances.length} han terminado. `}
-              {empezados === 0
-                ? 'Todavía no ha empezado nadie.'
-                : `El grupo va por el capítulo ${mediaGrupo} de media.`}
-            </p>
+          {lectores.length > 0 && (
+            <BookMap
+              totalChapters={total}
+              myChapter={yo?.chapter ?? 0}
+              heat={heat}
+              readers={lectores}
+            />
+          )}
 
-            {lectores.length > 0 && (
-              <BookMap
-                totalChapters={total}
-                myChapter={yo?.chapter ?? 0}
-                heat={heat}
-                readers={lectores}
-              />
-            )}
-
-            <div className="capitan__avances">
-              {avances.map((a) => {
-                const pct = total > 0 ? Math.round((a.chapter / total) * 100) : 0
-                return (
-                  <div key={a.id} className="capitan__avance">
-                    <Avatar name={a.name} url={a.avatar} size={36} />
-                    <div className="capitan__avance-main">
-                      <span className="title-small">
-                        {a.name}
-                        {a.isMe && (
-                          <span className="body-small on-surface-variant"> · tú</span>
-                        )}
+          <div className="capitan__avances">
+            {avances.map((a) => {
+              const pct = total > 0 ? Math.round((a.chapter / total) * 100) : 0
+              return (
+                <div key={a.id} className="capitan__avance">
+                  <Avatar name={a.name} url={a.avatar} size={36} />
+                  <div className="capitan__avance-main">
+                    <span className="title-small">
+                      {a.name}
+                      {a.isMe && <span className="body-small on-surface-variant"> · tú</span>}
+                    </span>
+                    <div className="capitan__avance-barra">
+                      <ProgressBar percent={pct} />
+                      <span className="label-medium on-surface-variant capitan__avance-cap">
+                        {a.status === 'finished'
+                          ? 'Terminado'
+                          : a.chapter > 0
+                            ? `Cap. ${a.chapter}`
+                            : 'Sin empezar'}
                       </span>
-                      <div className="capitan__avance-barra">
-                        <ProgressBar percent={pct} />
-                        <span className="label-medium on-surface-variant capitan__avance-cap">
-                          {a.status === 'finished'
-                            ? 'Terminado'
-                            : a.chapter > 0
-                              ? `Cap. ${a.chapter}`
-                              : 'Sin empezar'}
-                        </span>
-                      </div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </>
-        )}
-      </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {isSuperAdmin && (
         <div className="manage-card capitan__admin">

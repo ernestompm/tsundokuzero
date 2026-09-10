@@ -43,3 +43,58 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* El paso siguiente: uno solo y destacado */
+.capitan__paso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0 4px;
+}
+.capitan__mas {
+  background: none;
+  border: none;
+  padding: 8px 0;
+  color: var(--md-sys-color-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.capitan__extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* Votación en curso */
+.capitan__votacion {
+  padding: 14px 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-high);
+}
+.capitan__votos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 8px;
+}
+.capitan__votos .label-medium {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.capitan__votacion p {
+  margin: 0;
+}
+
+.capitan__fecha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.capitan__fecha input {
+  max-width: 200px;
+  font-size: 16px;
+}
