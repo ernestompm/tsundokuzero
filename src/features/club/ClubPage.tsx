@@ -125,7 +125,11 @@ export default function ClubPage() {
           .from('polls')
           .select('*')
           .eq('club_id', clubData.id)
-          .order('status', { ascending: false }) // open antes que closed
+          // Solo la ABIERTA. Antes se pedía cualquiera ordenando por estado,
+          // así que al cerrarse una se quedaba clavada en el club para
+          // siempre, y encima tapaba el botón de proponer la siguiente.
+          // El resultado de la votación ya se ve como «Próxima lectura».
+          .eq('status', 'open')
           .limit(1)
           .maybeSingle(),
       ])
@@ -358,11 +362,6 @@ export default function ClubPage() {
     setBusy(false)
   }
 
-  const winner =
-    pollState?.poll.status === 'closed'
-      ? pollState.options.find((o) => o.id === pollState.poll.winner_option_id)
-      : null
-
   // Insights: tu avance frente al grupo
   const me = members.find((m) => m.id === session?.user.id)
   const myChapter = me?.chapter ?? 0
@@ -466,22 +465,15 @@ export default function ClubPage() {
           <div className="club-poll__head">
             <span className="title-medium serif">{pollState.poll.title}</span>
             <span className="body-small on-surface-variant">
-              {pollState.poll.status === 'open'
-                ? `Votación abierta · 1 voto por persona${
-                    pollState.poll.closes_at
-                      ? ` · cierra el ${new Date(pollState.poll.closes_at).toLocaleDateString()}`
-                      : ''
-                  }`
-                : 'Votación cerrada'}
+              {`Votación abierta · 1 voto por persona${
+                pollState.poll.closes_at
+                  ? ` · se cierra sola el ${new Date(
+                      pollState.poll.closes_at,
+                    ).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`
+                  : ''
+              }`}
             </span>
           </div>
-
-          {winner && (
-            <p className="club-poll__winner body-medium">
-              {/* Auditoría B-05: sin emoji en el copy */}
-              Ganadora: <b>{winner.book_title}</b> de {winner.book_author}
-            </p>
-          )}
 
           {/* Auditoría A-01: aviso inline si la acción no se pudo completar */}
           {actionError && (
@@ -501,7 +493,7 @@ export default function ClubPage() {
                 <div key={o.id} className={`poll-option${mine ? ' mine' : ''}`}>
                   <button
                     className="poll-option__vote"
-                    disabled={pollState.poll.status !== 'open' || busy}
+                    disabled={busy}
                     onClick={() => void vote(o.id)}
                   >
                     <span className="poll-option__row">
@@ -557,7 +549,7 @@ export default function ClubPage() {
             })}
           </div>
 
-          {iAmCaptain && pollState.poll.status === 'open' && (
+          {iAmCaptain && (
             <md-text-button disabled={busy || undefined} onClick={() => void closePoll()}>
               Cerrar votación (capitán)
             </md-text-button>

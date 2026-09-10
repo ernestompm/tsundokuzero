@@ -54,12 +54,6 @@
   flex-direction: column;
   gap: 2px;
 }
-.club-poll__winner {
-  padding: 10px 14px;
-  border-radius: var(--md-sys-shape-corner-medium);
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-}
 .club-poll__options {
   display: flex;
   flex-direction: column;
