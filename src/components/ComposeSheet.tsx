@@ -5,6 +5,7 @@ import type { DiscussionKind } from '../lib/database.types'
 import { KIND_LABEL } from '../features/book/chapterTypes'
 import { useModalBehavior } from './modal'
 import { BookCover, Chip } from './ui'
+import MentionTextarea from './MentionTextarea'
 import './ComposeSheet.css'
 
 export interface ComposeTarget {
@@ -287,18 +288,18 @@ export default function ComposeSheet({
               <span className="label-large compose__cambiar">Cambiar</span>
             </button>
 
-            <textarea
+            <MentionTextarea
               className="sheet__input body-large"
-              aria-label={isBook ? 'Tu idea sobre este libro' : 'Entrada para tu muro'}
+              ariaLabel={isBook ? 'Tu idea sobre este libro' : 'Entrada para tu muro'}
               placeholder={
                 isBook
-                  ? '¿Qué te ha hecho pensar este capítulo?'
+                  ? '¿Qué te ha hecho pensar este capítulo? Escribe @ para mencionar'
                   : 'Escribe una entrada para tu muro…'
               }
               rows={4}
               autoFocus
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
             />
 
             {isBook && (

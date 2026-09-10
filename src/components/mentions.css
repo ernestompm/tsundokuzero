@@ -1,0 +1,73 @@
+/* Menciones: «@carlos, esto me ha recordado a ti» (migr. 035) */
+
+.mencion {
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+.mencion:hover {
+  text-decoration: underline;
+}
+
+.mentionbox {
+  position: relative;
+  width: 100%;
+}
+.mentionbox textarea {
+  width: 100%;
+}
+
+.mentionbox__lista {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.mentionbox__op {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mentionbox__op.activa,
+.mentionbox__op:hover {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.mentionbox__txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Aviso de que algo te espera más adelante */
+.mencion-espera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.mencion-espera .material-symbols-rounded {
+  font-size: 19px;
+}

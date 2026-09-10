@@ -4,6 +4,8 @@ import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import PersonLink from '../../components/PersonLink'
+import MentionText from '../../components/MentionText'
+import MentionTextarea from '../../components/MentionTextarea'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
@@ -144,13 +146,13 @@ export default function ChapterView({
           <div className="composer__anchor label-medium">
             Escribes anclado al capítulo {data.chapterNumber}
           </div>
-          <textarea
+          <MentionTextarea
             className="composer__input body-medium"
-            placeholder="Comparte lo que estás pensando…"
-            aria-label={`Tu publicación para el capítulo ${data.chapterNumber}`}
+            placeholder="Comparte lo que estás pensando… escribe @ para mencionar"
+            ariaLabel={`Tu publicación para el capítulo ${data.chapterNumber}`}
             value={body}
             rows={3}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
           />
           <div className="composer__row">
             <div className="composer__kinds">
@@ -321,7 +323,9 @@ function DiscussionCard({
           </div>
         </div>
       ) : (
-        <p className="disc__body body-medium">{d.body}</p>
+        <p className="disc__body body-medium">
+          <MentionText text={d.body} />
+        </p>
       )}
 
       {onReact && (
@@ -353,7 +357,8 @@ function DiscussionCard({
                 </p>
               ) : (
                 <p className="body-small" style={{ flex: 1 }}>
-                  <span className="who">{c.authorName}</span> · {c.body}
+                  <span className="who">{c.authorName}</span> ·{' '}
+                  <MentionText text={c.body} />
                 </p>
               )}
               {c.body != null && (
@@ -391,14 +396,20 @@ function DiscussionCard({
       {onReply &&
         (replying ? (
           <div className="disc__reply">
-            <input
+            <MentionTextarea
               className="disc__reply-input body-medium"
-              placeholder="Escribe tu respuesta…"
-              aria-label="Tu respuesta a esta publicación"
+              placeholder="Escribe tu respuesta… @ para mencionar"
+              ariaLabel="Tu respuesta a esta publicación"
               value={reply}
+              rows={2}
               autoFocus
-              onChange={(e) => setReply(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && void send()}
+              onChange={setReply}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void send()
+                }
+              }}
             />
             <md-icon-button aria-label="Enviar" onClick={() => void send()}>
               <span className="material-symbols-rounded" aria-hidden="true">send</span>

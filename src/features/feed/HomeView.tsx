@@ -14,6 +14,7 @@ import { useConfirm } from '../../components/ConfirmProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import PushNudge from '../../components/PushNudge'
 import ClubStrip from '../../components/ClubStrip'
+import MentionText from '../../components/MentionText'
 import NextRead from '../club/NextRead'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
@@ -595,7 +596,7 @@ function FeedCard({
                 {item.postTitle}
               </div>
             )}
-            {item.body}
+            <MentionText text={item.body} />
           </div>
         ) : (
           <div
@@ -605,7 +606,7 @@ function FeedCard({
             onClick={go}
             onKeyDown={pressKeys(go)}
           >
-            {item.body}
+            <MentionText text={item.body} />
           </div>
         ))}
 

@@ -4,6 +4,8 @@ import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import PersonLink from '../../components/PersonLink'
+import MentionText from '../../components/MentionText'
+import MentionTextarea from '../../components/MentionTextarea'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
@@ -143,7 +145,9 @@ export default function ThreadView({
             />
           </div>
         ) : (
-          <p className="thread-parent__body body-large">{data.body}</p>
+          <p className="thread-parent__body body-large">
+            <MentionText text={data.body} />
+          </p>
         )}
 
         {onReact && data.body != null && (
@@ -214,7 +218,9 @@ export default function ThreadView({
                       </button>
                     )}
                   </div>
-                  <p className="body-medium thread-reply__body">{c.body}</p>
+                  <p className="body-medium thread-reply__body">
+                    <MentionText text={c.body} />
+                  </p>
                 </>
               )}
             </div>
@@ -225,13 +231,19 @@ export default function ThreadView({
       {/* ===== Composer de respuesta ===== */}
       {data.canWrite && onReply ? (
         <div className="thread-composer">
-          <input
+          <MentionTextarea
             className="thread-composer__input body-medium"
-            placeholder="Escribe tu respuesta…"
-            aria-label="Tu respuesta al hilo"
+            placeholder="Escribe tu respuesta… @ para mencionar"
+            ariaLabel="Tu respuesta al hilo"
             value={reply}
-            onChange={(e) => setReply(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void send()}
+            rows={2}
+            onChange={setReply}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                void send()
+              }
+            }}
           />
           <md-filled-button
             disabled={!reply.trim() || busy || undefined}

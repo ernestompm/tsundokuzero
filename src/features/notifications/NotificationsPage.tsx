@@ -80,6 +80,9 @@ export default function NotificationsPage() {
         } else if (n.type === 'reaction') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'reaccionó a tu idea'
+        } else if (n.type === 'mention') {
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
+          detail = 'te ha mencionado'
         } else if (n.type === 'recommendation') {
           to = n.book_id ? `/book/${n.book_id}` : '/library'
           detail = 'te recomienda un libro'

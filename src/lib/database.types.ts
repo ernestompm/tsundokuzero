@@ -120,6 +120,7 @@ export type NotificationType =
   | 'captain'
   | 'next_book'
   | 'recommendation'
+  | 'mention'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -146,6 +147,8 @@ export type NotificationPrefsRow = {
   next_book: boolean
   /** alguien te recomienda un libro (migr. 034) */
   recommendation: boolean
+  /** te mencionan en una idea o respuesta (migr. 035) */
+  mention: boolean
 }
 
 export type Notification = {
@@ -551,6 +554,19 @@ export type Database = {
         Returns: string
       }
       reading_affinity: { Args: { p_user: string }; Returns: Record<string, unknown> }
+      mentionables: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          username: string
+          display_name: string
+          avatar_url: string | null
+        }[]
+      }
+      pending_mentions: {
+        Args: Record<string, never>
+        Returns: { book_id: string; chapter_number: number; cuantas: number }[]
+      }
       club_activity: {
         Args: Record<string, never>
         Returns: {

@@ -32,6 +32,12 @@ export const NOVEDADES: Novedad[] = [
       'Cuando el club elige el siguiente libro, ya no aparece de golpe el día que se empieza. Sale antes en tu Inicio, con su portada y un enlace para conseguirlo, así que te da tiempo a hacerte con él.',
   },
   {
+    icon: 'chat_bubble',
+    titulo: 'Menciones que esperan',
+    texto:
+      'Escribe @ y el nombre de alguien del club para nombrarle. Y si va por detrás de ti en el libro, el aviso no le llega ahora: se le guarda y le aparece justo cuando llegue a ese capítulo. Ni se pierde ni te destripa nada.',
+  },
+  {
     icon: 'send',
     titulo: 'Recomendarle un libro a alguien',
     texto:

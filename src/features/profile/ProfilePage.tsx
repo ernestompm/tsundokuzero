@@ -50,6 +50,7 @@ type NotifPrefs = {
   new_idea: boolean
   next_book: boolean
   recommendation: boolean
+  mention: boolean
 }
 
 const NOTIF_DEFAULTS: NotifPrefs = {
@@ -62,6 +63,7 @@ const NOTIF_DEFAULTS: NotifPrefs = {
   new_idea: true,
   next_book: true,
   recommendation: true,
+  mention: true,
 }
 
 const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = [
@@ -109,6 +111,11 @@ const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = 
     key: 'recommendation',
     label: 'Te recomiendan un libro',
     hint: 'Cuando alguien del club te recomienda algo a ti en concreto.',
+  },
+  {
+    key: 'mention',
+    label: 'Te mencionan',
+    hint: 'Cuando alguien te nombra con @ en una idea o una respuesta.',
   },
 ]
 
@@ -262,6 +269,8 @@ export default function ProfilePage() {
             next_book: data.next_book ?? true,
             // ?? true: la fila puede ser anterior a la migración 034
             recommendation: data.recommendation ?? true,
+            // ?? true: la fila puede ser anterior a la migración 035
+            mention: data.mention ?? true,
           })
         }
       })
