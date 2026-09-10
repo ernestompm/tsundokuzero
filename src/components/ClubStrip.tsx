@@ -18,6 +18,7 @@ interface Datos {
   nombre: string
   emblema: string | null
   color: string | null
+  emblemaUrl: string | null
   miembros: number
   librosLeidos: number
   caras: { name: string; url?: string | null }[]
@@ -63,7 +64,7 @@ export default function ClubStrip() {
           .maybeSingle(),
         supabase
           .from('clubs')
-          .select('emblem, emblem_color')
+          .select('emblem, emblem_color, emblem_url')
           .order('created_at')
           .limit(1)
           .maybeSingle(),
@@ -91,6 +92,7 @@ export default function ClubStrip() {
         nombre: resumen.name,
         emblema: club?.emblem ?? null,
         color: club?.emblem_color ?? null,
+        emblemaUrl: club?.emblem_url ?? null,
         miembros: resumen.miembros,
         librosLeidos: resumen.libros_leidos,
         caras: (perfiles ?? []).map((p) => ({ name: p.display_name, url: p.avatar_url })),
@@ -116,22 +118,27 @@ export default function ClubStrip() {
   const hayActividad =
     act.ideas > 0 || act.respuestas > 0 || act.reacciones > 0 || act.adelantos.length > 0
 
-  const abrir = () => {
-    // Al mirar, los contadores se ponen a cero, como debe ser
-    void supabase.rpc('mark_club_seen')
-    navigate('/club')
-  }
+  const total =
+    act.ideas + act.respuestas + act.reacciones + act.adelantos.length
 
   return (
-    <button type="button" className="clubstrip" onClick={abrir}>
-      <span className="clubstrip__fila">
-        <span
-          className="clubstrip__emblema"
-          aria-hidden="true"
-          style={data.color ? { background: data.color } : undefined}
-        >
-          {data.emblema ?? '📖'}
-        </span>
+    <div className="clubstrip">
+      <button
+        type="button"
+        className="clubstrip__fila clubstrip__club"
+        onClick={() => navigate('/club')}
+      >
+        {data.emblemaUrl ? (
+          <img className="clubstrip__emblema" src={data.emblemaUrl} alt="" aria-hidden="true" />
+        ) : (
+          <span
+            className="clubstrip__emblema"
+            aria-hidden="true"
+            style={data.color ? { background: data.color } : undefined}
+          >
+            {data.emblema ?? '📖'}
+          </span>
+        )}
 
         <span className="clubstrip__izq">
           <span className="label-medium clubstrip__kicker">Tu club</span>
@@ -151,10 +158,16 @@ export default function ClubStrip() {
           people={data.caras.slice(0, 4)}
           extra={Math.max(0, data.miembros - 4)}
         />
-      </span>
+      </button>
 
       {hayActividad && (
-        <span className="clubstrip__actividad">
+        <button
+          type="button"
+          className="clubstrip__novedades"
+          onClick={() => navigate('/nuevo')}
+          aria-label={`Ver las ${total} novedades`}
+        >
+          <span className="clubstrip__actividad">
           {act.ideas > 0 && (
             <span className="clubstrip__pill">
               <span className="material-symbols-rounded" aria-hidden="true">forum</span>
@@ -184,8 +197,15 @@ export default function ClubStrip() {
               {act.adelantos.length === 1 ? 'te ha adelantado' : 'te han adelantado'}
             </span>
           )}
-        </span>
+          </span>
+          <span className="clubstrip__ver label-large">
+            Ver lo nuevo
+            <span className="material-symbols-rounded" aria-hidden="true">
+              chevron_right
+            </span>
+          </span>
+        </button>
       )}
-    </button>
+    </div>
   )
 }

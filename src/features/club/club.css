@@ -503,3 +503,14 @@
 .admin-emblema__color.activo {
   border-color: var(--md-sys-color-primary);
 }
+
+.admin-emblema__muestra img,
+img.admin-emblema__muestra {
+  object-fit: cover;
+}
+.admin-emblema__subir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}

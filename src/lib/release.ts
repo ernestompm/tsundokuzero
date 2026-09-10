@@ -32,6 +32,12 @@ export const NOVEDADES: Novedad[] = [
       'Cuando el club elige el siguiente libro, ya no aparece de golpe el día que se empieza. Sale antes en tu Inicio, con su portada y un enlace para conseguirlo, así que te da tiempo a hacerte con él.',
   },
   {
+    icon: 'notifications',
+    titulo: 'Lo nuevo',
+    texto:
+      'Tu club te dice qué te has perdido desde la última vez: quién te ha respondido, quién ha reaccionado a tus ideas y quién te ha adelantado leyendo. Tocas, lo ves, y deja de aparecer.',
+  },
+  {
     icon: 'group',
     titulo: 'Tu club, en la primera pantalla',
     texto:

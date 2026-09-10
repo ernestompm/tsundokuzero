@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/outlined-button.js'
@@ -50,6 +50,8 @@ export default function ClubAdminPage() {
   const [emblema, setEmblema] = useState('')
   const [color, setColor] = useState('')
   const [tag, setTag] = useState('')
+  const [emblemaUrl, setEmblemaUrl] = useState<string | null>(null)
+  const fotoRef = useRef<HTMLInputElement>(null)
   const [copiado, setCopiado] = useState(false)
 
   const load = useCallback(async () => {
@@ -67,6 +69,7 @@ export default function ClubAdminPage() {
     setEmblema(c.emblem ?? '')
     setColor(c.emblem_color ?? '')
     setTag(c.affiliate_tag ?? '')
+    setEmblemaUrl(c.emblem_url ?? null)
 
     const { data: memberRows } = await supabase
       .from('club_members')
@@ -125,6 +128,95 @@ export default function ClubAdminPage() {
     else setBanner({ kind: 'info', text: 'Datos del club guardados.' })
     await load()
     setBusy(false)
+  }
+
+  /**
+   * Sube el escudo del club. Mismo camino que las fotos de perfil:
+   * recorte cuadrado en el navegador y al bucket «avatars», bajo la
+   * carpeta «clubs», donde solo escriben capitán y administradores
+   * (migr. 033).
+   */
+  const subirEmblema = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setBanner({ kind: 'error', text: 'Elige un archivo de imagen.' })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setBanner({ kind: 'error', text: 'La imagen no puede pasar de 5 MB.' })
+      return
+    }
+    setBusy(true)
+    setBanner(null)
+    const objectUrl = URL.createObjectURL(file)
+    try {
+      const img = new Image()
+      img.src = objectUrl
+      await img.decode()
+      const lado = Math.min(img.naturalWidth, img.naturalHeight)
+      const size = 512
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      canvas
+        .getContext('2d')!
+        .drawImage(
+          img,
+          (img.naturalWidth - lado) / 2,
+          (img.naturalHeight - lado) / 2,
+          lado,
+          lado,
+          0,
+          0,
+          size,
+          size,
+        )
+      const blob = await new Promise<Blob | null>((r) =>
+        canvas.toBlob(r, 'image/jpeg', 0.88),
+      )
+      if (!blob) throw new Error('No se pudo procesar la imagen')
+
+      const path = `clubs/${club.id}-${crypto.randomUUID()}.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { contentType: 'image/jpeg' })
+      if (upErr) throw new Error(friendlyError(upErr, 'No se pudo subir el emblema.'))
+
+      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
+      const { error: dbErr } = await supabase
+        .from('clubs')
+        .update({ emblem_url: pub.publicUrl })
+        .eq('id', club.id)
+      if (dbErr) throw new Error(friendlyError(dbErr, 'No se pudo guardar el emblema.'))
+
+      // El escudo anterior se borra: no tiene sentido acumularlos
+      const { data: antiguos } = await supabase.storage.from('avatars').list('clubs')
+      const sobran = (antiguos ?? [])
+        .filter((f) => f.name.startsWith(club.id) && `clubs/${f.name}` !== path)
+        .map((f) => `clubs/${f.name}`)
+      if (sobran.length > 0) await supabase.storage.from('avatars').remove(sobran)
+
+      setBanner({ kind: 'info', text: 'Emblema actualizado.' })
+      await load()
+    } catch (e) {
+      setBanner({
+        kind: 'error',
+        text: e instanceof Error ? e.message : 'No se pudo cambiar el emblema.',
+      })
+    }
+    setBusy(false)
+  }
+
+  const quitarEmblema = async () => {
+    setBusy(true)
+    const { error } = await supabase
+      .from('clubs')
+      .update({ emblem_url: null })
+      .eq('id', club.id)
+    if (error)
+      setBanner({ kind: 'error', text: friendlyError(error, 'No se pudo quitar el emblema.') })
+    else setBanner({ kind: 'info', text: 'Emblema quitado. Vuelve a valer el emoji.' })
+    setBusy(false)
+    await load()
   }
 
   const expulsar = async (userId: string, quien: string) => {
@@ -196,15 +288,54 @@ export default function ClubAdminPage() {
           />
         </label>
         <div className="admin-emblema">
-          <span
-            className="admin-emblema__muestra"
-            aria-hidden="true"
-            style={color ? { background: color } : undefined}
-          >
-            {emblema || '📖'}
-          </span>
+          {emblemaUrl ? (
+            <img className="admin-emblema__muestra" src={emblemaUrl} alt="Emblema del club" />
+          ) : (
+            <span
+              className="admin-emblema__muestra"
+              aria-hidden="true"
+              style={color ? { background: color } : undefined}
+            >
+              {emblema || '📖'}
+            </span>
+          )}
           <div className="admin-emblema__opciones">
             <span className="label-medium">Emblema del club</span>
+
+            {/* Una imagen propia manda sobre el emoji */}
+            <input
+              ref={fotoRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void subirEmblema(f)
+                e.target.value = ''
+              }}
+            />
+            <div className="admin-emblema__subir">
+              <md-outlined-button
+                disabled={busy || undefined}
+                onClick={() => fotoRef.current?.click()}
+              >
+                <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
+                  add
+                </span>
+                {emblemaUrl ? 'Cambiar la imagen' : 'Subir una imagen'}
+              </md-outlined-button>
+              {emblemaUrl && (
+                <md-text-button disabled={busy || undefined} onClick={() => void quitarEmblema()}>
+                  Quitarla
+                </md-text-button>
+              )}
+            </div>
+
+            <span className="body-small on-surface-variant">
+              {emblemaUrl
+                ? 'Se usa la imagen. Si la quitas, vuelve a valer el emoji.'
+                : 'O elige un emoji y un color mientras no tengas escudo propio.'}
+            </span>
             <div className="admin-emblema__emojis">
               {EMBLEMAS.map((e) => (
                 <button

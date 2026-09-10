@@ -23,6 +23,17 @@
   justify-content: space-between;
   gap: 12px;
 }
+/* La tira son ahora DOS botones: el club y las novedades */
+.clubstrip__club {
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
 
 .clubstrip__emblema {
   flex: none;
@@ -35,6 +46,7 @@
   line-height: 1;
   background: var(--md-sys-color-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+  object-fit: cover;
 }
 
 .clubstrip__izq {
@@ -61,10 +73,42 @@
 }
 
 /* ---- Qué ha pasado desde la última vez ---- */
+/* Novedades: un botón entero, para que se vea que se puede tocar */
+.clubstrip__novedades {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: color-mix(in srgb, var(--md-sys-color-surface) 55%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.clubstrip__novedades:hover {
+  background: var(--md-sys-color-surface);
+}
+.clubstrip__ver {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--md-sys-color-primary);
+  white-space: nowrap;
+}
+.clubstrip__ver .material-symbols-rounded {
+  font-size: 18px;
+}
+
 .clubstrip__actividad {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 .clubstrip__pill {
   display: inline-flex;

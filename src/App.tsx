@@ -12,6 +12,7 @@ import OnboardingPage from './auth/OnboardingPage'
 import FeedPage from './features/feed/FeedPage'
 import BookPage from './features/book/BookPage'
 import OpinionsPage from './features/book/OpinionsPage'
+import NewsPage from './features/feed/NewsPage'
 import ClubBookRedirect from './features/book/ClubBookRedirect'
 import ChapterPage from './features/book/ChapterPage'
 import ThreadPage from './features/book/ThreadPage'
@@ -71,6 +72,7 @@ export default function App() {
                 <Route element={<TermsGate />}>
                   <Route element={<AppShell />}>
                     <Route index element={<FeedPage />} />
+                    <Route path="nuevo" element={<NewsPage />} />
                     <Route path="explore" element={<ExplorePage />} />
                     <Route path="library" element={<LibraryPage />} />
                     <Route path="book" element={<ClubBookRedirect />} />

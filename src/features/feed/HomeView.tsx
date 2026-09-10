@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
 import {
   Avatar,
-  AvatarStack,
   BookCover,
   Chip,
   ProgressBar,
@@ -99,7 +98,7 @@ export default function HomeView({
     obs.observe(nodo)
     return () => obs.disconnect()
   }, [hayMas, onMas, data.feed.length])
-  const { readings, stats, conversations, discover, feed } = data
+  const { readings, stats, feed } = data
   const reading = readings[0] ?? null
 
   // Filtro del feed: controlado (FeedPage lo aplica en la query, auditoría
@@ -124,9 +123,6 @@ export default function HomeView({
 
   return (
     <div className="home">
-      {/* Pertenencia: lo primero que ves es que perteneces a un grupo */}
-      <ClubStrip />
-
       {/* ===== Cabecera grande (móvil): fecha + «Hoy», estilo iOS ===== */}
       <header className="home-today">
         <div className="home-today__text">
@@ -228,6 +224,9 @@ export default function HomeView({
         </button>
       )}
 
+      {/* ===== Tu club: quiénes sois y qué te has perdido ===== */}
+      <ClubStrip />
+
       {/* ===== Votación abierta ===== */}
       {data.openPoll && (
         <button className="poll-banner" onClick={() => navigate('/club')}>
@@ -244,6 +243,9 @@ export default function HomeView({
         </button>
       )}
 
+      {/* Ya hay libro elegido para después: que dé tiempo a conseguirlo */}
+      <NextRead compacta />
+
       {/* ===== Invitación a activar push (un toque; descartable) ===== */}
       <PushNudge />
 
@@ -257,49 +259,6 @@ export default function HomeView({
           add
         </span>
       </button>
-
-      {/* Ya hay libro elegido para después: que dé tiempo a comprarlo */}
-      <NextRead compacta />
-
-      {/* ===== Conversaciones activas ===== */}
-      {conversations.length > 0 && (
-        <>
-          <SectionHeader title="Conversaciones activas" />
-          <div className="conv-grid">
-            {conversations.map((c) => (
-              <button
-                key={c.bookId}
-                className="conv-card"
-                onClick={() => navigate(`/book/${c.bookId}`)}
-              >
-                <BookCover
-                  title={c.bookTitle}
-                  author={c.author}
-                  coverUrl={c.coverUrl}
-                  size="md"
-                />
-                <div className="conv-card__body">
-                  <span className="title-small serif conv-card__title">
-                    {c.bookTitle}
-                  </span>
-                  <span className="body-small on-surface-variant">
-                    Capítulos 1 – {c.upTo}
-                  </span>
-                  <span className="conv-card__foot">
-                    <AvatarStack people={c.avatars} extra={c.extra} />
-                    <span className="label-medium on-surface-variant conv-card__count">
-                      <span className="material-symbols-rounded" aria-hidden="true">
-                        chat_bubble
-                      </span>
-                      {c.count}
-                    </span>
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
 
       {/* ===== Últimas ideas (el feed) ===== */}
       <SectionHeader title="Últimas ideas" />
@@ -354,19 +313,6 @@ export default function HomeView({
         </div>
       )}
 
-      {/* ===== Descubre nuevas lecturas ===== */}
-      {discover.length > 0 && (
-        <>
-          <SectionHeader title="Descubre nuevas lecturas" />
-          <div className="discover-row">
-            {discover.map((b) => (
-              <div key={b.id} className="discover-item" title={`${b.title} · ${b.author}`}>
-                <BookCover title={b.title} author={b.author} size="lg" />
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </div>
   )
 }

@@ -20,6 +20,11 @@ export type Profile = {
   show_ahead_replies: boolean
   /** última vez que miró la actividad del club (migr. 032) */
   club_seen_at: string | null
+  /** marcas por tipo de aviso (migr. 033) */
+  ideas_seen_at: string | null
+  replies_seen_at: string | null
+  reactions_seen_at: string | null
+  ahead_seen_at: string | null
   created_at: string
 }
 
@@ -253,6 +258,8 @@ export type Club = {
   /** emblema y afiliados (migr. 032) */
   emblem: string | null
   emblem_color: string | null
+  /** imagen del escudo, si la hay (migr. 033) */
+  emblem_url: string | null
   affiliate_tag: string | null
   /** próxima lectura ya elegida, aún sin empezar (migr. 030) */
   next_book_id: string | null
@@ -515,6 +522,11 @@ export type Database = {
       finish_and_start_next: { Args: Record<string, never>; Returns: string | null }
       close_poll_if_due: { Args: Record<string, never>; Returns: string | null }
       mark_club_seen: { Args: Record<string, never>; Returns: undefined }
+      mark_seen: {
+        Args: { p_kind?: 'all' | 'ideas' | 'replies' | 'reactions' | 'ahead' }
+        Returns: undefined
+      }
+      club_news: { Args: Record<string, never>; Returns: Record<string, unknown> }
       club_activity: {
         Args: Record<string, never>
         Returns: {
