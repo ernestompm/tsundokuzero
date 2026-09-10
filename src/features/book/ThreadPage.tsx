@@ -111,6 +111,7 @@ export default function ThreadPage() {
         authorId: c.author_id,
         authorName: byId.get(c.author_id)?.display_name ?? '·',
         authorAvatar: byId.get(c.author_id)?.avatar_url,
+        authorUsername: byId.get(c.author_id)?.username,
         body: c.unlocked ? c.body : null,
         unlockChapter: c.author_chapter,
         createdAt: timeAgo(c.created_at),

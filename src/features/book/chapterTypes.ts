@@ -4,6 +4,8 @@ export interface ThreadComment {
   id: string
   authorName: string
   authorAvatar?: string | null
+  /** para enlazar la cara con su perfil público */
+  authorUsername?: string
   authorId: string
   /** null = bloqueada: su autor iba más adelante que tú */
   body: string | null

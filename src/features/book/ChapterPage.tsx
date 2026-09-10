@@ -128,6 +128,7 @@ export default function ChapterPage() {
           authorId: c.author_id,
           authorName: nameById.get(c.author_id) ?? '·',
           authorAvatar: avatarById.get(c.author_id),
+          authorUsername: usernameById.get(c.author_id),
           body: c.unlocked ? c.body : null,
           unlockChapter: c.author_chapter,
           createdAt: timeAgo(c.created_at),

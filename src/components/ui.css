@@ -196,3 +196,20 @@
   --md-sys-color-primary: var(--md-sys-color-error);
   --md-sys-color-on-primary: var(--md-sys-color-on-error);
 }
+
+/* Cara o nombre que lleva al perfil de esa persona */
+.personlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+.personlink:hover {
+  text-decoration: underline;
+}
+.personlink:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 3px;
+}

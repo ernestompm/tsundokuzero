@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
+import PersonLink from '../../components/PersonLink'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
@@ -167,7 +168,9 @@ export default function ThreadView({
       <div className="thread-replies">
         {data.comments.map((c) => (
           <div key={c.id} className="thread-reply">
-            <Avatar name={c.authorName} url={c.authorAvatar} size={34} />
+            <PersonLink username={c.authorUsername}>
+              <Avatar name={c.authorName} url={c.authorAvatar} size={34} />
+            </PersonLink>
             <div className="thread-reply__content">
               {c.body == null ? (
                 <p className="body-medium disc__comment-locked">

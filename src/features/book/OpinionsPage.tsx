@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
+import PersonLink from '../../components/PersonLink'
 import PageHeader from '../../components/PageHeader'
 import { RatingBarsCompare, type Dimensions } from '../../components/RatingBars'
 import { friendlyError } from '../../lib/errors'
@@ -331,7 +332,7 @@ export default function OpinionsPage() {
             {escritas.map((o) => (
               <Card key={o.userId} tone="soft" className="opinion">
                 <div className="opinion__head">
-                  <Link to={`/u/${o.username ?? ''}`} className="opinion__quien">
+                  <PersonLink username={o.username} className="opinion__quien">
                     <Avatar name={o.name} url={o.avatar} size={36} />
                     <span className="opinion__nombres">
                       <span className="title-small">{o.name}</span>
@@ -339,7 +340,7 @@ export default function OpinionsPage() {
                         {timeAgo(o.createdAt)}
                       </span>
                     </span>
-                  </Link>
+                  </PersonLink>
                   <Stars value={o.rating} size={16} />
                 </div>
                 <p className="body-medium opinion__texto">{o.review}</p>

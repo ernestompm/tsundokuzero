@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 import '@material/web/iconbutton/icon-button.js'
+import PersonLink from '../../components/PersonLink'
 import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
@@ -338,7 +339,9 @@ function DiscussionCard({
         <div className="disc__comments">
           {d.comments.map((c) => (
             <div key={c.id} className="disc__comment">
-              <Avatar name={c.authorName} url={c.authorAvatar} size={26} />
+              <PersonLink username={c.authorUsername}>
+                <Avatar name={c.authorName} url={c.authorAvatar} size={26} />
+              </PersonLink>
               {c.body == null ? (
                 <p className="body-small disc__comment-locked" style={{ flex: 1 }}>
                   <span className="material-symbols-rounded" aria-hidden="true">lock</span>

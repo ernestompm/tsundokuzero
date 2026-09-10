@@ -5,7 +5,10 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
-import { Avatar } from '../../components/ui'
+import { Avatar, BookCover } from '../../components/ui'
+import Stars from '../../components/Stars'
+import { BadgeRow } from '../../components/Badges'
+import { antiguedadEnPalabras, badgesDe, type MemberStats } from '../../lib/badges'
 import ReportButton from '../../components/ReportButton'
 import { friendlyError } from '../../lib/errors'
 import { useConfirm } from '../../components/ConfirmProvider'
@@ -29,6 +32,17 @@ interface PostRow {
   createdAt: string
 }
 
+/** Un libro de su estantería, con la nota que le puso si la puso. */
+interface LibroSuyo {
+  id: string
+  title: string
+  author: string
+  cover: string | null
+  status: 'reading' | 'finished' | 'want'
+  rating: number | null
+  recomienda: number | null
+}
+
 export default function UserProfilePage() {
   const { username } = useParams()
   const { session, profile: me } = useAuth()
@@ -37,6 +51,10 @@ export default function UserProfilePage() {
   const [person, setPerson] = useState<Profile | null | 'missing'>(null)
   const [error, setError] = useState<string | null>(null)
   const [followers, setFollowers] = useState(0)
+  // Su estantería y sus notas: el perfil público de un club de lectura
+  // debería hablar de libros, no solo de mensajes.
+  const [libros, setLibros] = useState<LibroSuyo[]>([])
+  const [stats, setStats] = useState<MemberStats | null>(null)
   const [following, setFollowing] = useState(0)
   const [amFollowing, setAmFollowing] = useState(false)
   const [amBlocking, setAmBlocking] = useState(false)
@@ -141,6 +159,65 @@ export default function UserProfilePage() {
     )
   }, [username, session])
 
+  // Sus libros, sus notas y sus insignias
+  useEffect(() => {
+    if (!person || person === 'missing') return
+    const uid = person.id
+    let cancelado = false
+    const load = async () => {
+      const [{ data: prog }, { data: notas }, { data: st }] = await Promise.all([
+        supabase
+          .from('reading_progress')
+          .select('book_id, status, updated_at')
+          .eq('user_id', uid)
+          .order('updated_at', { ascending: false }),
+        // La vista enmascara el TEXTO de la reseña; la nota no es spoiler
+        supabase
+          .from('book_reviews')
+          .select('book_id, rating, d_recommend')
+          .eq('user_id', uid),
+        supabase.from('club_member_stats').select('*').eq('user_id', uid).maybeSingle(),
+      ])
+      if (cancelado) return
+      setStats((st as MemberStats | null) ?? null)
+
+      const filas = prog ?? []
+      if (filas.length === 0) {
+        setLibros([])
+        return
+      }
+      const { data: books } = await supabase
+        .from('books')
+        .select('id, title, author, cover_url')
+        .in('id', filas.map((f) => f.book_id))
+      const porId = new Map((books ?? []).map((b) => [b.id, b]))
+      const notaPorLibro = new Map((notas ?? []).map((n) => [n.book_id, n]))
+      if (cancelado) return
+      setLibros(
+        filas.flatMap((f) => {
+          const b = porId.get(f.book_id)
+          if (!b) return []
+          const n = notaPorLibro.get(f.book_id)
+          return [
+            {
+              id: b.id,
+              title: b.title,
+              author: b.author,
+              cover: b.cover_url,
+              status: f.status as LibroSuyo['status'],
+              rating: n?.rating ?? null,
+              recomienda: n?.d_recommend ?? null,
+            },
+          ]
+        }),
+      )
+    }
+    void load()
+    return () => {
+      cancelado = true
+    }
+  }, [person])
+
   useEffect(() => {
     void load()
   }, [load])
@@ -214,6 +291,13 @@ export default function UserProfilePage() {
     await load()
   }
 
+  // Recomienda = lo que puntuó alto. La reseña escrita sigue sellada por
+  // el servidor hasta que termines el libro; esto son solo estrellas.
+  const recomienda = libros
+    .filter((b) => (b.recomienda ?? b.rating ?? 0) >= 4)
+    .sort((a, b) => (b.recomienda ?? b.rating ?? 0) - (a.recomienda ?? a.rating ?? 0))
+    .slice(0, 8)
+
   return (
     <section className="profile">
       {error && <p className="profile-error body-medium">{error}</p>}
@@ -272,6 +356,62 @@ export default function UserProfilePage() {
           no puede seguirte.
         </p>
       )}
+
+      {!amBlocking && stats && badgesDe(stats).length > 0 && (
+        <div className="userprofile__insignias">
+          <BadgeRow badges={badgesDe(stats)} max={6} />
+          <span className="body-small on-surface-variant">
+            En el club {antiguedadEnPalabras(stats.joined_at)}
+          </span>
+        </div>
+      )}
+
+      {!amBlocking && recomienda.length > 0 && (
+        <>
+          <h2 className="title-small profile-sec">Lo que recomienda</h2>
+          <p className="body-small on-surface-variant userprofile__sub">
+            Los libros a los que puso mejor nota.
+          </p>
+          <div className="userprofile__estante">
+            {recomienda.map((b) => (
+              <Link key={b.id} to={`/book/${b.id}`} className="userprofile__libro">
+                <BookCover title={b.title} author={b.author} coverUrl={b.cover} size="lg" />
+                <span className="label-small userprofile__titulo">{b.title}</span>
+                {b.rating != null && <Stars value={b.rating} size={13} />}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!amBlocking &&
+        (
+          [
+            ['finished', 'Lo que ha leído'],
+            ['reading', 'Leyendo ahora'],
+            ['want', 'Lo que tiene pendiente'],
+          ] as const
+        ).map(([estado, titulo]) => {
+          const lista = libros.filter((b) => b.status === estado)
+          if (lista.length === 0) return null
+          return (
+            <section key={estado}>
+              <h2 className="title-small profile-sec">
+                {titulo}{' '}
+                <span className="body-small on-surface-variant">({lista.length})</span>
+              </h2>
+              <div className="userprofile__estante">
+                {lista.map((b) => (
+                  <Link key={b.id} to={`/book/${b.id}`} className="userprofile__libro">
+                    <BookCover title={b.title} author={b.author} coverUrl={b.cover} size="lg" />
+                    <span className="label-small userprofile__titulo">{b.title}</span>
+                    {b.rating != null && <Stars value={b.rating} size={13} />}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )
+        })}
 
       {posts.length > 0 && (
         <>

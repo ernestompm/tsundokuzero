@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import PersonLink from './PersonLink'
 import { Avatar } from './ui'
 import './reactions.css'
 
@@ -149,7 +150,9 @@ function ReactionsSheet({
           <div className="reactions-sheet__list">
             {rows.map((r, i) => (
               <div key={`${r.userId}-${i}`} className="reactions-sheet__row">
-                <Avatar name={r.name} url={r.avatar} size={36} />
+                <PersonLink username={r.username}>
+                  <Avatar name={r.name} url={r.avatar} size={36} />
+                </PersonLink>
                 <span className="reactions-sheet__names">
                   <span className="title-small">{r.name}</span>
                   {r.username && (
