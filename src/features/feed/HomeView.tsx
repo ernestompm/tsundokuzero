@@ -15,6 +15,7 @@ import LockedTeaser from '../../components/LockedTeaser'
 import PushNudge from '../../components/PushNudge'
 import ClubStrip from '../../components/ClubStrip'
 import MentionText from '../../components/MentionText'
+import MentionsWaiting from '../../components/MentionsWaiting'
 import NextRead from '../club/NextRead'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
@@ -222,6 +223,9 @@ export default function HomeView({
           </span>
         </button>
       )}
+
+      {/* Menciones esperándote unos capítulos más adelante */}
+      <MentionsWaiting />
 
       {/* ===== Tu club: quiénes sois y qué te has perdido ===== */}
       <ClubStrip />

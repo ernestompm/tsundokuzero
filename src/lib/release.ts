@@ -35,7 +35,7 @@ export const NOVEDADES: Novedad[] = [
     icon: 'chat_bubble',
     titulo: 'Menciones que esperan',
     texto:
-      'Escribe @ y el nombre de alguien del club para nombrarle. Y si va por detrás de ti en el libro, el aviso no le llega ahora: se le guarda y le aparece justo cuando llegue a ese capítulo. Ni se pierde ni te destripa nada.',
+      'Escribe @ y el nombre de alguien del club para nombrarle. Si va por detrás de ti, le avisamos de que le has mencionado en el capítulo X, pero no de qué dijiste: el mensaje se le abre solo cuando llegue. Saber que alguien pensó en ti unas páginas más adelante es la mejor razón para seguir leyendo esta noche.',
   },
   {
     icon: 'send',

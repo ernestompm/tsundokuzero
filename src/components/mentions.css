@@ -71,3 +71,18 @@
 .mencion-espera .material-symbols-rounded {
   font-size: 19px;
 }
+
+.mencion-espera {
+  text-decoration: none;
+  width: 100%;
+}
+.mencion-espera__txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mencion-espera__txt .body-small {
+  opacity: 0.85;
+}

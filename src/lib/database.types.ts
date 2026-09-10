@@ -121,6 +121,7 @@ export type NotificationType =
   | 'next_book'
   | 'recommendation'
   | 'mention'
+  | 'mention_wait'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -163,6 +164,8 @@ export type Notification = {
   created_at: string
   /** motivo de una decisión de moderación (DSA art. 17, migr. 018) */
   note: string | null
+  /** capítulo al que se refiere el aviso, si viene a cuento (migr. 036) */
+  chapter_number: number | null
 }
 
 /** Registro inmutable de aceptación de términos (RGPD art. 7, migr. 018) */
@@ -565,7 +568,15 @@ export type Database = {
       }
       pending_mentions: {
         Args: Record<string, never>
-        Returns: { book_id: string; chapter_number: number; cuantas: number }[]
+        Returns: {
+          book_id: string
+          book_title: string
+          chapter_number: number
+          my_chapter: number
+          total_chapters: number
+          cuantas: number
+          quien: string | null
+        }[]
       }
       club_activity: {
         Args: Record<string, never>

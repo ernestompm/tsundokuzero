@@ -34,7 +34,7 @@ export default function NotificationsPage() {
     const [{ data: rows }, blocked] = await Promise.all([
       supabase
         .from('notifications')
-        .select('id, actor_id, type, discussion_id, poll_id, book_id, note, read, created_at')
+        .select('id, actor_id, type, discussion_id, poll_id, book_id, note, chapter_number, read, created_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(40),
@@ -80,6 +80,12 @@ export default function NotificationsPage() {
         } else if (n.type === 'reaction') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'reaccionó a tu idea'
+        } else if (n.type === 'mention_wait') {
+          // Se dice quién y dónde, nunca qué, y lleva a la ficha del libro
+          to = n.book_id ? `/book/${n.book_id}` : '/'
+          detail = n.chapter_number
+            ? `te ha mencionado en el capítulo ${n.chapter_number}. Sigue leyendo para abrirlo`
+            : 'te ha mencionado más adelante en el libro'
         } else if (n.type === 'mention') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'te ha mencionado'

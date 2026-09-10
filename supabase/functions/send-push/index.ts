@@ -39,7 +39,11 @@ webpush.setVapidDetails(
 function describe(
   type: string,
   actorName: string | null,
-  n: { discussion_id: string | null; book_id: string | null },
+  n: {
+    discussion_id: string | null
+    book_id: string | null
+    chapter_number: number | null
+  },
 ): { title: string; body: string; url: string } {
   const who = actorName ?? 'Alguien'
   switch (type) {
@@ -84,6 +88,14 @@ function describe(
         title: 'Tsundoku Zero',
         body: `${who} compartió un pensamiento nuevo 💭`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
+      }
+    case 'mention_wait':
+      return {
+        title: 'Tsundoku Zero',
+        body: n.chapter_number
+          ? `${who} te ha mencionado en un pensamiento del capítulo ${n.chapter_number}. Sigue leyendo para abrirlo 🔒`
+          : `${who} te ha mencionado más adelante en el libro 🔒`,
+        url: n.book_id ? `/book/${n.book_id}` : '/notifications',
       }
     case 'mention':
       return {
@@ -131,7 +143,7 @@ Deno.serve(async (req: Request) => {
   // Releer el aviso: si no existe de verdad, aquí se acaba
   const { data: n } = await supabase
     .from('notifications')
-    .select('id, user_id, actor_id, type, discussion_id, book_id, created_at')
+    .select('id, user_id, actor_id, type, discussion_id, book_id, chapter_number, created_at')
     .eq('id', id)
     .maybeSingle()
   if (!n) return new Response('unknown notification', { status: 404 })

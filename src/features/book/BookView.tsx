@@ -8,6 +8,7 @@ import { BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
 import BookMap from './BookMap'
 import RecommendSheet from '../../components/RecommendSheet'
+import MentionsWaiting from '../../components/MentionsWaiting'
 import {
   RatingBarsCompare,
   RatingBarsInput,
@@ -212,6 +213,9 @@ export default function BookView({
           )}
         </Card>
       )}
+
+      {/* Alguien pensó en ti más adelante: la mejor razón para seguir */}
+      <MentionsWaiting bookId={data.bookId} />
 
       {/* Leyendo: terminar sin arrastrar el slider hasta el final */}
       {data.status === 'reading' && onMarkFinished && (
