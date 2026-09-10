@@ -10,12 +10,12 @@
  */
 
 /** Cambia esto en cada versión con novedades que merezca contar. */
-export const RELEASE_KEY = '0.12.0'
+export const RELEASE_KEY = '0.13.0'
 
-export const RELEASE_TITULO = 'Ahora se nota que sois un club'
+export const RELEASE_TITULO = 'Ahora sí sois un club'
 
 export const RELEASE_ENTRADA =
-  'Nos habéis dicho lo que faltaba y hemos ido a por ello. Esto es lo que cambia.'
+  'Nos habéis dicho lo que faltaba y hemos ido a por ello. Esto es lo que cambia para vosotros.'
 
 export interface Novedad {
   /** icono del subset (scripts/icons.txt) */

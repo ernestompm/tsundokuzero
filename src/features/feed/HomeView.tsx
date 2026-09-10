@@ -64,10 +64,6 @@ interface Props {
   onReact?: (discussionId: string, emoji: string | null) => void
   /** true = publicada (los stubs de preview pueden seguir devolviendo void) */
   onReply?: (discussionId: string, body: string) => Promise<boolean> | void
-  /** quedan más ideas por cargar más abajo */
-  hayMas?: boolean
-  /** pide el siguiente puñado (scroll infinito) */
-  onMas?: () => void
 }
 
 export default function HomeView({
@@ -78,26 +74,26 @@ export default function HomeView({
   onDeleteItem,
   onReact,
   onReply,
-  hayMas,
-  onMas,
 }: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
-  // Scroll infinito: el feed ya no suelta cuarenta ideas de golpe, va
-  // trayendo más según bajas.
+  // Scroll infinito SIN red. La tanda ya está en memoria y aquí solo se
+  // va enseñando de 20 en 20. Antes cada scroll relanzaba la carga entera
+  // del Inicio, diez consultas cada vez, y eso era lo que iba lento.
+  const [cuantas, setCuantas] = useState(20)
   const centinela = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const nodo = centinela.current
-    if (!nodo || !hayMas || !onMas) return
+    if (!nodo) return
     const obs = new IntersectionObserver(
       (entradas) => {
-        if (entradas[0]?.isIntersecting) onMas()
+        if (entradas[0]?.isIntersecting) setCuantas((n) => n + 20)
       },
-      { rootMargin: '400px' },
+      { rootMargin: '600px' },
     )
     obs.observe(nodo)
     return () => obs.disconnect()
-  }, [hayMas, onMas, data.feed.length])
+  }, [])
   const { readings, stats, feed } = data
   const reading = readings[0] ?? null
 
@@ -108,7 +104,7 @@ export default function HomeView({
   const setFilter = onFilterChange ?? setLocalFilter
   const readingSet = new Set(data.readingBookIds)
   const finishedSet = new Set(data.finishedBookIds)
-  const visibleFeed =
+  const feedFiltrado =
     serverFilter != null
       ? feed // ya viene filtrado del servidor
       : feed.filter((item) => {
@@ -120,6 +116,8 @@ export default function HomeView({
             ? readingSet.has(bookId)
             : finishedSet.has(bookId)
         })
+  const visibleFeed = feedFiltrado.slice(0, cuantas)
+  const hayMas = feedFiltrado.length > cuantas
 
   return (
     <div className="home">

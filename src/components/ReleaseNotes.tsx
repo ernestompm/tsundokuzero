@@ -11,6 +11,8 @@ import { useModalBehavior } from './modal'
 import './releasenotes.css'
 
 const STORAGE_KEY = 'tz-novedades-vistas'
+/** Recuerda durante la sesión que el servidor aún no está al día. */
+const ESPERA_KEY = 'tz-novedades-espera'
 
 /** ¿Ya vio esta persona las novedades de esta versión en este aparato? */
 function yaVisto(): boolean {
@@ -66,27 +68,36 @@ export default function ReleaseNotes({
     if (yaVisto()) return
     let cancelado = false
 
-    // Se comprueban las TRES migraciones que sostienen lo que se anuncia,
-    // una columna testigo de cada una. Si falta cualquiera, PostgREST
-    // devuelve error y el aviso no aparece. Que salga el aviso es, en sí
-    // mismo, la prueba de que todo lo que cuenta funciona de verdad.
+    // UNA sola consulta. Antes eran siete, una por migración, y se
+    // lanzaban en CADA carga de página mientras no se hubiera visto el
+    // aviso: siete idas y venidas solo para decidir si enseñar algo.
+    //
+    // La fila del club sirve de testigo de casi todo lo que se anuncia:
+    // `captain_mode` llegó con la 029, `next_book_id` con la 030,
+    // `affiliate_tag` con la 032 y `emblem_url` con la 033. Si falta
+    // cualquiera, PostgREST devuelve error y el aviso se calla.
+    //
+    // El resultado se recuerda durante la sesión de la pestaña, así que
+    // navegar por la app no vuelve a preguntarlo.
+    try {
+      if (sessionStorage.getItem(ESPERA_KEY) === RELEASE_KEY) return
+    } catch {
+      /* navegador con el almacenamiento bloqueado: se pregunta y ya */
+    }
+
     void (async () => {
-      const [m027, m028, m029, m030, m031, m032, m033, m034] = await Promise.all([
-        supabase.from('books').select('id, chapters_confirmed').limit(1),
-        supabase.from('club_readings').select('id, kind').limit(1),
-        supabase.from('clubs').select('id, captain_mode, next_book_id').limit(1),
-        supabase.from('club_summary').select('club_id').limit(1),
-        supabase.from('poll_progress').select('poll_id').limit(1),
-        supabase.from('clubs').select('emblem, affiliate_tag').limit(1),
-        supabase.from('clubs').select('emblem_url').limit(1),
-        supabase.from('recommendations').select('id').limit(1),
-      ])
+      const { error } = await supabase
+        .from('clubs')
+        .select('id, captain_mode, next_book_id, affiliate_tag, emblem_url')
+        .limit(1)
       if (cancelado) return
-      if (
-        m027.error || m028.error || m029.error ||
-        m030.error || m031.error || m032.error || m033.error || m034.error
-      ) {
+      if (error) {
         console.info('[tz] novedades en espera: faltan migraciones por ejecutar')
+        try {
+          sessionStorage.setItem(ESPERA_KEY, RELEASE_KEY)
+        } catch {
+          /* sin almacenamiento se vuelve a preguntar, tampoco pasa nada */
+        }
         return
       }
       setOpen(true)

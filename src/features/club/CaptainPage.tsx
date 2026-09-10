@@ -6,6 +6,7 @@ import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
+import { olvidarClub } from '../../lib/clubCache'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, BookCover, ProgressBar } from '../../components/ui'
@@ -80,6 +81,10 @@ export default function CaptainPage() {
 
   const load = useCallback(async () => {
     if (!session) return
+
+    // Esta pantalla cambia el club constantemente: la caché compartida
+    // no puede servir datos viejos aquí.
+    olvidarClub()
 
     // La votación puede haber vencido mientras nadie miraba (migr. 031)
     await supabase.rpc('close_poll_if_due')

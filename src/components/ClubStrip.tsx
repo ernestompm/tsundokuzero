@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { clubActual } from '../lib/clubCache'
 import { useAuth } from '../auth/AuthContext'
 import { AvatarStack } from './ui'
 import { antiguedadEnPalabras, badgesDe, type MemberStats } from '../lib/badges'
@@ -56,36 +57,35 @@ export default function ClubStrip() {
     if (!session) return
     let cancelado = false
     const load = async () => {
-      const [{ data: resumen }, { data: club }, { data: act }] = await Promise.all([
-        supabase
-          .from('club_summary')
-          .select('club_id, name, miembros, libros_leidos')
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('clubs')
-          .select('emblem, emblem_color, emblem_url')
-          .order('created_at')
-          .limit(1)
-          .maybeSingle(),
-        supabase.rpc('club_activity'),
-      ])
+      // Todo lo que no depende de nada, de una sola vez. Antes esto eran
+      // tres rondas encadenadas y se notaba al abrir el Inicio.
+      const [{ data: resumen }, club, { data: act }, { data: stats }] =
+        await Promise.all([
+          supabase
+            .from('club_summary')
+            .select('club_id, name, miembros, libros_leidos')
+            .limit(1)
+            .maybeSingle(),
+          clubActual(),
+          supabase.rpc('club_activity'),
+          supabase
+            .from('club_member_stats')
+            .select('joined_at, orden_llegada, libros_terminados, veces_primero, libros_propuestos, ideas, resenas, respuestas, reacciones, votaciones, libros_en_estanteria, perfil_completo, en_la_app_desde, role, club_id, user_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle(),
+        ])
       if (!resumen || cancelado) return
 
-      const [{ data: miembros }, { data: stats }] = await Promise.all([
-        supabase.from('club_members').select('user_id').eq('club_id', resumen.club_id).limit(8),
-        supabase
-          .from('club_member_stats')
-          .select('*')
-          .eq('club_id', resumen.club_id)
-          .eq('user_id', session.user.id)
-          .maybeSingle(),
-      ])
-      const ids = (miembros ?? []).map((m) => m.user_id)
-      const { data: perfiles } = ids.length
-        ? await supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids)
-        : { data: [] }
+      // Las caras: una sola consulta con la unión ya hecha por PostgREST
+      const { data: miembros } = await supabase
+        .from('club_members')
+        .select('user_id, profiles(id, display_name, avatar_url)')
+        .eq('club_id', resumen.club_id)
+        .limit(8)
       if (cancelado) return
+      const perfiles = (miembros ?? [])
+        .map((m) => (m as unknown as { profiles: { display_name: string; avatar_url: string | null } | null }).profiles)
+        .filter((p): p is { display_name: string; avatar_url: string | null } => p != null)
 
       const a = act?.[0]
       setData({
@@ -95,7 +95,7 @@ export default function ClubStrip() {
         emblemaUrl: club?.emblem_url ?? null,
         miembros: resumen.miembros,
         librosLeidos: resumen.libros_leidos,
-        caras: (perfiles ?? []).map((p) => ({ name: p.display_name, url: p.avatar_url })),
+        caras: perfiles.map((p) => ({ name: p.display_name, url: p.avatar_url })),
         desde: stats ? antiguedadEnPalabras(stats.joined_at) : null,
         misBadges: stats ? badgesDe(stats as MemberStats) : [],
         actividad: {

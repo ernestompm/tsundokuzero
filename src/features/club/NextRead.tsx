@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import '@material/web/button/filled-tonal-button.js'
 import { supabase } from '../../lib/supabase'
+import { clubActual } from '../../lib/clubCache'
 import { BookCover } from '../../components/ui'
 import { AVISO_AFILIADO, conAfiliado } from '../../lib/affiliate'
 import './nextread.css'
@@ -44,12 +45,7 @@ export default function NextRead({ compacta = false }: { compacta?: boolean }) {
   useEffect(() => {
     let cancelado = false
     const load = async () => {
-      const { data: club } = await supabase
-        .from('clubs')
-        .select('next_book_id, next_starts_at, affiliate_tag')
-        .order('created_at')
-        .limit(1)
-        .maybeSingle()
+      const club = await clubActual()
       if (!club?.next_book_id) {
         if (!cancelado) setData(null)
         return

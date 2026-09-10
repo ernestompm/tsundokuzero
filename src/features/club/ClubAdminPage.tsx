@@ -6,6 +6,7 @@ import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
+import { olvidarClub } from '../../lib/clubCache'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar } from '../../components/ui'
@@ -56,6 +57,7 @@ export default function ClubAdminPage() {
 
   const load = useCallback(async () => {
     if (!session) return
+    olvidarClub()
     const { data: c } = await supabase
       .from('clubs')
       .select('*')
