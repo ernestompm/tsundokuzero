@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { Avatar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
+import RecommendedForYou from '../../components/RecommendedForYou'
 import { timeAgo } from '../../lib/time'
 import './news.css'
 
@@ -109,6 +110,9 @@ export default function NewsPage() {
         sub="Desde la última vez que miraste"
         action={<md-text-button onClick={() => navigate('/')}>Volver</md-text-button>}
       />
+
+      {/* Las recomendaciones no caducan al mirarlas: son un pendiente */}
+      <RecommendedForYou />
 
       {nada ? (
         <div className="news__vacio">

@@ -54,6 +54,17 @@ export type Book = {
   chapters_confirmed: boolean
 }
 
+/** Una recomendación de una persona a otra (migr. 034) */
+export type Recommendation = {
+  id: string
+  from_user: string
+  to_user: string
+  book_id: string
+  note: string | null
+  created_at: string
+  acted_at: string | null
+}
+
 /** Historial de lecturas del club (migr. 028) */
 export type ClubReading = {
   id: string
@@ -108,6 +119,7 @@ export type NotificationType =
   | 'new_idea'
   | 'captain'
   | 'next_book'
+  | 'recommendation'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -132,6 +144,8 @@ export type NotificationPrefsRow = {
   captain: boolean
   /** próxima lectura elegida (migr. 030) */
   next_book: boolean
+  /** alguien te recomienda un libro (migr. 034) */
+  recommendation: boolean
 }
 
 export type Notification = {
@@ -327,6 +341,11 @@ export type Database = {
       >
       chapters: TableDef<Chapter, 'book_id' | 'number', 'id'>
       club_readings: TableDef<ClubReading, 'club_id' | 'book_id', 'id' | 'started_at'>
+      recommendations: TableDef<
+        Recommendation,
+        'from_user' | 'to_user' | 'book_id',
+        'id' | 'created_at'
+      >
       reading_progress: TableDef<ReadingProgress, 'user_id' | 'book_id', 'updated_at'>
       discussions: TableDef<
         Discussion,
@@ -527,6 +546,11 @@ export type Database = {
         Returns: undefined
       }
       club_news: { Args: Record<string, never>; Returns: Record<string, unknown> }
+      recommend_book: {
+        Args: { p_book: string; p_to: string; p_note?: string | null }
+        Returns: string
+      }
+      reading_affinity: { Args: { p_user: string }; Returns: Record<string, unknown> }
       club_activity: {
         Args: Record<string, never>
         Returns: {

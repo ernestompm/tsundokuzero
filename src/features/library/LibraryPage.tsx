@@ -7,6 +7,7 @@ import '@material/web/button/text-button.js'
 import { BookCover, Card, Chip, ProgressBar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import AddBookSheet from '../../components/AddBookSheet'
+import RecommendedForYou from '../../components/RecommendedForYou'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
@@ -171,6 +172,9 @@ export default function LibraryPage() {
           </md-filled-button>
         }
       />
+
+      {/* Lo que te han recomendado: pendiente hasta que hagas algo */}
+      <RecommendedForYou />
 
       <div className="library__tabs" role="tablist" aria-label="Estanterías">
         {TABS.map((t) => (

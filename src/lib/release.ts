@@ -32,6 +32,12 @@ export const NOVEDADES: Novedad[] = [
       'Cuando el club elige el siguiente libro, ya no aparece de golpe el día que se empieza. Sale antes en tu Inicio, con su portada y un enlace para conseguirlo, así que te da tiempo a hacerte con él.',
   },
   {
+    icon: 'send',
+    titulo: 'Recomendarle un libro a alguien',
+    texto:
+      'Desde la ficha de cualquier libro puedes recomendárselo a una persona del club, con un mensaje tuyo. Y en su perfil ves lo que ha leído, lo que recomienda y en qué os parecéis leyendo.',
+  },
+  {
     icon: 'notifications',
     titulo: 'Lo nuevo',
     texto:

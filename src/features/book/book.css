@@ -292,3 +292,31 @@
 .book-dims__link:hover {
   text-decoration: underline;
 }
+
+/* Recomendar el libro a alguien (migr. 034) */
+.book-recomendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 9px 16px 9px 13px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font: inherit;
+  cursor: pointer;
+}
+.book-recomendar:hover {
+  filter: brightness(0.96);
+}
+.book-recomendar .material-symbols-rounded {
+  font-size: 18px;
+}
+.book-recomendado {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}

@@ -1,0 +1,87 @@
+/* Recomendaciones recibidas: una tarea pendiente, no un aviso (migr. 034) */
+.recomendadas {
+  margin-bottom: var(--tz-space-4);
+}
+.recomendadas__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.recomendadas__cuenta {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.recomendadas__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recomendada {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+}
+.recomendada__portada {
+  flex: none;
+  text-decoration: none;
+}
+.recomendada__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.recomendada__quien {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.recomendada__nombre {
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.recomendada__titulo {
+  text-decoration: none;
+  color: inherit;
+}
+.recomendada__titulo:hover {
+  text-decoration: underline;
+}
+.recomendada__nota {
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-style: italic;
+}
+.recomendada__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.recomendadas__error {
+  padding: 9px 13px;
+  margin-bottom: 10px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}

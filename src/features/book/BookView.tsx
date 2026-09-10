@@ -7,6 +7,7 @@ import '@material/web/button/filled-tonal-button.js'
 import { BookCover, Card } from '../../components/ui'
 import Stars from '../../components/Stars'
 import BookMap from './BookMap'
+import RecommendSheet from '../../components/RecommendSheet'
 import {
   RatingBarsCompare,
   RatingBarsInput,
@@ -30,6 +31,8 @@ interface Props {
   ) => Promise<boolean> | void
   /** marca el libro como terminado (último capítulo) y abre la reseña */
   onMarkFinished?: () => void
+  /** false en las vistas de muestra, que no tienen sesión */
+  onRecommend?: false
   onAddToShelf?: (status: 'want' | 'reading') => void
 }
 
@@ -42,10 +45,14 @@ export default function BookView({
   onRate,
   onAddToShelf,
   onMarkFinished,
+  onRecommend,
 }: Props) {
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [reviewDraft, setReviewDraft] = useState(data.myReview ?? '')
   const [dims, setDims] = useState<Dimensions>(data.myDimensions)
+  // Recomendar el libro a alguien del club (migr. 034)
+  const [recomendando, setRecomendando] = useState(false)
+  const [recomendado, setRecomendado] = useState<string | null>(null)
   const [pendingStars, setPendingStars] = useState(data.myRating ?? 0)
   // auditoría A-03: confirmación inline «Reseña guardada», autodescartable
   const [justSaved, setJustSaved] = useState(false)
@@ -190,6 +197,18 @@ export default function BookView({
                 Comprar el libro
               </md-outlined-button>
             </a>
+          )}
+
+          {/* La primera acción de una persona hacia otra persona */}
+          {onRecommend !== false && (
+            <button
+              type="button"
+              className="book-recomendar label-large"
+              onClick={() => setRecomendando(true)}
+            >
+              <span className="material-symbols-rounded" aria-hidden="true">send</span>
+              Recomendárselo a alguien
+            </button>
           )}
         </Card>
       )}
@@ -344,6 +363,23 @@ export default function BookView({
           Conversación de tu capítulo
         </md-filled-button>
       )}
+
+      {recomendado && (
+        <p className="book-recomendado body-medium" role="status">
+          Se lo has recomendado a {recomendado}. Le llegará un aviso.
+        </p>
+      )}
+
+      <RecommendSheet
+        open={recomendando}
+        bookId={data.bookId}
+        bookTitle={data.title}
+        onClose={() => setRecomendando(false)}
+        onSent={(nombre) => {
+          setRecomendado(nombre)
+          window.setTimeout(() => setRecomendado(null), 5000)
+        }}
+      />
 
       {/* El mapa del libro: dónde va el club y por dónde ha ardido la
           conversación, con niebla en el territorio que aún no has leído */}

@@ -85,6 +85,12 @@ function describe(
         body: `${who} compartió un pensamiento nuevo 💭`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
       }
+    case 'recommendation':
+      return {
+        title: 'Tsundoku Zero',
+        body: `${who} te recomienda un libro 💌`,
+        url: n.book_id ? `/book/${n.book_id}` : '/library',
+      }
     case 'next_book':
       return {
         title: 'Tsundoku Zero',

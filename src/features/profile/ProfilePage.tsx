@@ -49,6 +49,7 @@ type NotifPrefs = {
   reaction: boolean
   new_idea: boolean
   next_book: boolean
+  recommendation: boolean
 }
 
 const NOTIF_DEFAULTS: NotifPrefs = {
@@ -60,6 +61,7 @@ const NOTIF_DEFAULTS: NotifPrefs = {
   reaction: true,
   new_idea: true,
   next_book: true,
+  recommendation: true,
 }
 
 const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = [
@@ -103,6 +105,11 @@ const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = 
     label: 'Próxima lectura elegida',
     hint: 'Cuando ya se sabe cuál es el siguiente libro, para ir consiguiéndolo.',
   },
+  {
+    key: 'recommendation',
+    label: 'Te recomiendan un libro',
+    hint: 'Cuando alguien del club te recomienda algo a ti en concreto.',
+  },
 ]
 
 export default function ProfilePage() {
@@ -130,6 +137,8 @@ export default function ProfilePage() {
   const [estanteria, setEstanteria] = useState<
     { id: string; title: string; author: string; cover: string | null; status: string }[]
   >([])
+  // Mis notas, para el resumen de identidad de la estantería
+  const [misNotas, setMisNotas] = useState<Map<string, number>>(new Map())
   const [busy, setBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   // Derechos RGPD: supresión (art. 17) y portabilidad (art. 20)
@@ -154,11 +163,15 @@ export default function ProfilePage() {
     if (!session) return
     let cancelado = false
     const load = async () => {
-      const { data: prog } = await supabase
-        .from('reading_progress')
-        .select('book_id, status, updated_at')
-        .eq('user_id', session.user.id)
-        .order('updated_at', { ascending: false })
+      const [{ data: prog }, { data: notas }] = await Promise.all([
+        supabase
+          .from('reading_progress')
+          .select('book_id, status, updated_at')
+          .eq('user_id', session.user.id)
+          .order('updated_at', { ascending: false }),
+        supabase.from('book_reviews').select('book_id, rating').eq('user_id', session.user.id),
+      ])
+      if (!cancelado) setMisNotas(new Map((notas ?? []).map((n) => [n.book_id, n.rating])))
       const filas = prog ?? []
       if (filas.length === 0 || cancelado) return
       const { data: libros } = await supabase
@@ -247,6 +260,8 @@ export default function ProfilePage() {
             new_idea: data.new_idea ?? true,
             // ?? true: la fila puede ser anterior a la migración 030
             next_book: data.next_book ?? true,
+            // ?? true: la fila puede ser anterior a la migración 034
+            recommendation: data.recommendation ?? true,
           })
         }
       })
@@ -566,6 +581,15 @@ export default function ProfilePage() {
     setEditing(false)
   }
 
+  // La estantería como identidad: cuanto más llena y puntuada, más dice
+  // de ti. Y si algo falta, se dice, en vez de dejar el hueco callado.
+  const notas = [...misNotas.values()]
+  const mediaMia =
+    notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : null
+  const sinNota = estanteria.filter(
+    (b) => b.status === 'finished' && !misNotas.has(b.id),
+  ).length
+
   return (
     <section className="profile">
       {error && <p className="profile-error body-medium">{error}</p>}
@@ -679,6 +703,27 @@ export default function ProfilePage() {
 
       {tab === 'perfil' && estanteria.length > 0 && (
         <>
+          <div className="profile-resumen">
+            <span className="body-medium">
+              <b>{estanteria.length}</b>{' '}
+              {estanteria.length === 1 ? 'libro en tu estantería' : 'libros en tu estantería'}
+              {mediaMia != null && (
+                <>
+                  {' · '}
+                  <b>{mediaMia.toFixed(1)}</b> de media
+                </>
+              )}
+              {misStats && ` · en el club ${antiguedadEnPalabras(misStats.joined_at)}`}
+            </span>
+            {sinNota > 0 && (
+              <span className="body-small profile-resumen__pendiente">
+                Te faltan las notas de {sinNota}{' '}
+                {sinNota === 1 ? 'libro que terminaste' : 'libros que terminaste'}. Ponlas y
+                tu perfil dirá mucho más de ti.
+              </span>
+            )}
+          </div>
+
           {(
             [
               ['reading', 'Leyendo ahora'],

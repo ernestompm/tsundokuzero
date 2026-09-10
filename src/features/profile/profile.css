@@ -302,3 +302,51 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Afinidad lectora entre dos personas (migr. 034) */
+.afinidad {
+  padding: 16px;
+  margin: 10px 0 18px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.afinidad__kicker {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+.afinidad__frase {
+  margin: 0 0 4px;
+}
+.afinidad__extra {
+  margin: 8px 0 0;
+  opacity: 0.9;
+}
+.afinidad__extra a {
+  color: inherit;
+  font-weight: 500;
+}
+.afinidad__hecho {
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+/* La estantería como identidad (migr. 034) */
+.profile-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  margin: 8px 0 4px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+}
+.profile-resumen__pendiente {
+  color: var(--md-sys-color-primary);
+}

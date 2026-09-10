@@ -9,6 +9,8 @@ import { Avatar, BookCover } from '../../components/ui'
 import Stars from '../../components/Stars'
 import { BadgeRow } from '../../components/Badges'
 import { antiguedadEnPalabras, badgesDe, type MemberStats } from '../../lib/badges'
+import { frases, hayAfinidad, type Afinidad } from '../../lib/affinity'
+import RecommendSheet from '../../components/RecommendSheet'
 import ReportButton from '../../components/ReportButton'
 import { friendlyError } from '../../lib/errors'
 import { useConfirm } from '../../components/ConfirmProvider'
@@ -55,6 +57,10 @@ export default function UserProfilePage() {
   // debería hablar de libros, no solo de mensajes.
   const [libros, setLibros] = useState<LibroSuyo[]>([])
   const [stats, setStats] = useState<MemberStats | null>(null)
+  // Afinidad lectora y recomendaciones (migr. 034)
+  const [afinidad, setAfinidad] = useState<Afinidad | null>(null)
+  const [recomendando, setRecomendando] = useState<{ id: string; title: string } | null>(null)
+  const [recomendado, setRecomendado] = useState<string | null>(null)
   const [following, setFollowing] = useState(0)
   const [amFollowing, setAmFollowing] = useState(false)
   const [amBlocking, setAmBlocking] = useState(false)
@@ -165,7 +171,7 @@ export default function UserProfilePage() {
     const uid = person.id
     let cancelado = false
     const load = async () => {
-      const [{ data: prog }, { data: notas }, { data: st }] = await Promise.all([
+      const [{ data: prog }, { data: notas }, { data: st }, { data: af }] = await Promise.all([
         supabase
           .from('reading_progress')
           .select('book_id, status, updated_at')
@@ -177,9 +183,11 @@ export default function UserProfilePage() {
           .select('book_id, rating, d_recommend')
           .eq('user_id', uid),
         supabase.from('club_member_stats').select('*').eq('user_id', uid).maybeSingle(),
+        supabase.rpc('reading_affinity', { p_user: uid }),
       ])
       if (cancelado) return
       setStats((st as MemberStats | null) ?? null)
+      setAfinidad((af as Afinidad | null) ?? null)
 
       const filas = prog ?? []
       if (filas.length === 0) {
@@ -366,6 +374,47 @@ export default function UserProfilePage() {
         </div>
       )}
 
+      {!amBlocking && hayAfinidad(afinidad) && (
+        <div className="afinidad">
+          <span className="label-medium afinidad__kicker">Vosotros dos</span>
+          {frases(afinidad, person.display_name).map((f) => (
+            <p key={f} className="body-medium afinidad__frase">
+              {f}
+            </p>
+          ))}
+
+          {afinidad.shared_loves.length > 0 && (
+            <p className="body-small afinidad__extra">
+              Os encantó a los dos:{' '}
+              {afinidad.shared_loves.map((b, i) => (
+                <span key={b.id}>
+                  {i > 0 && ', '}
+                  <Link to={`/book/${b.id}`}>{b.title}</Link>
+                </span>
+              ))}
+              .
+            </p>
+          )}
+
+          {afinidad.disagreement && (
+            <p className="body-small afinidad__extra">
+              Donde no os ponéis de acuerdo:{' '}
+              <Link to={`/book/${afinidad.disagreement.id}`}>
+                {afinidad.disagreement.title}
+              </Link>
+              . Tú le diste {afinidad.disagreement.mine} y{' '}
+              {person.display_name.split(/\s+/)[0]} {afinidad.disagreement.theirs}.
+            </p>
+          )}
+        </div>
+      )}
+
+      {recomendado && (
+        <p className="body-medium afinidad__hecho" role="status">
+          Se lo has recomendado a {recomendado}.
+        </p>
+      )}
+
       {!amBlocking && recomienda.length > 0 && (
         <>
           <h2 className="title-small profile-sec">Lo que recomienda</h2>
@@ -412,6 +461,19 @@ export default function UserProfilePage() {
             </section>
           )
         })}
+
+      {recomendando && (
+        <RecommendSheet
+          open
+          bookId={recomendando.id}
+          bookTitle={recomendando.title}
+          onClose={() => setRecomendando(null)}
+          onSent={(nombre) => {
+            setRecomendado(nombre)
+            window.setTimeout(() => setRecomendado(null), 5000)
+          }}
+        />
+      )}
 
       {posts.length > 0 && (
         <>
