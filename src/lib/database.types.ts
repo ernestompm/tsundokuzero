@@ -18,6 +18,8 @@ export type Profile = {
   avatar_url: string | null
   /** ajuste: ver respuestas de gente que va por delante (migr. 017) */
   show_ahead_replies: boolean
+  /** última vez que miró la actividad del club (migr. 032) */
+  club_seen_at: string | null
   created_at: string
 }
 
@@ -248,6 +250,10 @@ export type Club = {
   slug: string
   description: string | null
   current_book_id: string | null
+  /** emblema y afiliados (migr. 032) */
+  emblem: string | null
+  emblem_color: string | null
+  affiliate_tag: string | null
   /** próxima lectura ya elegida, aún sin empezar (migr. 030) */
   next_book_id: string | null
   next_starts_at: string | null
@@ -393,6 +399,12 @@ export type Database = {
           libros_propuestos: number
           ideas: number
           resenas: number
+          respuestas: number
+          reacciones: number
+          votaciones: number
+          libros_en_estanteria: number
+          perfil_completo: boolean
+          en_la_app_desde: string
         }
         Relationships: []
       }
@@ -502,6 +514,17 @@ export type Database = {
       start_next_reading: { Args: Record<string, never>; Returns: string }
       finish_and_start_next: { Args: Record<string, never>; Returns: string | null }
       close_poll_if_due: { Args: Record<string, never>; Returns: string | null }
+      mark_club_seen: { Args: Record<string, never>; Returns: undefined }
+      club_activity: {
+        Args: Record<string, never>
+        Returns: {
+          ideas_nuevas: number
+          respuestas_nuevas: number
+          reacciones_nuevas: number
+          adelantos: { name: string; chapter: number }[]
+          desde: string
+        }[]
+      }
       set_next_book: {
         Args: { p_book: string | null; p_starts_at?: string | null }
         Returns: undefined

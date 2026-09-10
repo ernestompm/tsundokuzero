@@ -14,6 +14,10 @@ import CaptainCard from './CaptainCard'
 import type { Club } from '../../lib/database.types'
 import './club.css'
 
+/** Emblemas posibles: pocos y con sentido para un club de lectura. */
+const EMBLEMAS = ['📖', '📚', '🕯️', '🦉', '🔖', '🗝️', '🌙', '☕', '🪶', '🧭']
+const COLORES = ['#e1e9d8', '#f0e2d7', '#f1e8c8', '#dbe4ee', '#ece0ee', '#fdfdfb']
+
 interface Member {
   id: string
   username: string
@@ -42,6 +46,10 @@ export default function ClubAdminPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [codigo, setCodigo] = useState<string | null>(null)
+  // Emblema y afiliados (migr. 032)
+  const [emblema, setEmblema] = useState('')
+  const [color, setColor] = useState('')
+  const [tag, setTag] = useState('')
   const [copiado, setCopiado] = useState(false)
 
   const load = useCallback(async () => {
@@ -56,6 +64,9 @@ export default function ClubAdminPage() {
     setClub(c)
     setName(c.name)
     setDescription(c.description ?? '')
+    setEmblema(c.emblem ?? '')
+    setColor(c.emblem_color ?? '')
+    setTag(c.affiliate_tag ?? '')
 
     const { data: memberRows } = await supabase
       .from('club_members')
@@ -98,7 +109,13 @@ export default function ClubAdminPage() {
     setBusy(true)
     const { error } = await supabase
       .from('clubs')
-      .update({ name: name.trim(), description: description.trim() || null })
+      .update({
+        name: name.trim(),
+        description: description.trim() || null,
+        emblem: emblema.trim() || null,
+        emblem_color: color.trim() || null,
+        affiliate_tag: tag.trim() || null,
+      })
       .eq('id', club.id)
     if (error)
       setBanner({
@@ -178,6 +195,44 @@ export default function ClubAdminPage() {
             onChange={(e) => setName(e.target.value)}
           />
         </label>
+        <div className="admin-emblema">
+          <span
+            className="admin-emblema__muestra"
+            aria-hidden="true"
+            style={color ? { background: color } : undefined}
+          >
+            {emblema || '📖'}
+          </span>
+          <div className="admin-emblema__opciones">
+            <span className="label-medium">Emblema del club</span>
+            <div className="admin-emblema__emojis">
+              {EMBLEMAS.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  className={`admin-emblema__emoji${emblema === e ? ' activo' : ''}`}
+                  aria-label={`Elegir ${e} como emblema`}
+                  onClick={() => setEmblema(e)}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+            <div className="admin-emblema__colores">
+              {COLORES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`admin-emblema__color${color === c ? ' activo' : ''}`}
+                  style={{ background: c }}
+                  aria-label={`Fondo ${c}`}
+                  onClick={() => setColor(c)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
         <label className="label-medium manage-field">
           Descripción
           <textarea
@@ -235,6 +290,28 @@ export default function ClubAdminPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ---- Afiliados ---- */}
+      <div className="manage-card">
+        <h2 className="title-small manage-card__title">Enlaces de compra</h2>
+        <p className="body-medium">
+          Si pones aquí tu etiqueta de afiliado de Amazon, los botones de conseguir el
+          libro la llevarán y el club se lleva una comisión sin coste para nadie. Se
+          avisa siempre de que es un enlace de afiliado, que es obligatorio.
+        </p>
+        <label className="label-medium manage-field">
+          Etiqueta de afiliado
+          <input
+            className="tz-input body-medium"
+            placeholder="p. ej. miclub-21"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+          />
+        </label>
+        <p className="body-small on-surface-variant">
+          Se guarda con el botón de arriba, junto a los datos del club.
+        </p>
       </div>
 
       {/* ---- Invitar ---- */}

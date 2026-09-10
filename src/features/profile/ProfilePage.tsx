@@ -8,6 +8,7 @@ import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { BadgeBoard } from '../../components/Badges'
+import { BookCover, Chip } from '../../components/ui'
 import {
   antiguedadEnPalabras,
   badgesDe,
@@ -124,6 +125,11 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   // Insignias del club (migr. 030): se derivan, no se guardan
   const [misStats, setMisStats] = useState<MemberStats | null>(null)
+  // El perfil dejó de ser una página de ajustes: ahora tiene dos caras
+  const [tab, setTab] = useState<'perfil' | 'ajustes'>('perfil')
+  const [estanteria, setEstanteria] = useState<
+    { id: string; title: string; author: string; cover: string | null; status: string }[]
+  >([])
   const [busy, setBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   // Derechos RGPD: supresión (art. 17) y portabilidad (art. 20)
@@ -142,6 +148,39 @@ export default function ProfilePage() {
   const [pushOn, setPushOn] = useState(false)
   const [pushBusy, setPushBusy] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
+
+  // Mis libros, para que el perfil enseñe lo que de verdad importa aquí
+  useEffect(() => {
+    if (!session) return
+    let cancelado = false
+    const load = async () => {
+      const { data: prog } = await supabase
+        .from('reading_progress')
+        .select('book_id, status, updated_at')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false })
+      const filas = prog ?? []
+      if (filas.length === 0 || cancelado) return
+      const { data: libros } = await supabase
+        .from('books')
+        .select('id, title, author, cover_url')
+        .in('id', filas.map((f) => f.book_id))
+      const porId = new Map((libros ?? []).map((b) => [b.id, b]))
+      if (cancelado) return
+      setEstanteria(
+        filas.flatMap((f) => {
+          const b = porId.get(f.book_id)
+          return b
+            ? [{ id: b.id, title: b.title, author: b.author, cover: b.cover_url, status: f.status }]
+            : []
+        }),
+      )
+    }
+    void load()
+    return () => {
+      cancelado = true
+    }
+  }, [session])
 
   // Mis estadísticas en el club, para las insignias
   useEffect(() => {
@@ -616,8 +655,17 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* ===== Configuración ===== */}
-      {misStats && (
+      {/* Dos caras: quién eres, y cómo funciona la app para ti */}
+      <div className="profile-tabs" role="tablist" aria-label="Secciones del perfil">
+        <Chip active={tab === 'perfil'} onClick={() => setTab('perfil')}>
+          Perfil
+        </Chip>
+        <Chip active={tab === 'ajustes'} onClick={() => setTab('ajustes')}>
+          Ajustes
+        </Chip>
+      </div>
+
+      {tab === 'perfil' && misStats && (
         <>
           <h2 className="title-small profile-sec">Tus insignias</h2>
           <p className="body-small on-surface-variant" style={{ marginBottom: 12 }}>
@@ -629,6 +677,44 @@ export default function ProfilePage() {
         </>
       )}
 
+      {tab === 'perfil' && estanteria.length > 0 && (
+        <>
+          {(
+            [
+              ['reading', 'Leyendo ahora'],
+              ['finished', 'Ya leídos'],
+              ['want', 'Pendientes'],
+            ] as const
+          ).map(([estado, titulo]) => {
+            const libros = estanteria.filter((e) => e.status === estado)
+            if (libros.length === 0) return null
+            return (
+              <section key={estado}>
+                <h2 className="title-small profile-sec">
+                  {titulo}{' '}
+                  <span className="body-small on-surface-variant">({libros.length})</span>
+                </h2>
+                <div className="profile-shelf">
+                  {libros.map((b) => (
+                    <Link key={b.id} to={`/book/${b.id}`} className="profile-shelf__item">
+                      <BookCover
+                        title={b.title}
+                        author={b.author}
+                        coverUrl={b.cover}
+                        size="lg"
+                      />
+                      <span className="label-small profile-shelf__title">{b.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </>
+      )}
+
+      {tab === 'ajustes' && (
+      <>
       <h2 className="title-small profile-sec">Configuración</h2>
       <div className="profile-settings">
         <label className="profile-setting">
@@ -694,6 +780,11 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      </>
+      )}
+
+      {tab === 'perfil' && (
+      <>
       <h2 className="title-small profile-sec">Mi muro</h2>
       {writing ? (
         <div className="post-composer">
@@ -813,6 +904,11 @@ export default function ProfilePage() {
         </md-outlined-button>
       </div>
 
+      </>
+      )}
+
+      {tab === 'ajustes' && (
+      <>
       {/* ===== Cambiar contraseña (auditoría C-01b) ===== */}
       <h2 className="title-small profile-sec">Cambiar contraseña</h2>
       <div className="profile-password">
@@ -924,6 +1020,9 @@ export default function ProfilePage() {
           </button>
         )}
       </div>
+
+      </>
+      )}
 
       <nav
         className="legal-links label-small"

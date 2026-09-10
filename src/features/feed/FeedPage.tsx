@@ -20,6 +20,9 @@ export default function FeedPage() {
   const [data, setData] = useState<HomeData | null>(null)
   // auditoría B-04: el filtro del feed vive aquí para aplicarlo en la query
   const [filter, setFilter] = useState<FeedFilter>('all')
+  // El feed carga de 20 en 20 según bajas, en vez de soltar 40 de golpe
+  const [limite, setLimite] = useState(20)
+  const [hayMas, setHayMas] = useState(true)
   // auditoría A-01: error de la última acción (reaccionar/responder/eliminar)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -108,7 +111,7 @@ export default function FeedPage() {
       { data: posts },
       { data: myReplyRows },
     ] = await Promise.all([
-      discQuery.order('created_at', { ascending: false }).limit(30),
+      discQuery.order('created_at', { ascending: false }).limit(limite + 10),
       // Conversaciones activas: siempre sobre lo más reciente, sin filtro
       filter === 'all'
         ? Promise.resolve({ data: null })
@@ -117,14 +120,14 @@ export default function FeedPage() {
             .select(discussionCols)
             .or(feedFilter)
             .order('created_at', { ascending: false })
-            .limit(30),
-      postQuery.order('created_at', { ascending: false }).limit(15),
+            .limit(limite + 10),
+      postQuery.order('created_at', { ascending: false }).limit(Math.ceil(limite / 2)),
       supabase
         .from('thread_comments')
         .select('id, discussion_id, author_id, body, created_at, unlocked, author_chapter')
         .in('author_id', authorSet)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(Math.ceil(limite / 2)),
     ])
 
     // Bloqueos (P2-13): el contenido de quien has bloqueado no se muestra
@@ -392,9 +395,11 @@ export default function FeedPage() {
         } satisfies FeedItem,
       }))
 
-      feed = [...ideaItems, ...replyItems, ...postItems]
+      const mezcla = [...ideaItems, ...replyItems, ...postItems]
+      setHayMas(mezcla.length > limite)
+      feed = mezcla
         .sort((a, b) => (a.ts < b.ts ? 1 : -1))
-        .slice(0, 40)
+        .slice(0, limite)
         .map((x) => x.item)
 
       // Conversaciones activas agrupadas por libro (ajenas al filtro del feed)
@@ -460,7 +465,7 @@ export default function FeedPage() {
       feed,
       openPoll: openPoll ?? null,
     })
-  }, [session, profile, filter])
+  }, [session, profile, filter, limite])
 
   useEffect(() => {
     void load()
@@ -545,6 +550,8 @@ export default function FeedPage() {
       onDeleteItem={deleteItem}
       onReact={react}
       onReply={reply}
+      hayMas={hayMas}
+      onMas={() => setLimite((n) => n + 20)}
     />
   )
 }

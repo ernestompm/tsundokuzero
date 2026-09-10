@@ -658,3 +658,10 @@
     font-size: 15px;
   }
 }
+
+/* Centinela del scroll infinito del feed */
+.feed-mas {
+  display: grid;
+  place-items: center;
+  padding: 20px 0 8px;
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '@material/web/button/filled-button.js'
@@ -65,6 +65,10 @@ interface Props {
   onReact?: (discussionId: string, emoji: string | null) => void
   /** true = publicada (los stubs de preview pueden seguir devolviendo void) */
   onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  /** quedan más ideas por cargar más abajo */
+  hayMas?: boolean
+  /** pide el siguiente puñado (scroll infinito) */
+  onMas?: () => void
 }
 
 export default function HomeView({
@@ -75,9 +79,26 @@ export default function HomeView({
   onDeleteItem,
   onReact,
   onReply,
+  hayMas,
+  onMas,
 }: Props) {
   const navigate = useNavigate()
   const { openCompose } = useCompose()
+  // Scroll infinito: el feed ya no suelta cuarenta ideas de golpe, va
+  // trayendo más según bajas.
+  const centinela = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const nodo = centinela.current
+    if (!nodo || !hayMas || !onMas) return
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        if (entradas[0]?.isIntersecting) onMas()
+      },
+      { rootMargin: '400px' },
+    )
+    obs.observe(nodo)
+    return () => obs.disconnect()
+  }, [hayMas, onMas, data.feed.length])
   const { readings, stats, conversations, discover, feed } = data
   const reading = readings[0] ?? null
 
@@ -323,6 +344,13 @@ export default function HomeView({
               onReply={onReply}
             />
           ))}
+
+          {/* Centinela: al asomarse, pide más ideas */}
+          {hayMas && (
+            <div ref={centinela} className="feed-mas" aria-hidden="true">
+              <span className="body-small on-surface-variant">Cargando más ideas…</span>
+            </div>
+          )}
         </div>
       )}
 

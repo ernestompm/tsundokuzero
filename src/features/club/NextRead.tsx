@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import '@material/web/button/outlined-button.js'
+import '@material/web/button/filled-tonal-button.js'
 import { supabase } from '../../lib/supabase'
 import { BookCover } from '../../components/ui'
+import { AVISO_AFILIADO, conAfiliado } from '../../lib/affiliate'
 import './nextread.css'
 
 interface Proxima {
@@ -13,6 +14,8 @@ interface Proxima {
   buyUrl: string | null
   totalChapters: number
   startsAt: string | null
+  /** enlace ya con la etiqueta de afiliado del club, si la hay */
+  afiliado: boolean
 }
 
 function cuando(iso: string | null) {
@@ -43,7 +46,7 @@ export default function NextRead({ compacta = false }: { compacta?: boolean }) {
     const load = async () => {
       const { data: club } = await supabase
         .from('clubs')
-        .select('next_book_id, next_starts_at')
+        .select('next_book_id, next_starts_at, affiliate_tag')
         .order('created_at')
         .limit(1)
         .maybeSingle()
@@ -62,7 +65,8 @@ export default function NextRead({ compacta = false }: { compacta?: boolean }) {
         title: b.title,
         author: b.author,
         coverUrl: b.cover_url,
-        buyUrl: b.buy_url,
+        buyUrl: conAfiliado(b.buy_url, club.affiliate_tag),
+        afiliado: !!club.affiliate_tag && !!b.buy_url,
         totalChapters: b.total_chapters,
         startsAt: club.next_starts_at,
       })
@@ -105,14 +109,21 @@ export default function NextRead({ compacta = false }: { compacta?: boolean }) {
           </p>
 
           {data.buyUrl && (
-            <md-outlined-button
-              onClick={() => window.open(data.buyUrl!, '_blank', 'noopener,noreferrer')}
-            >
-              <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
-                shopping_bag
-              </span>
-              Conseguir el libro
-            </md-outlined-button>
+            <>
+              <md-filled-tonal-button
+                onClick={() => window.open(data.buyUrl!, '_blank', 'noopener,noreferrer')}
+              >
+                <span slot="icon" className="material-symbols-rounded" aria-hidden="true">
+                  shopping_bag
+                </span>
+                Conseguir el libro
+              </md-filled-tonal-button>
+              {data.afiliado && (
+                <span className="body-small on-surface-variant nextread__afiliado">
+                  {AVISO_AFILIADO}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>

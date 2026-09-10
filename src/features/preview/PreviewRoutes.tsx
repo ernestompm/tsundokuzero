@@ -166,6 +166,12 @@ function InsigniasPreview() {
     libros_propuestos: 2,
     ideas: 41,
     resenas: 4,
+    respuestas: 63,
+    reacciones: 52,
+    votaciones: 6,
+    libros_en_estanteria: 16,
+    perfil_completo: true,
+    en_la_app_desde: new Date(Date.now() - 430 * 86400000).toISOString(),
   }
   return (
     <section style={{ maxWidth: 720, margin: '0 auto' }}>

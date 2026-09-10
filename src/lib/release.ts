@@ -44,6 +44,12 @@ export const NOVEDADES: Novedad[] = [
       'Se ganan leyendo, no usando la app: terminar libros con el club, ser el primero en llegar al final, llevar el timón como capitán o llevar tiempo aquí. Están en tu perfil y junto a tu nombre en el club.',
   },
   {
+    icon: 'account_circle',
+    titulo: 'Un perfil de verdad',
+    texto:
+      'Tu perfil ya no es una pantalla de ajustes. Ahora enseña quién eres: tus insignias, los libros que lees, los que has terminado, los que tienes pendientes y tu muro. Los ajustes siguen ahí, en su pestaña.',
+  },
+  {
     icon: 'lock_open',
     titulo: 'El estreno',
     texto:

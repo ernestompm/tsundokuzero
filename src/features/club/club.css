@@ -451,3 +451,61 @@
   gap: 8px;
   margin-top: 12px;
 }
+
+/* Emblema del club (migr. 032) */
+.admin-emblema {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin: 6px 0 14px;
+}
+.admin-emblema__muestra {
+  flex: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  line-height: 1;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+.admin-emblema__opciones {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.admin-emblema__emojis,
+.admin-emblema__colores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.admin-emblema__emoji {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--md-sys-color-surface-container-high);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-emblema__emoji.activo {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-secondary-container);
+}
+.admin-emblema__color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.admin-emblema__color.activo {
+  border-color: var(--md-sys-color-primary);
+}

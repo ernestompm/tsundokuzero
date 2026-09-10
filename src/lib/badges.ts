@@ -1,9 +1,13 @@
 /**
  * Insignias del club (migr. 030).
  *
- * CRITERIO. Pocas, ganadas y sobre LEER, no sobre usar la app. Una
- * insignia que se consigue abriendo la aplicación no significa nada; una
- * que dice que terminaste cinco libros con la misma gente, sí.
+ * CRITERIO. Las que más pesan son de LEER: terminar libros con el club,
+ * llegar el primero, llevar el timón. Después van las de vida en el club
+ * (responder, reaccionar, votar), que también cuentan porque un club sin
+ * conversación no es un club. Ninguna se gana solo por abrir la app.
+ *
+ * El orden importa: `badgesDe` las devuelve de más significativa a menos,
+ * y las vistas compactas enseñan solo las primeras.
  *
  * Se calculan a partir de la vista `club_member_stats`, que deriva todo
  * de los datos reales. No hay tabla de premios que se pueda quedar
@@ -21,6 +25,13 @@ export interface MemberStats {
   libros_propuestos: number
   ideas: number
   resenas: number
+  /** uso de la app (migr. 032) */
+  respuestas: number
+  reacciones: number
+  votaciones: number
+  libros_en_estanteria: number
+  perfil_completo: boolean
+  en_la_app_desde: string
 }
 
 export interface Badge {
@@ -202,6 +213,60 @@ export function badgesDe(s: MemberStats): Badge[] {
       nombre: 'Crítico del club',
       detalle: 'Ha escrito diez reseñas',
       tono: 'salvia',
+    })
+
+  // ---- Vida en el club: usar la app también cuenta (migr. 032) ----
+  if (s.respuestas >= 50)
+    out.push({
+      id: 'conversador',
+      icon: 'chat_bubble',
+      nombre: 'Nunca deja a nadie solo',
+      detalle: 'Ha respondido cincuenta veces a otros',
+      tono: 'salvia',
+    })
+  else if (s.respuestas >= 10)
+    out.push({
+      id: 'buen-companero',
+      icon: 'chat_bubble',
+      nombre: 'Buena compañía',
+      detalle: 'Ha respondido diez veces a otros',
+      tono: 'tierra',
+    })
+
+  if (s.reacciones >= 50)
+    out.push({
+      id: 'entusiasta',
+      icon: 'local_fire_department',
+      nombre: 'Entusiasta',
+      detalle: 'Ha reaccionado cincuenta veces',
+      tono: 'tierra',
+    })
+
+  if (s.votaciones >= 5)
+    out.push({
+      id: 'votante',
+      icon: 'how_to_vote',
+      nombre: 'Siempre vota',
+      detalle: 'Ha participado en cinco votaciones',
+      tono: 'tierra',
+    })
+
+  if (s.libros_en_estanteria >= 15)
+    out.push({
+      id: 'tsundoku',
+      icon: 'bookmark',
+      nombre: 'Tsundoku de verdad',
+      detalle: 'Quince libros en la estantería, leídos o por leer',
+      tono: 'tierra',
+    })
+
+  if (s.perfil_completo)
+    out.push({
+      id: 'perfil',
+      icon: 'account_circle',
+      nombre: 'Da la cara',
+      detalle: 'Tiene foto y ha contado quién es',
+      tono: 'tierra',
     })
 
   return out
