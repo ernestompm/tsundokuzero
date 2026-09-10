@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "check:icons": "node scripts/check-icons.mjs",
+    "check:migrations": "python scripts/check-migrations.py",
     "fetch:icons": "node scripts/fetch-icon-font.mjs",
     "build": "node scripts/check-icons.mjs && tsc -b && vite build",
     "lint": "oxlint",

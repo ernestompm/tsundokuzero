@@ -181,7 +181,14 @@ $$;
 -- ---------- Lo que te espera, para poder insistir en la app ----------
 -- Devuelve, por libro, el capítulo más cercano donde te espera algo,
 -- cuántas menciones hay y quién te mencionó. Nunca el contenido.
-create or replace function public.pending_mentions()
+--
+-- OJO: en la migración 035 esta función devolvía tres columnas y aquí
+-- devuelve siete. PostgreSQL no deja cambiar el tipo de retorno con
+-- `create or replace`, así que hay que borrarla primero. No depende nada
+-- de ella salvo el cliente, así que se puede tirar sin miedo.
+drop function if exists public.pending_mentions();
+
+create function public.pending_mentions()
 returns table (
   book_id uuid,
   book_title text,
