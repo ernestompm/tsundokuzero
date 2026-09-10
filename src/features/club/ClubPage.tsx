@@ -8,6 +8,9 @@ import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
+import NextRead from './NextRead'
+import { BadgeDots } from '../../components/Badges'
+import { badgesDe, type MemberStats } from '../../lib/badges'
 import { Avatar, AvatarStack, BookCover } from '../../components/ui'
 import type { Book, Club, Poll, PollOption } from '../../lib/database.types'
 import './club.css'
@@ -72,6 +75,8 @@ export default function ClubPage() {
   const [pollState, setPollState] = useState<PollState | null>(null)
   const [historial, setHistorial] = useState<Lectura[]>([])
   const [capitanias, setCapitanias] = useState<Capitania[]>([])
+  // Insignias por miembro (migr. 030), derivadas de la vista
+  const [stats, setStats] = useState<Map<string, MemberStats>>(new Map())
   const [busy, setBusy] = useState(false)
   // Estado de carga explícito (auditoría C-03): sin él, «no hay club»
   // dejaba el spinner girando para siempre.
@@ -200,6 +205,12 @@ export default function ClubPage() {
     } else {
       setHistorial([])
     }
+
+    const { data: filas } = await supabase
+      .from('club_member_stats')
+      .select('*')
+      .eq('club_id', clubData.id)
+    setStats(new Map((filas ?? []).map((f) => [f.user_id, f as MemberStats])))
 
     const { data: hojas } = await supabase
       .from('club_captain_record')
@@ -417,6 +428,9 @@ export default function ClubPage() {
           </span>
         </button>
       )}
+
+      {/* Lo que viene después, para ir consiguiéndolo */}
+      <NextRead />
 
       {/* Insights: tu avance frente al grupo */}
       {book && members.length > 1 && (
@@ -655,6 +669,9 @@ export default function ClubPage() {
                   @{m.username}
                   {book && m.chapter > 0 ? ` · cap. ${m.chapter}` : ''}
                 </span>
+                {stats.get(m.id) && (
+                  <BadgeDots badges={badgesDe(stats.get(m.id)!)} max={4} />
+                )}
               </span>
             </Link>
           </div>

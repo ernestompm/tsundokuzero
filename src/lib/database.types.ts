@@ -100,6 +100,7 @@ export type NotificationType =
   | 'reaction'
   | 'new_idea'
   | 'captain'
+  | 'next_book'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -122,6 +123,8 @@ export type NotificationPrefsRow = {
   new_idea: boolean
   /** relevo de capitanía (migr. 029) */
   captain: boolean
+  /** próxima lectura elegida (migr. 030) */
+  next_book: boolean
 }
 
 export type Notification = {
@@ -245,6 +248,9 @@ export type Club = {
   slug: string
   description: string | null
   current_book_id: string | null
+  /** próxima lectura ya elegida, aún sin empezar (migr. 030) */
+  next_book_id: string | null
+  next_starts_at: string | null
   /** política de capitanía (migr. 029) */
   captain_mode: 'manual' | 'random' | 'rotation'
   captain_term: 'time' | 'book'
@@ -349,6 +355,34 @@ export type Database = {
       blocks: TableDef<Block, 'blocker_id' | 'blocked_id', 'created_at'>
     }
     Views: {
+      /** resumen del club para la tira de pertenencia (migr. 030) */
+      club_summary: {
+        Row: {
+          club_id: string
+          name: string
+          created_at: string
+          miembros: number
+          libros_leidos: number
+        }
+        Relationships: []
+      }
+      /** estadísticas por miembro, base de las insignias (migr. 030) */
+      club_member_stats: {
+        Row: {
+          club_id: string
+          user_id: string
+          joined_at: string
+          role: string
+          last_captain_at: string | null
+          orden_llegada: number
+          libros_terminados: number
+          veces_primero: number
+          libros_propuestos: number
+          ideas: number
+          resenas: number
+        }
+        Relationships: []
+      }
       /** hoja de capitanía (migr. 028) */
       club_captain_record: {
         Row: {
@@ -452,6 +486,11 @@ export type Database = {
       }
       close_club_reading: { Args: Record<string, never>; Returns: undefined }
       premiere_reviews: { Args: Record<string, never>; Returns: undefined }
+      start_next_reading: { Args: Record<string, never>; Returns: string }
+      set_next_book: {
+        Args: { p_book: string | null; p_starts_at?: string | null }
+        Returns: undefined
+      }
       rotate_captain_if_due: { Args: Record<string, never>; Returns: string | null }
       set_captain: { Args: { p_user: string }; Returns: undefined }
       next_captain_id: { Args: { p_club: string }; Returns: string | null }

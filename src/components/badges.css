@@ -1,0 +1,122 @@
+/* Insignias del club (migr. 030) */
+
+.badgerow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--md-sys-shape-corner-full);
+  white-space: nowrap;
+}
+.badge .material-symbols-rounded {
+  font-size: 15px;
+}
+.badge--oro {
+  background: var(--md-sys-color-tertiary-container, #f1e8c8);
+  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+}
+.badge--salvia {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.badge--tierra {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.badge--resto {
+  padding: 3px 9px;
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---- Solo iconos, junto a un nombre ---- */
+.badgedots {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.badgedot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.badgedot .material-symbols-rounded {
+  font-size: 12px;
+}
+.badgedot--oro {
+  background: var(--md-sys-color-tertiary-container, #f1e8c8);
+  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+}
+.badgedot--salvia {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.badgedot--tierra {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---- Ficha completa ---- */
+.badgeboard__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+.badgecard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+}
+.badgecard__icon {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.badgecard--oro .badgecard__icon {
+  background: var(--md-sys-color-tertiary-container, #f1e8c8);
+  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+}
+.badgecard--salvia .badgecard__icon {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.badgecard--tierra .badgecard__icon {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.badgecard__txt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.badgeboard__siguiente {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.badgeboard__siguiente .material-symbols-rounded {
+  font-size: 18px;
+  color: var(--md-sys-color-primary);
+}

@@ -85,6 +85,12 @@ function describe(
         body: `${who} compartió un pensamiento nuevo 💭`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
       }
+    case 'next_book':
+      return {
+        title: 'Tsundoku Zero',
+        body: 'Ya tenemos el próximo libro del club. Ve consiguiéndolo 📚',
+        url: n.book_id ? `/book/${n.book_id}` : '/club',
+      }
     case 'captain':
       return {
         title: 'Tsundoku Zero',

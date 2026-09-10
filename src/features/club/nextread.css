@@ -1,0 +1,48 @@
+/* La próxima lectura del club (migr. 030) */
+.nextread {
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+}
+.nextread__kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 3px 12px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.nextread__cuerpo {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.nextread__portada {
+  flex: none;
+  text-decoration: none;
+}
+.nextread__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nextread__titulo {
+  text-decoration: none;
+  color: inherit;
+}
+.nextread__titulo:hover {
+  text-decoration: underline;
+}
+.nextread__aviso {
+  margin: 10px 0 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.nextread--compacta {
+  padding: 14px;
+}

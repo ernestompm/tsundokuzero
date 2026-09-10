@@ -7,6 +7,13 @@ import '@material/web/button/filled-tonal-button.js'
 import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
+import { BadgeBoard } from '../../components/Badges'
+import {
+  antiguedadEnPalabras,
+  badgesDe,
+  siguienteBadge,
+  type MemberStats,
+} from '../../lib/badges'
 import { Avatar } from '../../components/ui'
 import { friendlyError } from '../../lib/errors'
 import { disablePush, enablePush, pushEnabled, pushSupported } from '../../lib/push'
@@ -40,6 +47,7 @@ type NotifPrefs = {
   book_done: boolean
   reaction: boolean
   new_idea: boolean
+  next_book: boolean
 }
 
 const NOTIF_DEFAULTS: NotifPrefs = {
@@ -50,6 +58,7 @@ const NOTIF_DEFAULTS: NotifPrefs = {
   book_done: true,
   reaction: true,
   new_idea: true,
+  next_book: true,
 }
 
 const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = [
@@ -88,6 +97,11 @@ const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; hint: string }[] = 
     label: 'Libro terminado por el club',
     hint: 'Cuando todo el club acaba la lectura del mes.',
   },
+  {
+    key: 'next_book',
+    label: 'Próxima lectura elegida',
+    hint: 'Cuando ya se sabe cuál es el siguiente libro, para ir consiguiéndolo.',
+  },
 ]
 
 export default function ProfilePage() {
@@ -108,6 +122,8 @@ export default function ProfilePage() {
   const [postBody, setPostBody] = useState('')
   const [postToClub, setPostToClub] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Insignias del club (migr. 030): se derivan, no se guardan
+  const [misStats, setMisStats] = useState<MemberStats | null>(null)
   const [busy, setBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   // Derechos RGPD: supresión (art. 17) y portabilidad (art. 20)
@@ -126,6 +142,18 @@ export default function ProfilePage() {
   const [pushOn, setPushOn] = useState(false)
   const [pushBusy, setPushBusy] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
+
+  // Mis estadísticas en el club, para las insignias
+  useEffect(() => {
+    if (!session) return
+    supabase
+      .from('club_member_stats')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setMisStats((data as MemberStats | null) ?? null))
+  }, [session])
 
   useEffect(() => {
     void pushEnabled().then(setPushOn)
@@ -178,6 +206,8 @@ export default function ProfilePage() {
             // ?? true: la fila puede ser anterior a la migración 024
             reaction: data.reaction ?? true,
             new_idea: data.new_idea ?? true,
+            // ?? true: la fila puede ser anterior a la migración 030
+            next_book: data.next_book ?? true,
           })
         }
       })
@@ -587,6 +617,18 @@ export default function ProfilePage() {
       </div>
 
       {/* ===== Configuración ===== */}
+      {misStats && (
+        <>
+          <h2 className="title-small profile-sec">Tus insignias</h2>
+          <p className="body-small on-surface-variant" style={{ marginBottom: 12 }}>
+            En el club {antiguedadEnPalabras(misStats.joined_at)} ·{' '}
+            {misStats.libros_terminados}{' '}
+            {misStats.libros_terminados === 1 ? 'libro terminado' : 'libros terminados'}
+          </p>
+          <BadgeBoard badges={badgesDe(misStats)} siguiente={siguienteBadge(misStats)} />
+        </>
+      )}
+
       <h2 className="title-small profile-sec">Configuración</h2>
       <div className="profile-settings">
         <label className="profile-setting">

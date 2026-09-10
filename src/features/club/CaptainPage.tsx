@@ -12,6 +12,7 @@ import { Avatar, BookCover, ProgressBar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import BookMap, { type MapReader } from '../book/BookMap'
 import PollComposer from './PollComposer'
+import NextRead from './NextRead'
 import type { Book, Club } from '../../lib/database.types'
 import './club.css'
 import './captainpage.css'
@@ -53,6 +54,9 @@ export default function CaptainPage() {
   const [chaptersDraft, setChaptersDraft] = useState('')
   const [pidiendoBis, setPidiendoBis] = useState(false)
   const [cambiandoLibro, setCambiandoLibro] = useState(false)
+  // Próxima lectura (migr. 030): elegida pero todavía sin abrir
+  const [eligiendoProxima, setEligiendoProxima] = useState(false)
+  const [proximaFecha, setProximaFecha] = useState('')
 
   const load = useCallback(async () => {
     if (!session) return
@@ -154,6 +158,50 @@ export default function CaptainPage() {
     else setCambiandoLibro(false)
     await load()
     setBusy(false)
+  }
+
+  const fijarProxima = async (bookId: string | null) => {
+    setBusy(true)
+    setBanner(null)
+    const { error } = await supabase.rpc('set_next_book', {
+      p_book: bookId,
+      p_starts_at: proximaFecha ? new Date(proximaFecha + 'T09:00:00').toISOString() : null,
+    })
+    if (error)
+      setBanner({
+        kind: 'error',
+        text: friendlyError(error, 'No se pudo fijar la próxima lectura.'),
+      })
+    else {
+      setBanner({
+        kind: 'info',
+        text: bookId
+          ? 'Próxima lectura fijada. El club ya tiene el aviso para ir consiguiéndola.'
+          : 'Próxima lectura retirada.',
+      })
+      setEligiendoProxima(false)
+    }
+    setBusy(false)
+    await load()
+  }
+
+  const empezarProxima = async () => {
+    const ok = await confirm({
+      title: '¿Empezar ya la próxima lectura?',
+      message:
+        'Pasa a ser el libro del club. Si hay una lectura abierta, se cierra y se abren sus reseñas.',
+      confirmLabel: 'Empezar',
+    })
+    if (!ok) return
+    setBusy(true)
+    const { error } = await supabase.rpc('start_next_reading')
+    setBanner(
+      error
+        ? { kind: 'error', text: friendlyError(error, 'No se pudo empezar la lectura.') }
+        : { kind: 'info', text: '¡En marcha! Ya es el libro del club.' },
+    )
+    setBusy(false)
+    await load()
   }
 
   const cerrarLectura = async () => {
@@ -436,7 +484,75 @@ export default function CaptainPage() {
         )}
       </div>
 
-      {/* ============ 3 · Cómo va el club ============ */}
+      {/* ============ 3 · La próxima lectura ============ */}
+      <div className="manage-card">
+        <h2 className="title-small manage-card__title">La próxima lectura</h2>
+        <p className="body-small on-surface-variant">
+          El libro ya elegido que todavía no habéis abierto. Se enseña en el Inicio de
+          todos para que les dé tiempo a conseguirlo.
+        </p>
+
+        {club.next_book_id ? (
+          <>
+            <NextRead compacta />
+            <div className="manage-reading-actions">
+              <md-filled-button disabled={busy || undefined} onClick={() => void empezarProxima()}>
+                Empezar ya esta lectura
+              </md-filled-button>
+              <md-text-button
+                disabled={busy || undefined}
+                onClick={() => setEligiendoProxima((v) => !v)}
+              >
+                {eligiendoProxima ? 'Cancelar' : 'Cambiarla'}
+              </md-text-button>
+              <md-text-button disabled={busy || undefined} onClick={() => void fijarProxima(null)}>
+                Quitarla
+              </md-text-button>
+            </div>
+          </>
+        ) : (
+          <div className="manage-reading-actions">
+            <md-outlined-button
+              disabled={busy || undefined}
+              onClick={() => setEligiendoProxima((v) => !v)}
+            >
+              {eligiendoProxima ? 'Cancelar' : 'Elegir la próxima lectura'}
+            </md-outlined-button>
+          </div>
+        )}
+
+        {eligiendoProxima && (
+          <div className="manage-bis">
+            <label className="label-medium" style={{ display: 'block', marginBottom: 10 }}>
+              ¿Cuándo se empieza? Opcional
+              <input
+                className="tz-input body-medium"
+                type="date"
+                style={{ display: 'block', marginTop: 4, maxWidth: 200, fontSize: 16 }}
+                value={proximaFecha}
+                onChange={(e) => setProximaFecha(e.target.value)}
+              />
+            </label>
+            <div className="manage-book-picker">
+              {books
+                .filter((b) => b.id !== club.current_book_id)
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    className={`manage-book${b.id === club.next_book_id ? ' active' : ''}`}
+                    disabled={busy || undefined}
+                    onClick={() => void fijarProxima(b.id)}
+                  >
+                    <BookCover title={b.title} author={b.author} coverUrl={b.cover_url} size="sm" />
+                    <span className="label-small manage-book__title">{b.title}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ============ 4 · Cómo va el club ============ */}
       <div className="manage-card">
         <h2 className="title-small manage-card__title">Cómo va el club</h2>
 

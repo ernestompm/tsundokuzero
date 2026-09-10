@@ -1,0 +1,37 @@
+/* Tira de pertenencia al club, en lo alto del Inicio (migr. 030) */
+.clubstrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  text-decoration: none;
+}
+.clubstrip:hover {
+  filter: brightness(0.97);
+}
+.clubstrip__izq {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.clubstrip__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+.clubstrip__nombre {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.clubstrip__datos {
+  opacity: 0.85;
+}

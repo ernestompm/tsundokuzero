@@ -80,6 +80,9 @@ export default function NotificationsPage() {
         } else if (n.type === 'reaction') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'reaccionó a tu idea'
+        } else if (n.type === 'next_book') {
+          to = n.book_id ? `/book/${n.book_id}` : '/club'
+          detail = 'Ya hay próximo libro. Ve consiguiéndolo'
         } else if (n.type === 'captain') {
           to = '/club'
           detail = 'Relevo de capitanía en el club'

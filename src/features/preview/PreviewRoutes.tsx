@@ -11,6 +11,8 @@ import ThreadView from '../book/ThreadView'
 import { SAMPLE_THREAD } from '../book/sampleThread'
 import AuthorPreview from '../author/AuthorPreview'
 import AddBookSheet from '../../components/AddBookSheet'
+import { BadgeBoard } from '../../components/Badges'
+import { badgesDe, siguienteBadge, type MemberStats } from '../../lib/badges'
 import PollComposer from '../club/PollComposer'
 
 /**
@@ -100,6 +102,7 @@ export default function PreviewRoutes() {
           }
         />
         <Route path="author" element={<AuthorPreview />} />
+        <Route path="insignias" element={<InsigniasPreview />} />
 
         <Route
           path="opinions"
@@ -147,5 +150,32 @@ export default function PreviewRoutes() {
         />
       </Route>
     </Routes>
+  )
+}
+
+/** Muestra de insignias, para revisar el diseño sin necesidad de datos. */
+function InsigniasPreview() {
+  const stats: MemberStats = {
+    club_id: 'c',
+    user_id: 'u',
+    joined_at: new Date(Date.now() - 400 * 86400000).toISOString(),
+    role: 'captain',
+    orden_llegada: 2,
+    libros_terminados: 7,
+    veces_primero: 3,
+    libros_propuestos: 2,
+    ideas: 41,
+    resenas: 4,
+  }
+  return (
+    <section style={{ maxWidth: 720, margin: '0 auto' }}>
+      <h1 className="headline-medium serif" style={{ marginBottom: 6 }}>
+        Tus insignias
+      </h1>
+      <p className="body-small on-surface-variant" style={{ marginBottom: 14 }}>
+        En el club desde hace un año · 7 libros terminados
+      </p>
+      <BadgeBoard badges={badgesDe(stats)} siguiente={siguienteBadge(stats)} />
+    </section>
   )
 }

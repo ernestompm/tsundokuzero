@@ -14,6 +14,8 @@ import { useCompose } from '../../components/ComposeProvider'
 import { useConfirm } from '../../components/ConfirmProvider'
 import LockedTeaser from '../../components/LockedTeaser'
 import PushNudge from '../../components/PushNudge'
+import ClubStrip from '../../components/ClubStrip'
+import NextRead from '../club/NextRead'
 import Reactions from '../../components/Reactions'
 import { KIND_LABEL } from '../book/chapterTypes'
 import type {
@@ -101,6 +103,9 @@ export default function HomeView({
 
   return (
     <div className="home">
+      {/* Pertenencia: lo primero que ves es que perteneces a un grupo */}
+      <ClubStrip />
+
       {/* ===== Cabecera grande (móvil): fecha + «Hoy», estilo iOS ===== */}
       <header className="home-today">
         <div className="home-today__text">
@@ -231,6 +236,9 @@ export default function HomeView({
           add
         </span>
       </button>
+
+      {/* Ya hay libro elegido para después: que dé tiempo a comprarlo */}
+      <NextRead compacta />
 
       {/* ===== Conversaciones activas ===== */}
       {conversations.length > 0 && (

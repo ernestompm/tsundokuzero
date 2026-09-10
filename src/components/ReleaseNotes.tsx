@@ -71,13 +71,14 @@ export default function ReleaseNotes({
     // devuelve error y el aviso no aparece. Que salga el aviso es, en sí
     // mismo, la prueba de que todo lo que cuenta funciona de verdad.
     void (async () => {
-      const [m027, m028, m029] = await Promise.all([
+      const [m027, m028, m029, m030] = await Promise.all([
         supabase.from('books').select('id, chapters_confirmed').limit(1),
         supabase.from('club_readings').select('id, kind').limit(1),
-        supabase.from('clubs').select('id, captain_mode').limit(1),
+        supabase.from('clubs').select('id, captain_mode, next_book_id').limit(1),
+        supabase.from('club_summary').select('club_id').limit(1),
       ])
       if (cancelado) return
-      if (m027.error || m028.error || m029.error) {
+      if (m027.error || m028.error || m029.error || m030.error) {
         console.info('[tz] novedades en espera: faltan migraciones por ejecutar')
         return
       }
