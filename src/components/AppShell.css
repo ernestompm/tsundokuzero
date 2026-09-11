@@ -470,3 +470,14 @@
 .shell-version--btn:hover {
   text-decoration: underline;
 }
+
+/* Selector de tema en el cajón móvil */
+.drawer__tema {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 4px;
+}
+.drawer__tema > .label-large {
+  color: var(--md-sys-color-on-surface-variant);
+}

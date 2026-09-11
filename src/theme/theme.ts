@@ -102,53 +102,66 @@ const LIGHT: Palette = {
 }
 
 const DARK: Palette = {
-  /* En oscuro se invierte el papel de Scarab: deja de ser la tinta y pasa
-     a ser la superficie. La tinta la pone Angel Feather. */
-  primary: '#BCCBB6',
-  'on-primary': '#1E2A25',
-  'primary-container': '#3E5148',
-  'on-primary-container': '#D6E2D1',
+  /* En oscuro se invierten los papeles: Scarab deja de ser la tinta y se
+     convierte en el material del que está hecho todo; la tinta la pone
+     Angel Feather, algo atenuado para no deslumbrar.
 
-  secondary: '#A9B6A4',
-  'on-secondary': '#22302A',
-  'secondary-container': '#3A4A40',
-  'on-secondary-container': '#D3DECE',
+     La versión anterior era una inversión mecánica y se notaba: los
+     contenedores quedaban a un paso de distancia del fondo y todo se
+     fundía en una papilla caqui. Aquí la escala abre más los peldaños y
+     el papel de las tarjetas va POR ENCIMA del fondo, no por debajo. */
 
-  tertiary: '#E6CE90',
-  'on-tertiary': '#3B2E06',
-  'tertiary-container': '#5C4A18',
-  'on-tertiary-container': '#F5E1AC',
+  /* Botones y acentos: el verde levantado hasta poder llevar texto oscuro */
+  primary: '#CBD6C2',
+  'on-primary': '#1C2822',
+  'primary-container': '#3C4E44',
+  'on-primary-container': '#D9E5D0',
 
-  error: '#F0B0A6',
-  'on-error': '#5B120D',
-  'error-container': '#7E241C',
-  'on-error-container': '#FADDD7',
+  /* Picholine sigue organizando, un peldaño por debajo del principal */
+  secondary: '#A9B3A2',
+  'on-secondary': '#212C26',
+  'secondary-container': '#37453C',
+  'on-secondary-container': '#C9D6C2',
 
-  background: '#1A231F',
-  'on-background': '#EDE6E5',
-  surface: '#1A231F',
-  'on-surface': '#EDE6E5',
-  'surface-variant': '#3C4A43',
-  'on-surface-variant': '#B3BBAD',
+  /* El oro aguanta casi tal cual sobre verde profundo: es de los pocos
+     colores que en oscuro gana en vez de perder */
+  tertiary: '#E7CE93',
+  'on-tertiary': '#3A2D07',
+  'tertiary-container': '#57451A',
+  'on-tertiary-container': '#F6E3B4',
 
-  outline: '#8B9382',
-  'outline-variant': '#3C4A43',
+  error: '#EFAFA4',
+  'on-error': '#5A120C',
+  'error-container': '#7A231B',
+  'on-error-container': '#F9DCD6',
 
-  'surface-container-lowest': '#141B18',
-  'surface-container-low': '#1F2A25',
-  'surface-container': '#24302B',
-  'surface-container-high': '#2C3D37',
-  'surface-container-highest': '#354841',
-  'surface-dim': '#141B18',
-  'surface-bright': '#3A4E46',
+  background: '#151C19',
+  'on-background': '#E9E3DF',
+  surface: '#151C19',
+  'on-surface': '#E9E3DF',
+  'surface-variant': '#3A4741',
+  'on-surface-variant': '#ADB8A9',
 
-  'inverse-surface': '#EDE6E5',
+  outline: '#8A9487',
+  'outline-variant': '#3B4841',
+
+  /* Peldaños amplios: entre uno y otro tiene que haber diferencia visible,
+     o las tarjetas dejan de leerse como objetos */
+  'surface-container-lowest': '#0F1512',
+  'surface-container-low': '#1A221E',
+  'surface-container': '#1E2723',
+  'surface-container-high': '#27332D',
+  'surface-container-highest': '#303E37',
+  'surface-dim': '#101614',
+  'surface-bright': '#32403A',
+
+  'inverse-surface': '#E9E3DF',
   'inverse-on-surface': '#2C3D37',
   'inverse-primary': '#2C3D37',
-  'surface-tint': '#BCCBB6',
+  'surface-tint': '#CBD6C2',
 
   shadow: '#000000',
-  scrim: '#0C110F',
+  scrim: '#080C0A',
 }
 
 function systemPrefersDark(): boolean {

@@ -1,0 +1,52 @@
+/* Selector de tema: claro · oscuro · sistema */
+
+.themepick {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 60%, transparent);
+}
+
+.themepick__op {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--md-sys-motion-duration-short)
+      var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+.themepick__op .material-symbols-rounded {
+  font-size: 17px;
+}
+.themepick__op:hover {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* El tema puesto es una selección: la señala el Vermillion */
+.themepick__op.activa {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+  font-weight: 600;
+}
+
+/* En el cajón del móvil no caben las tres etiquetas: quedan los iconos */
+.themepick--compacto .themepick__txt {
+  display: none;
+}
+.themepick--compacto .themepick__op .material-symbols-rounded {
+  font-size: 19px;
+}

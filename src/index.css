@@ -80,10 +80,13 @@
   --tz-editorial-sage-soft: #e2e3d8;
   --tz-on-editorial-sage: #2f3527;
 
-  /* --- El papel: blanco roto, más claro que el fondo. No es color de
-         marca, es el que da profundidad y evita que toda la pantalla
-         sea el mismo beige. --- */
-  --tz-paper: var(--md-sys-color-surface-container-lowest);
+  /* --- El papel: la hoja que se levanta del escritorio. Siempre MÁS
+         claro que el fondo, en claro y en oscuro. No cuelga de la escala
+         de Material a propósito: allí `lowest` es el más oscuro, y en
+         tema oscuro eso convertía las tarjetas en agujeros en vez de en
+         hojas. Es lo que da profundidad y evita que toda la pantalla sea
+         del mismo tono. --- */
+  --tz-paper: #fffcfb;
   /* Filete editorial: la línea fina que separa sin hacer ruido */
   --tz-rule: var(--md-sys-color-outline-variant);
   --tz-ink: var(--md-sys-color-on-surface);
@@ -92,22 +95,32 @@
 }
 
 :root[data-theme='dark'] {
-  --tz-signal: #e0805f;
-  --tz-signal-strong: #eb9273;
-  --tz-on-signal: #3a1409;
-  --tz-signal-soft: #4a2417;
+  /* El naranja hay que levantarlo para que siga señalando sobre verde
+     profundo; el `strong` es el que puede llevar texto pequeño. */
+  --tz-signal: #e2795a;
+  --tz-signal-strong: #ee8e70;
+  --tz-on-signal: #3a1208;
+  --tz-signal-soft: #502619;
 
-  --tz-editorial-yellow: #5c4a18;
-  --tz-editorial-yellow-soft: #3d3111;
-  --tz-on-editorial-yellow: #f5e1ac;
+  --tz-editorial-yellow: #55441a;
+  --tz-editorial-yellow-soft: #3a2f13;
+  --tz-on-editorial-yellow: #f6e3b4;
 
-  --tz-editorial-sage: #6e7461;
-  --tz-editorial-sage-soft: #333c31;
-  --tz-on-editorial-sage: #dfe2d4;
+  --tz-editorial-sage: #6c7360;
+  --tz-editorial-sage-soft: #2e3830;
+  --tz-on-editorial-sage: #d9dfd2;
 
+  /* La hoja, por encima del fondo también aquí */
+  --tz-paper: #232e28;
+
+  /* En oscuro la sombra sola no separa nada: lo que levanta la tarjeta es
+     el propio tono del papel, y la sombra solo la asienta. */
   --tz-shadow-card:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 6px 20px rgba(0, 0, 0, 0.34);
+    0 1px 2px rgba(0, 0, 0, 0.34),
+    0 8px 24px rgba(0, 0, 0, 0.38);
+  --tz-shadow-raised:
+    0 4px 10px rgba(0, 0, 0, 0.44),
+    0 18px 44px rgba(0, 0, 0, 0.5);
 
   color-scheme: dark;
 }

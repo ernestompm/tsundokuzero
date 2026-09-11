@@ -9,7 +9,7 @@ import { useCompose } from './ComposeProvider'
 import ReleaseNotes from './ReleaseNotes'
 import DevNoteSheet from './DevNoteSheet'
 import { useModalBehavior } from './modal'
-import { isDarkActive, setThemeMode } from '../theme/theme'
+import ThemePicker from './ThemePicker'
 import './AppShell.css'
 
 /* Nombres canónicos de navegación (auditoría M-08): un solo nombre por
@@ -74,7 +74,6 @@ export default function AppShell() {
   const location = useLocation()
   const { session, profile, isSuperAdmin, signOut } = useAuth()
   const { openCompose } = useCompose()
-  const [dark, setDark] = useState(isDarkActive)
   const [unread, setUnread] = useState(0)
   const [drawer, setDrawer] = useState(false)
   // Novedades: se abren solas una vez por versión, o a mano desde el pie
@@ -111,12 +110,6 @@ export default function AppShell() {
       window.removeEventListener('tz-notifications-read', refresh)
     }
   }, [session, location.pathname])
-
-  const toggleTheme = () => {
-    const next = !dark
-    setDark(next)
-    setThemeMode(next ? 'dark' : 'light')
-  }
 
   const bell = (
     <span className="bell">
@@ -216,12 +209,7 @@ export default function AppShell() {
           Compartir una idea
         </button>
         <div className="sidebar__foot">
-          <button className="side-item" onClick={toggleTheme} type="button">
-            <span className="material-symbols-rounded" aria-hidden="true">
-              {dark ? 'light_mode' : 'dark_mode'}
-            </span>
-            <span className="label-large">{dark ? 'Tema claro' : 'Tema oscuro'}</span>
-          </button>
+          <ThemePicker />
           <button
             type="button"
             className="shell-version label-small shell-version--btn"
@@ -310,14 +298,10 @@ export default function AppShell() {
             </div>
 
             <div className="drawer__foot">
-              <button className="drawer__link" onClick={toggleTheme}>
-                <span className="material-symbols-rounded" aria-hidden="true">
-                  {dark ? 'light_mode' : 'dark_mode'}
-                </span>
-                <span className="label-large">
-                  {dark ? 'Tema claro' : 'Tema oscuro'}
-                </span>
-              </button>
+              <div className="drawer__tema">
+                <span className="label-large">Tema</span>
+                <ThemePicker />
+              </div>
               <button
                 className="drawer__link"
                 onClick={() => void signOut()}

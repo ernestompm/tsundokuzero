@@ -35,6 +35,14 @@ const MAP: [RegExp, string][] = [
     'Te has pasado de largo: el máximo son 1500 caracteres.',
   ],
   [/escribe algo antes de publicarlo/i, 'Escribe algo antes de publicarlo.'],
+  // Una restricción de la base de datos no es un problema de permisos:
+  // decir «no tienes permiso» cuando en realidad falta una migración
+  // manda a buscar el fallo al sitio equivocado (pasó de verdad con el
+  // juramento de las respuestas).
+  [
+    /violates check constraint|check constraint .* is violated/i,
+    'Hay un dato que el servidor no acepta. Puede que falte ejecutar la última migración en Supabase.',
+  ],
   [
     /row-level security|permission denied|not allowed|violates/i,
     'No tienes permiso para hacer esto.',
