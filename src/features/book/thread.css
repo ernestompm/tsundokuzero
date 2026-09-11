@@ -87,3 +87,21 @@
   margin-top: 14px;
   text-align: center;
 }
+
+/* Editar lo ya publicado, en el hilo y en sus respuestas */
+.thread-editar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.thread-editar__input {
+  min-height: 90px;
+  resize: vertical;
+}
+.thread-editar__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}

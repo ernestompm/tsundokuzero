@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthContext'
 import { ComposeProvider } from './components/ComposeProvider'
 import { ConfirmProvider } from './components/ConfirmProvider'
 import { SwearProvider } from './components/SwearProvider'
+import BadgeCelebration from './components/BadgeCelebration'
 import RequireAuth from './auth/RequireAuth'
 import TermsGate from './auth/TermsGate'
 import AppShell from './components/AppShell'
@@ -51,6 +52,8 @@ export default function App() {
       <ConfirmProvider>
         <SwearProvider>
           <ComposeProvider>
+            {/* El momento de ganar una insignia, allá donde estés */}
+            <BadgeCelebration />
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />

@@ -520,15 +520,43 @@ export default function FeedPage() {
 
   // Devuelve true si la respuesta llegó a publicarse: HomeView solo
   // limpia el input en ese caso (el texto no se pierde si algo falla)
-  const reply = async (discussionId: string, body: string): Promise<boolean> => {
+  const reply = async (
+    discussionId: string,
+    body: string,
+    jurado: boolean,
+  ): Promise<boolean> => {
     if (!session) return false
     const { error } = await supabase
       .from('discussion_comments')
-      .insert({ discussion_id: discussionId, author_id: session.user.id, body })
+      .insert({
+        discussion_id: discussionId,
+        author_id: session.user.id,
+        body,
+        sworn_safe: jurado,
+      })
     if (error) {
       setActionError(
         friendlyError(error, 'No se pudo publicar tu respuesta. Inténtalo de nuevo.'),
       )
+      return false
+    }
+    setActionError(null)
+    await load()
+    return true
+  }
+
+  /** Editar lo propio ya publicado (las políticas de UPDATE ya existían). */
+  const editItem = async (
+    id: string,
+    type: 'idea' | 'post',
+    body: string,
+  ): Promise<boolean> => {
+    const { error } = await supabase
+      .from(type === 'post' ? 'posts' : 'discussions')
+      .update({ body })
+      .eq('id', id)
+    if (error) {
+      setActionError(friendlyError(error, 'No se pudo guardar el cambio.'))
       return false
     }
     setActionError(null)
@@ -545,6 +573,7 @@ export default function FeedPage() {
       onFilterChange={changeFilter}
       actionError={actionError}
       onDeleteItem={deleteItem}
+      onEditItem={editItem}
       onReact={react}
       onReply={reply}
     />

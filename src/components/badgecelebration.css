@@ -1,0 +1,68 @@
+/* El momento de ganar una insignia (migr. 040) */
+
+.celebra {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 28px 24px;
+}
+
+/* La medalla: un disco con su tono, que entra girando una vez */
+.celebra__medalla {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin-bottom: 8px;
+  box-shadow: var(--tz-shadow-card);
+}
+.celebra__medalla .material-symbols-rounded {
+  font-size: 40px;
+}
+.celebra__medalla--oro {
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+}
+.celebra__medalla--salvia {
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
+}
+.celebra__medalla--tierra {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .celebra__medalla {
+    animation: celebra-entra 620ms var(--md-sys-motion-easing-emphasized) both;
+  }
+}
+@keyframes celebra-entra {
+  from {
+    transform: scale(0.4) rotate(-24deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08) rotate(4deg);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.celebra__kicker { margin: 0; }
+.celebra__nombre { margin: 0; }
+.celebra__detalle {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  max-width: 34ch;
+}
+.celebra__acciones {
+  margin-top: 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

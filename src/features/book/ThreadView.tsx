@@ -27,6 +27,10 @@ interface Props {
   onReact?: (emoji: string | null) => void
   onDeleteComment?: (id: string) => void
   onDeleteDiscussion?: () => void
+  /** editar el pensamiento propio ya publicado */
+  onEditDiscussion?: (body: string) => Promise<boolean> | void
+  /** editar una respuesta propia ya publicada */
+  onEditComment?: (id: string, body: string) => Promise<boolean> | void
 }
 
 export default function ThreadView({
@@ -38,30 +42,70 @@ export default function ThreadView({
   onReact,
   onDeleteComment,
   onDeleteDiscussion,
+  onEditDiscussion,
+  onEditComment,
 }: Props) {
   const navigate = useNavigate()
   const confirm = useConfirm()
   const jurar = useSwear()
   const [reply, setReply] = useState('')
+  /** id de la respuesta que se está editando, o 'hilo' para el mensaje padre */
+  const [editando, setEditando] = useState<string | null>(null)
+  const [borrador, setBorrador] = useState('')
 
   // auditoría A-01: el texto solo se limpia si la operación fue bien
   const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    // Si voy por delante del hilo, mi respuesta se sellaría para quien
-    // venga detrás: se pregunta antes de publicarla (migr. 037). Si no
-    // hay nadie detrás, `jurar` resuelve solo y no interrumpe.
-    const juramento =
-      data.myChapter > data.chapterNumber
-        ? await jurar({
-            discussionId: data.discussionId,
-            chapterNumber: data.chapterNumber,
-          })
-        : 'sellado'
+    // Siempre se pregunta al servidor: es él quien sabe si alguien se
+    // quedaría esperando. Si no hay nadie, `jurar` resuelve solo.
+    const juramento = await jurar({
+      discussionId: data.discussionId,
+      chapterNumber: data.chapterNumber,
+    })
     if (juramento === 'cancelado') return
     const ok = await onReply(text, juramento === 'jurado')
     if (ok !== false) setReply('')
   }
+
+  const abrirEdicion = (id: string, texto: string) => {
+    setEditando(id)
+    setBorrador(texto)
+  }
+
+  const guardar = async (id: string) => {
+    const texto = borrador.trim()
+    if (!texto) return
+    const ok =
+      id === 'hilo'
+        ? await onEditDiscussion?.(texto)
+        : await onEditComment?.(id, texto)
+    if (ok !== false) setEditando(null)
+  }
+
+  /** Caja de edición compartida por el hilo y sus respuestas. */
+  const cajaEdicion = (id: string) => (
+    <div className="thread-editar">
+      <MentionTextarea
+        className="tz-input thread-editar__input body-medium"
+        ariaLabel="Edita tu texto"
+        value={borrador}
+        rows={3}
+        maxLength={1500}
+        autoFocus
+        onChange={setBorrador}
+      />
+      <div className="thread-editar__acciones">
+        <md-text-button onClick={() => setEditando(null)}>Cancelar</md-text-button>
+        <md-filled-button
+          disabled={!borrador.trim() || busy || undefined}
+          onClick={() => void guardar(id)}
+        >
+          Guardar cambios
+        </md-filled-button>
+      </div>
+    </div>
+  )
 
   const mine = currentUserId != null && data.authorId === currentUserId
   const chapterPart = data.chapterLabel
@@ -125,6 +169,14 @@ export default function ThreadView({
               excerpt={data.body}
             />
           )}
+          {mine && data.body != null && onEditDiscussion && (
+            <md-icon-button
+              aria-label="Editar"
+              onClick={() => abrirEdicion('hilo', data.body ?? '')}
+            >
+              <span className="material-symbols-rounded" aria-hidden="true">edit</span>
+            </md-icon-button>
+          )}
           {mine && onDeleteDiscussion && (
             <md-icon-button
               aria-label="Eliminar"
@@ -159,9 +211,13 @@ export default function ThreadView({
             />
           </div>
         ) : (
-          <p className="thread-parent__body body-large">
-            <MentionText text={data.body} />
-          </p>
+          editando === 'hilo' ? (
+            cajaEdicion('hilo')
+          ) : (
+            <p className="thread-parent__body body-large">
+              <MentionText text={data.body} />
+            </p>
+          )
         )}
 
         {onReact && data.body != null && (
@@ -219,6 +275,15 @@ export default function ThreadView({
                       reportedUserId={c.authorId}
                       excerpt={c.body}
                     />
+                    {currentUserId === c.authorId && onEditComment && (
+                      <button
+                        className="thread-reply__del"
+                        aria-label="Editar respuesta"
+                        onClick={() => abrirEdicion(c.id, c.body ?? '')}
+                      >
+                        <span className="material-symbols-rounded" aria-hidden="true">edit</span>
+                      </button>
+                    )}
                     {currentUserId === c.authorId && onDeleteComment && (
                       <button
                         className="thread-reply__del"
@@ -239,9 +304,13 @@ export default function ThreadView({
                       </button>
                     )}
                   </div>
-                  <p className="body-medium thread-reply__body">
-                    <MentionText text={c.body} />
-                  </p>
+                  {editando === c.id ? (
+                    cajaEdicion(c.id)
+                  ) : (
+                    <p className="body-medium thread-reply__body">
+                      <MentionText text={c.body} />
+                    </p>
+                  )}
                   {c.swornSafe && c.unlockChapter != null &&
                     c.unlockChapter > data.myChapter && (
                       <span className="body-small jurada-sello">

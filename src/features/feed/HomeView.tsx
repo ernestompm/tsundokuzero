@@ -11,6 +11,8 @@ import {
 } from '../../components/ui'
 import { useCompose } from '../../components/ComposeProvider'
 import { useConfirm } from '../../components/ConfirmProvider'
+import { useSwear } from '../../components/SwearProvider'
+import MentionTextarea from '../../components/MentionTextarea'
 import LockedTeaser from '../../components/LockedTeaser'
 import PushNudge from '../../components/PushNudge'
 import ClubStrip from '../../components/ClubStrip'
@@ -63,9 +65,19 @@ interface Props {
   /** auditoría A-01: error de la última acción, mostrado junto al feed */
   actionError?: string | null
   onDeleteItem?: (id: string, type: 'idea' | 'post') => void
+  /** editar lo propio ya publicado (auditoría: equivocarse no es definitivo) */
+  onEditItem?: (
+    id: string,
+    type: 'idea' | 'post',
+    body: string,
+  ) => Promise<boolean> | void
   onReact?: (discussionId: string, emoji: string | null) => void
   /** true = publicada (los stubs de preview pueden seguir devolviendo void) */
-  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  onReply?: (
+    discussionId: string,
+    body: string,
+    jurado: boolean,
+  ) => Promise<boolean> | void
 }
 
 export default function HomeView({
@@ -74,6 +86,7 @@ export default function HomeView({
   onFilterChange,
   actionError,
   onDeleteItem,
+  onEditItem,
   onReact,
   onReply,
 }: Props) {
@@ -302,6 +315,7 @@ export default function HomeView({
               item={item}
               mine={data.myId != null && item.authorId === data.myId}
               onDelete={onDeleteItem}
+              onEdit={onEditItem}
               onReact={onReact}
               onReply={onReply}
             />
@@ -469,19 +483,32 @@ function FeedCard({
   item,
   mine,
   onDelete,
+  onEdit,
   onReact,
   onReply,
 }: {
   item: FeedItem
   mine: boolean
   onDelete?: (id: string, type: 'idea' | 'post') => void
+  onEdit?: (
+    id: string,
+    type: 'idea' | 'post',
+    body: string,
+  ) => Promise<boolean> | void
   onReact?: (discussionId: string, emoji: string | null) => void
-  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  onReply?: (
+    discussionId: string,
+    body: string,
+    jurado: boolean,
+  ) => Promise<boolean> | void
 }) {
   const navigate = useNavigate()
   const confirm = useConfirm()
+  const jurar = useSwear()
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState('')
+  const [editando, setEditando] = useState(false)
+  const [borrador, setBorrador] = useState('')
   const isIdea = item.type === 'idea'
   const isReply = item.type === 'reply'
   const isPost = item.type === 'post'
@@ -519,11 +546,32 @@ function FeedCard({
   const sendReply = async () => {
     const text = replyText.trim()
     if (!text || !onReply) return
-    const ok = await onReply(threadId, text)
+    // El mismo juramento que en el hilo y en el capítulo: responder es
+    // responder, y no puede comportarse distinto según desde dónde lo hagas.
+    const juramento = await jurar({
+      discussionId: threadId,
+      chapterNumber: isReply
+        ? item.parent?.chapterNumber
+        : (item.chapterNumber ?? null),
+    })
+    if (juramento === 'cancelado') return
+    const ok = await onReply(threadId, text, juramento === 'jurado')
     if (ok !== false) {
       setReplyText('')
       setReplying(false)
     }
+  }
+
+  const abrirEdicion = () => {
+    setBorrador(item.body ?? '')
+    setEditando(true)
+  }
+
+  const guardarEdicion = async () => {
+    const text = borrador.trim()
+    if (!text || !onEdit) return
+    const ok = await onEdit(item.id, isPost ? 'post' : 'idea', text)
+    if (ok !== false) setEditando(false)
   }
 
   const meta = (
@@ -640,6 +688,33 @@ function FeedCard({
         </div>
       )}
 
+      {/* Editar lo que ya publicaste: equivocarse no puede ser definitivo */}
+      {editando && (
+        <div className="feed-editar">
+          <MentionTextarea
+            className="tz-input feed-editar__input body-medium"
+            ariaLabel="Edita tu publicación"
+            value={borrador}
+            rows={3}
+            maxLength={1500}
+            autoFocus
+            onChange={setBorrador}
+          />
+          <div className="feed-editar__acciones">
+            <button className="feed-action" onClick={() => setEditando(false)}>
+              Cancelar
+            </button>
+            <button
+              className="feed-action feed-action--activa"
+              disabled={!borrador.trim()}
+              onClick={() => void guardarEdicion()}
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Caja de respuesta inline */}
       {replying && (
         <div className="feed-reply-box">
@@ -663,18 +738,32 @@ function FeedCard({
       )}
 
       <footer className="feed-card__foot">
+        {/* El botón dice siempre «Responder». Antes, en cuanto había una
+            respuesta, se convertía en un bocadillo con un número suelto: ni
+            se entendía que era pulsable ni que servía para responder. La
+            cuenta ahora vive donde significa algo, en «Ver hilo». */}
         {(isIdea ? unlocked : isReply) && onReply && (
-          <button className="feed-action" onClick={() => setReplying((v) => !v)}>
+          <button
+            className={`feed-action${replying ? ' feed-action--activa' : ''}`}
+            aria-expanded={replying}
+            onClick={() => setReplying((v) => !v)}
+          >
             <span className="material-symbols-rounded" aria-hidden="true">chat_bubble</span>
-            {isIdea && (item.commentCount ?? 0) > 0
-              ? item.commentCount
-              : 'Responder'}
+            Responder
           </button>
         )}
         {(isIdea || isReply) && (
           <button className="feed-action" onClick={go}>
             <span className="material-symbols-rounded" aria-hidden="true">forum</span>
-            Ver hilo
+            {isIdea && (item.commentCount ?? 0) > 0
+              ? `Ver hilo · ${item.commentCount}`
+              : 'Ver hilo'}
+          </button>
+        )}
+        {mine && !isReply && unlocked && onEdit && (
+          <button className="feed-action" onClick={abrirEdicion}>
+            <span className="material-symbols-rounded" aria-hidden="true">edit</span>
+            Editar
           </button>
         )}
         {mine && !isReply && onDelete && (

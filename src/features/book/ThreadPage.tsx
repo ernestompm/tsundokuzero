@@ -203,6 +203,17 @@ export default function ThreadPage() {
       onDeleteComment={(id) =>
         void run(supabase.from('discussion_comments').delete().eq('id', id))
       }
+      onEditDiscussion={(body) =>
+        run(
+          supabase
+            .from('discussions')
+            .update({ body })
+            .eq('id', data.discussionId),
+        )
+      }
+      onEditComment={(id, body) =>
+        run(supabase.from('discussion_comments').update({ body }).eq('id', id))
+      }
       onDeleteDiscussion={() =>
         void (async () => {
           // auditoría A-01: si el borrado falla, avisa y no navega

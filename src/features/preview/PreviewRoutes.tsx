@@ -171,6 +171,7 @@ function InsigniasPreview() {
     votaciones: 6,
     libros_en_estanteria: 16,
     perfil_completo: true,
+    capitulos_leidos: 184,
     en_la_app_desde: new Date(Date.now() - 430 * 86400000).toISOString(),
   }
   return (

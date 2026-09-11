@@ -29,6 +29,8 @@ export type Profile = {
   beta_tester: boolean
   /** permiso de un solo uso para fundar un club (migr. 038) */
   can_create_club: boolean
+  /** insignias ya celebradas, para no repetir el aviso (migr. 040) */
+  badges_seen: string[]
   created_at: string
 }
 
@@ -476,6 +478,8 @@ export type Database = {
           libros_en_estanteria: number
           perfil_completo: boolean
           en_la_app_desde: string
+          /** capítulos leídos en total (migr. 040) */
+          capitulos_leidos: number
         }
         Relationships: []
       }
@@ -642,6 +646,7 @@ export type Database = {
       }
       /* ---------- migr. 038: probadores, clubes y «ya lo tengo» ---------- */
       is_beta: { Args: Record<string, never>; Returns: boolean }
+      marcar_insignias: { Args: { p_ids: string[] }; Returns: string[] }
       admin_set_flag: {
         Args: { target: string; flag: 'beta_tester' | 'can_create_club'; value: boolean }
         Returns: undefined

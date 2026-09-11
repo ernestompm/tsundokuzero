@@ -219,6 +219,9 @@ export default function ChapterPage() {
       onDeleteDiscussion={(id) =>
         void run(supabase.from('discussions').delete().eq('id', id))
       }
+      onEditComment={(id, body) =>
+        run(supabase.from('discussion_comments').update({ body }).eq('id', id))
+      }
       onDeleteComment={(id) =>
         void run(supabase.from('discussion_comments').delete().eq('id', id))
       }

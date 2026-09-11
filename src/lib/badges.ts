@@ -32,6 +32,8 @@ export interface MemberStats {
   libros_en_estanteria: number
   perfil_completo: boolean
   en_la_app_desde: string
+  /** capítulos leídos en total, sumando todos los libros (migr. 040) */
+  capitulos_leidos: number
 }
 
 export interface Badge {
@@ -107,6 +109,53 @@ export function badgesDe(s: MemberStats): Badge[] {
       tono: 'salvia',
     })
   }
+
+  // ---- El camino: capítulos leídos ----
+  // Terminar un libro es raro; leer quince capítulos pasa la primera
+  // semana. Sin estas, nadie gana nada en su primer mes y las insignias
+  // no le dicen nada a quien acaba de llegar, que es justo a quien más
+  // falta le hace que le digan algo.
+  const c = s.capitulos_leidos ?? 0
+  if (c >= 1000)
+    out.push({
+      id: 'capitulos-1000',
+      icon: 'auto_stories',
+      nombre: 'Ratón de biblioteca',
+      detalle: 'Mil capítulos leídos',
+      tono: 'oro',
+    })
+  else if (c >= 500)
+    out.push({
+      id: 'capitulos-500',
+      icon: 'auto_stories',
+      nombre: 'Lector de fondo',
+      detalle: 'Quinientos capítulos leídos',
+      tono: 'oro',
+    })
+  else if (c >= 200)
+    out.push({
+      id: 'capitulos-200',
+      icon: 'auto_stories',
+      nombre: 'Lector veterano',
+      detalle: 'Doscientos capítulos leídos',
+      tono: 'salvia',
+    })
+  else if (c >= 50)
+    out.push({
+      id: 'capitulos-50',
+      icon: 'auto_stories',
+      nombre: 'Lector constante',
+      detalle: 'Cincuenta capítulos leídos',
+      tono: 'salvia',
+    })
+  else if (c >= 15)
+    out.push({
+      id: 'capitulos-15',
+      icon: 'auto_stories',
+      nombre: 'Lector novato',
+      detalle: 'Quince capítulos leídos',
+      tono: 'tierra',
+    })
 
   // ---- Libros terminados con el club ----
   const t = s.libros_terminados
@@ -188,6 +237,14 @@ export function badgesDe(s: MemberStats): Badge[] {
     })
 
   // ---- Conversación ----
+  if (s.ideas >= 1 && s.ideas < 25)
+    out.push({
+      id: 'voz-1',
+      icon: 'forum',
+      nombre: 'Rompió el hielo',
+      detalle: 'Compartió su primer pensamiento',
+      tono: 'tierra',
+    })
   if (s.ideas >= 100)
     out.push({
       id: 'voz-100',
@@ -259,6 +316,22 @@ export function badgesDe(s: MemberStats): Badge[] {
       detalle: 'Quince libros en la estantería, leídos o por leer',
       tono: 'tierra',
     })
+  else if (s.libros_en_estanteria >= 5)
+    out.push({
+      id: 'estanteria-5',
+      icon: 'bookmark',
+      nombre: 'La estantería crece',
+      detalle: 'Cinco libros en la estantería',
+      tono: 'tierra',
+    })
+  else if (s.libros_en_estanteria >= 1)
+    out.push({
+      id: 'estanteria-1',
+      icon: 'bookmark',
+      nombre: 'Empezando tu biblioteca',
+      detalle: 'Primer libro en tu estantería',
+      tono: 'tierra',
+    })
 
   if (s.perfil_completo)
     out.push({
@@ -279,6 +352,11 @@ export function badgesDe(s: MemberStats): Badge[] {
  */
 export function siguienteBadge(s: MemberStats): { nombre: string; falta: string } | null {
   const t = s.libros_terminados
+  const c = s.capitulos_leidos ?? 0
+  // A quien acaba de llegar se le habla de capítulos, que es lo que puede
+  // conseguir esta semana; lo de terminar libros llega después.
+  if (c < 15)
+    return { nombre: 'Lector novato', falta: `Te faltan ${15 - c} capítulos` }
   if (t < 1) return { nombre: 'Primer libro', falta: 'Termina un libro con el club' }
   if (t < 5) return { nombre: 'Cinco libros', falta: `Te faltan ${5 - t} para las cinco lecturas` }
   if (t < 10) return { nombre: 'Diez libros', falta: `Te faltan ${10 - t} para los diez` }

@@ -661,3 +661,31 @@
   place-items: center;
   padding: 20px 0 8px;
 }
+
+/* ---- Editar lo ya publicado desde el Inicio ---- */
+.feed-editar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.feed-editar__input {
+  min-height: 92px;
+  resize: vertical;
+}
+.feed-editar__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* La acción abierta (respondiendo) se marca: es un estado activo */
+.feed-action--activa {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+}
+.feed-action[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}

@@ -45,6 +45,7 @@ interface Props {
   onEditDiscussion?: (id: string, body: string) => Promise<boolean> | void
   onDeleteDiscussion?: (id: string) => void
   onDeleteComment?: (id: string) => void
+  onEditComment?: (id: string, body: string) => Promise<boolean> | void
   onReact?: (discussionId: string, emoji: string | null) => void
 }
 
@@ -61,6 +62,7 @@ export default function ChapterView({
   onEditDiscussion,
   onDeleteDiscussion,
   onDeleteComment,
+  onEditComment,
   onReact,
 }: Props) {
   const navigate = useNavigate()
@@ -123,8 +125,8 @@ export default function ChapterView({
               onEdit={onEditDiscussion}
               onDelete={onDeleteDiscussion}
               onDeleteComment={onDeleteComment}
+              onEditComment={onEditComment}
               onReact={onReact}
-              myChapter={data.myChapter ?? 0}
               chapterNumber={data.chapterNumber}
             />
           ))}
@@ -209,15 +211,13 @@ function DiscussionCard({
   onEdit,
   onDelete,
   onDeleteComment,
+  onEditComment,
   onReact,
-  myChapter,
   chapterNumber,
 }: {
   d: ThreadDiscussion
   mine: boolean
   currentUserId?: string
-  /** por dónde voy yo, para saber si mi respuesta se sellaría */
-  myChapter: number
   /** capítulo del hilo */
   chapterNumber: number
   onReply?: (
@@ -228,6 +228,7 @@ function DiscussionCard({
   onEdit?: (id: string, body: string) => Promise<boolean> | void
   onDelete?: (id: string) => void
   onDeleteComment?: (id: string) => void
+  onEditComment?: (id: string, body: string) => Promise<boolean> | void
   onReact?: (discussionId: string, emoji: string | null) => void
 }) {
   const confirm = useConfirm()
@@ -236,18 +237,16 @@ function DiscussionCard({
   const [reply, setReply] = useState('')
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(d.body)
+  /** respuesta que se está editando */
+  const [editandoResp, setEditandoResp] = useState<string | null>(null)
+  const [borradorResp, setBorradorResp] = useState('')
 
   // auditoría A-01: el texto solo se limpia si la operación fue bien
   const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    // Si voy por delante, mi respuesta se sellaría para quien venga
-    // detrás: se pregunta antes (migr. 037). Si no hay nadie detrás,
-    // `jurar` resuelve solo y no interrumpe a nadie.
-    const juramento =
-      myChapter > chapterNumber
-        ? await jurar({ discussionId: d.id, chapterNumber })
-        : 'sellado'
+    // Decide el servidor, que es quien sabe por dónde va cada uno
+    const juramento = await jurar({ discussionId: d.id, chapterNumber })
     if (juramento === 'cancelado') return
     const ok = await onReply(d.id, text, juramento === 'jurado')
     if (ok !== false) {
@@ -389,6 +388,34 @@ function DiscussionCard({
                     capítulo {c.unlockChapter}
                   </span>
                 </p>
+              ) : editandoResp === c.id ? (
+                <div className="disc__editar">
+                  <MentionTextarea
+                    className="tz-input disc__editar-input body-small"
+                    ariaLabel="Edita tu respuesta"
+                    value={borradorResp}
+                    rows={2}
+                    maxLength={1500}
+                    autoFocus
+                    onChange={setBorradorResp}
+                  />
+                  <div className="disc__editar-acciones">
+                    <md-text-button onClick={() => setEditandoResp(null)}>
+                      Cancelar
+                    </md-text-button>
+                    <md-filled-button
+                      disabled={!borradorResp.trim() || undefined}
+                      onClick={() =>
+                        void (async () => {
+                          const ok = await onEditComment?.(c.id, borradorResp.trim())
+                          if (ok !== false) setEditandoResp(null)
+                        })()
+                      }
+                    >
+                      Guardar
+                    </md-filled-button>
+                  </div>
+                </div>
               ) : (
                 <p className="body-small" style={{ flex: 1 }}>
                   <span className="who">{c.authorName}</span> ·{' '}
@@ -402,6 +429,18 @@ function DiscussionCard({
                   reportedUserId={c.authorId}
                   excerpt={c.body}
                 />
+              )}
+              {currentUserId === c.authorId && c.body != null && onEditComment && (
+                <button
+                  className="disc__comment-del"
+                  aria-label="Editar respuesta"
+                  onClick={() => {
+                    setEditandoResp(c.id)
+                    setBorradorResp(c.body ?? '')
+                  }}
+                >
+                  <span className="material-symbols-rounded" aria-hidden="true">edit</span>
+                </button>
               )}
               {currentUserId === c.authorId && onDeleteComment && (
                 <button

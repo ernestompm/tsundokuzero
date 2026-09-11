@@ -31,14 +31,21 @@ import './swear.css'
  *   const r = await jurar({ discussionId, chapterNumber })
  *   if (r === 'cancelado') return
  *   await publicar(texto, r === 'jurado')
+ *
+ * Llámalo SIEMPRE antes de publicar una respuesta, desde donde sea. Quien
+ * decide si hay que preguntar es el servidor (`quien_espera`), que sabe
+ * por dónde va cada uno; si no hay nadie por detrás resuelve «sellado» sin
+ * abrir nada. Al principio esto se filtraba en el cliente comparando
+ * capítulos, y el resultado fue que responder desde el Inicio se saltaba
+ * el juramento: la misma acción se comportaba distinto según la pantalla.
  */
 
 export type Juramento = 'jurado' | 'sellado' | 'cancelado'
 
 interface Peticion {
   discussionId: string
-  /** capítulo del hilo al que se responde */
-  chapterNumber: number
+  /** capítulo del hilo al que se responde, si quien llama lo sabe */
+  chapterNumber?: number | null
 }
 
 interface Esperando {
@@ -146,8 +153,17 @@ export function SwearProvider({ children }: { children: ReactNode }) {
                 onChange={(e) => setJuro(e.target.checked)}
               />
               <span>
-                Juro que mi respuesta no cuenta nada de lo que pasa después
-                del capítulo {peticion.chapterNumber}.
+                {peticion.chapterNumber != null ? (
+                  <>
+                    Juro que mi respuesta no cuenta nada de lo que pasa después
+                    del capítulo {peticion.chapterNumber}.
+                  </>
+                ) : (
+                  <>
+                    Juro que mi respuesta no cuenta nada de lo que pasa por
+                    delante de donde va esta gente.
+                  </>
+                )}
               </span>
             </label>
 
