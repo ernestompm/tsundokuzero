@@ -4,7 +4,7 @@
   gap: 12px;
   padding: 14px;
   margin-bottom: 12px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-tertiary-container);
   color: var(--md-sys-color-on-tertiary-container);
 }

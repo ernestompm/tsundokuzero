@@ -245,7 +245,7 @@
   max-width: 640px;
   margin: 26px auto 6px;
   padding: 24px clamp(18px, 5vw, 28px) 18px;
-  border-radius: 24px;
+  border-radius: var(--md-sys-shape-corner-extra-large);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
@@ -280,7 +280,7 @@
 .landing-demo__msg {
   position: relative;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-low);
   transition: background-color 300ms var(--md-sys-motion-easing-standard);
 }
@@ -401,7 +401,7 @@
 }
 .landing-card {
   padding: 20px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-lowest);
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
@@ -422,7 +422,7 @@
   place-items: center;
   width: 46px;
   height: 46px;
-  border-radius: 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-secondary-container);
 }
 

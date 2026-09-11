@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useCompose } from './ComposeProvider'
 import ReleaseNotes from './ReleaseNotes'
 import DevNoteSheet from './DevNoteSheet'
+import SearchField from './SearchField'
 import { useModalBehavior } from './modal'
 import ThemePicker from './ThemePicker'
 import './AppShell.css'
@@ -345,27 +346,18 @@ export default function AppShell() {
           </span>
 
           {/* Buscador (solo escritorio; en móvil queda el icono) */}
-          <form
-            className="top-bar__search"
-            role="search"
-            onSubmit={(e) => {
-              e.preventDefault()
-              const q = topQuery.trim()
-              navigate(q ? `/explore?q=${encodeURIComponent(q)}` : '/explore')
-            }}
-          >
-            <span className="material-symbols-rounded" aria-hidden>
-              search
-            </span>
-            <input
-              className="top-bar__searchinput body-medium"
-              type="search"
-              placeholder="Buscar libros o lectores…"
-              aria-label="Buscar libros o lectores"
+          <div className="top-bar__search">
+            <SearchField
               value={topQuery}
-              onChange={(e) => setTopQuery(e.target.value)}
+              onChange={setTopQuery}
+              placeholder="Buscar libros o lectores…"
+              ariaLabel="Buscar libros o lectores"
+              onSubmit={() => {
+                const q = topQuery.trim()
+                navigate(q ? `/explore?q=${encodeURIComponent(q)}` : '/explore')
+              }}
             />
-          </form>
+          </div>
 
           <span className="top-bar__actions">
             {/* Probadores: contar un fallo sin salir de donde estás */}

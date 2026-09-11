@@ -33,7 +33,7 @@
 
 .ldemo__caja {
   padding: 22px;
-  border-radius: 26px;
+  border-radius: var(--md-sys-shape-corner-extra-large);
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
 }
@@ -71,7 +71,7 @@
 }
 .lestreno__card {
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface);
   border: 1px solid var(--md-sys-color-outline-variant);
   transition:
@@ -114,7 +114,7 @@
   gap: 15px;
   align-items: flex-start;
   padding: 18px;
-  border-radius: 20px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface);
   border: 1px dashed var(--md-sys-color-outline-variant);
   transition: background 400ms ease, border-color 400ms ease;
@@ -153,7 +153,7 @@
 }
 .lmock {
   padding: 20px;
-  border-radius: 22px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
 }
@@ -182,7 +182,7 @@
 .lmock__nota {
   margin: 8px 0 0;
   padding: 8px 11px;
-  border-radius: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
   font-style: italic;

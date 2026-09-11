@@ -40,7 +40,7 @@
 }
 .bookform__coverpreview {
   width: 84px;
-  border-radius: 6px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 .bookform__actions {

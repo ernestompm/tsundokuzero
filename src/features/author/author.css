@@ -59,7 +59,7 @@
 }
 .author code {
   background: var(--md-sys-color-surface-container);
-  border-radius: 4px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
   padding: 1px 5px;
   font-size: 0.9em;
 }

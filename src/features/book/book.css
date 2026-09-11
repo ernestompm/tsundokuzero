@@ -171,10 +171,6 @@
   margin-top: 16px;
 }
 .book-sec__title {
-  margin: 12px 2px 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--md-sys-color-on-surface-variant);
 }
 .book-toggle {
   display: block;
@@ -272,11 +268,7 @@
 }
 
 /* ---- Chip ---- */
-.chip {
-  flex: none;
-  padding: 3px 9px;
-  border-radius: var(--md-sys-shape-corner-full);
-}
+
 .chip--here {
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
@@ -329,3 +321,67 @@
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
 }
+
+/* =====================================================================
+   Los tres paneles de la ficha
+   Arriba queda lo que vienes a hacer —mover tu capítulo—; lo demás se
+   reparte en tres preguntas distintas: por dónde va la gente, de qué va
+   el libro y qué nos pareció. No sobra ningún dato: cambia dónde vive.
+   ===================================================================== */
+
+.book-panels {
+  display: flex;
+  gap: 4px;
+  margin: 22px 0 18px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--tz-rule);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.book-panels::-webkit-scrollbar { display: none; }
+
+.book-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 9px 15px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -3px;
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
+}
+.book-panel-tab .material-symbols-rounded { font-size: 19px; }
+.book-panel-tab:hover { color: var(--md-sys-color-on-surface); }
+
+/* El panel abierto es una selección: la señala el Vermillion */
+.book-panel-tab.activa {
+  color: var(--tz-signal-strong);
+  border-bottom-color: var(--tz-signal);
+  font-weight: 600;
+}
+
+.book-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-space-4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .book-panel {
+    animation: book-panel-entra 240ms var(--md-sys-motion-easing-standard) both;
+  }
+}
+@keyframes book-panel-entra {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+/* Dentro de un panel manda el `gap`: los márgenes sueltos de cada bloque
+   se anulan para que la separación sea una sola y siempre la misma. */
+.book-panel > * { margin-top: 0; margin-bottom: 0; }
+.book-panel .book-sec { margin-top: 0; }

@@ -130,7 +130,7 @@
   gap: 14px;
   padding: 14px;
   margin-bottom: 12px;
-  border-radius: 24px;
+  border-radius: var(--md-sys-shape-corner-extra-large);
   background: linear-gradient(
     150deg,
     var(--md-sys-color-surface-container-low),
@@ -413,10 +413,7 @@
   display: inline-flex;
   gap: 6px;
 }
-.chip {
-  padding: 3px 10px;
-  border-radius: var(--md-sys-shape-corner-full);
-}
+
 .chip--kind {
   background: var(--md-sys-color-surface-variant);
   color: var(--md-sys-color-on-surface-variant);

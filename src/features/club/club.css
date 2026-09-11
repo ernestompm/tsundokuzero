@@ -190,7 +190,7 @@
   gap: var(--tz-space-1);
   background: none;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--md-sys-shape-corner-small);
   padding: 2px;
   cursor: pointer;
   color: inherit;
@@ -249,10 +249,6 @@
 }
 
 .club-sec {
-  margin: 10px 2px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--md-sys-color-on-surface-variant);
 }
 .club-members {
   display: flex;
@@ -389,33 +385,10 @@
   color: var(--md-sys-color-on-primary);
 }
 
-.club-captains {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.club-captain {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: var(--md-sys-shape-corner-medium);
-  background: var(--md-sys-color-surface-container-low);
-}
-.club-captain__main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.club-captain__nota {
-  flex: none;
-  font-size: 26px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--md-sys-color-tertiary);
-}
+
+
+
+
 
 /* Invitación en la administración del club */
 .admin-invite {
@@ -457,7 +430,7 @@
   flex: none;
   width: 60px;
   height: 60px;
-  border-radius: 18px;
+  border-radius: var(--tz-shape-card);
   display: grid;
   place-items: center;
   font-size: 32px;
@@ -482,7 +455,7 @@
 .admin-emblema__emoji {
   width: 36px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
   border: 1px solid transparent;
   background: var(--md-sys-color-surface-container-high);
   font-size: 19px;
@@ -514,3 +487,151 @@ img.admin-emblema__muestra {
   gap: 6px;
   align-items: center;
 }
+
+/* =====================================================================
+   La hoja de capitanía: una estantería, no una clasificación
+   Cada capitán con los libros que nos ha traído. La nota va pegada al
+   libro —que es de lo único de lo que se puede decir algo siendo seis—
+   y no al capitán.
+   ===================================================================== */
+
+.club-captains {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.club-captain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--tz-shape-card);
+  background: var(--tz-paper);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
+}
+
+.club-captain__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.club-captain__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* La balda: portadas en fila, que se desplaza si no caben */
+.club-captain__baldas {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.club-captain__baldas::-webkit-scrollbar { display: none; }
+
+.club-balda {
+  position: relative;
+  flex: none;
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
+}
+.club-balda:hover { transform: translateY(-3px); }
+
+.club-balda__nota {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--md-sys-color-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.club-balda__nota .material-symbols-rounded {
+  font-size: 13px;
+}
+
+/* El bis lleva su marca: es la lectura extra, y hasta ahora no se veía */
+.club-balda__bis {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  padding: 1px 6px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--tz-signal);
+  color: var(--tz-on-signal);
+  font-weight: 600;
+}
+
+/* =====================================================================
+   Las tres pestañas del club
+   Mismo patrón que la ficha de libro: una fila de pestañas con filete
+   abajo y la puesta señalada en Vermillion. Dos pantallas que hacen lo
+   mismo tienen que hacerlo igual.
+   ===================================================================== */
+
+.club-pestanas {
+  display: flex;
+  gap: 4px;
+  margin: 20px 0 18px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--tz-rule);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.club-pestanas::-webkit-scrollbar { display: none; }
+
+.club-pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 9px 15px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -3px;
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
+}
+.club-pestana .material-symbols-rounded { font-size: 19px; }
+.club-pestana:hover { color: var(--md-sys-color-on-surface); }
+.club-pestana.activa {
+  color: var(--tz-signal-strong);
+  border-bottom-color: var(--tz-signal);
+  font-weight: 600;
+}
+
+.club-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-space-4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .club-panel {
+    animation: club-panel-entra 240ms var(--md-sys-motion-easing-standard) both;
+  }
+}
+@keyframes club-panel-entra {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+/* Dentro del panel manda el `gap`: una sola separación, siempre la misma */
+.club-panel > * { margin-top: 0; margin-bottom: 0; }
+.club-panel .club-sec { margin-top: 0; }

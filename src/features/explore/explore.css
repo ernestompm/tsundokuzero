@@ -1,15 +1,5 @@
-.explore {
-}
-
-/* Base compartida en .tz-input (M-09): aquí solo dimensiones y el radio
-   de píldora propio del buscador. */
-.explore-search {
-  width: 100%;
-  border-radius: var(--md-sys-shape-corner-full);
-  padding: 14px 20px;
-  color: inherit;
-  font: inherit;
-}
+/* El buscador ya no vive aquí: es SearchField, compartido con la barra
+   superior. */
 
 .explore-books {
   display: flex;

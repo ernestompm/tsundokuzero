@@ -9,6 +9,7 @@ import { Avatar, BookCover, SectionHeader } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
 import AddBookSheet from '../../components/AddBookSheet'
 import '@material/web/button/filled-tonal-button.js'
+import SearchField from '../../components/SearchField'
 import './explore.css'
 
 interface PersonRow {
@@ -135,13 +136,13 @@ export default function ExplorePage() {
           </md-filled-tonal-button>
         }
       />
-      <input
-        className="tz-input explore-search body-large"
-        placeholder="Busca libros, autores o personas…"
-        aria-label="Buscar libros, autores o personas" /* auditoría A-08 */
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
+      <SearchField
+        grande
         autoFocus
+        value={q}
+        onChange={setQ}
+        placeholder="Busca libros, autores o personas…"
+        ariaLabel="Buscar libros, autores o personas"
       />
 
       {people === null || books === null ? (

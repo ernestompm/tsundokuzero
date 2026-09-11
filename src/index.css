@@ -262,6 +262,32 @@ select:focus-visible {
   font-variation-settings: 'opsz' 30, 'SOFT' 16;
 }
 
+/* ===== Encabezado de sección =====
+   La versalita que abre un bloque («MIEMBROS», «CONVERSACIONES ACTIVAS»).
+   Estaba implementada cuatro veces, con cuatro márgenes y tres espaciados
+   distintos, y se notaba: dos secciones seguidas de pantallas distintas
+   no respiraban igual. Esta es la única. */
+.tz-sec,
+.club-sec,
+.book-sec__title,
+.profile-sec {
+  margin: var(--tz-space-6) 2px var(--tz-space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-weight: 600;
+  color: var(--md-sys-color-secondary);
+}
+
+/* ===== Etiqueta pequeña (chip de lectura) =====
+   No es pulsable —para eso está `.tz-chip`—: solo nombra algo, como el
+   tipo de idea o «Club». Estaba definida en tres hojas distintas con
+   valores que no coincidían, y ganaba la que cargara última. */
+.chip {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
 /* ===== Antetítulo editorial =====
    La etiqueta en versalitas espaciadas que encabeza una sección. Es la
    voz de revista de la app y va en Picholine, no en Scarab: organiza,

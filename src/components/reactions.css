@@ -65,7 +65,8 @@
   max-height: 70dvh;
   overflow-y: auto;
   padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--md-sys-shape-corner-extra-large)
+    var(--md-sys-shape-corner-extra-large) 0 0;
   background: var(--md-sys-color-surface-container-high);
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
   animation: sheet-up 220ms var(--md-sys-motion-easing-emphasized);
@@ -115,7 +116,7 @@
     padding: 24px;
   }
   .reactions-sheet {
-    border-radius: 24px;
+    border-radius: var(--md-sys-shape-corner-extra-large);
     max-height: 60vh;
   }
 }

@@ -1,0 +1,68 @@
+/* El campo de búsqueda de la app. Uno solo, dos tamaños. */
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 42px;
+  padding: 0 8px 0 16px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
+  transition: border-color var(--md-sys-motion-duration-short)
+      var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short)
+      var(--md-sys-motion-easing-standard);
+}
+/* El foco señala, como en todos los campos de la app */
+.buscador:focus-within {
+  border-color: var(--tz-signal);
+  box-shadow: 0 0 0 3px var(--tz-signal-soft);
+}
+
+.buscador--grande {
+  height: 52px;
+  padding: 0 10px 0 18px;
+  background: var(--tz-paper);
+}
+
+.buscador__lupa {
+  font-size: 20px;
+  flex: none;
+}
+.buscador--grande .buscador__lupa { font-size: 22px; }
+
+.buscador__campo {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-plain);
+  /* Sin outline propio: el :focus-within del contenedor ya lo marca */
+  outline: none;
+}
+.buscador--grande .buscador__campo { font-size: 16px; }
+.buscador__campo::placeholder { color: var(--md-sys-color-on-surface-variant); }
+/* La X nativa de Safari/Chrome sobra: ya hay un botón de limpiar */
+.buscador__campo::-webkit-search-cancel-button { display: none; }
+
+.buscador__limpiar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+.buscador__limpiar:hover {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+.buscador__limpiar .material-symbols-rounded { font-size: 18px; }

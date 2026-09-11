@@ -64,7 +64,7 @@
   overflow-x: auto;
   border: 1px solid
     color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
-  border-radius: 14px;
+  border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-surface-container-lowest);
 }
 .richtext table {

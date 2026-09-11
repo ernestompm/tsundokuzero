@@ -79,40 +79,13 @@
   gap: 2px;
 }
 
-/* Buscador y avatar: solo en escritorio (en móvil, icono + menú) */
+/* Buscador y avatar: solo en escritorio (en móvil, icono + menú).
+   Aquí solo se reserva el hueco: la forma del buscador la pone
+   SearchField, que es el MISMO componente que usa Explorar. Antes había
+   dos buscadores con dos anatomías distintas en la misma pantalla. */
 .top-bar__search {
   display: none;
-  align-items: center;
-  gap: 10px;
   flex: 0 1 440px;
-  height: 42px;
-  padding: 0 16px;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: var(--md-sys-color-surface-container);
-  border: 1px solid
-    color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-  color: var(--md-sys-color-on-surface-variant);
-  transition: border-color var(--md-sys-motion-duration-short)
-    var(--md-sys-motion-easing-standard);
-}
-.top-bar__search:focus-within {
-  border-color: var(--md-sys-color-primary);
-}
-.top-bar__search .material-symbols-rounded {
-  font-size: 20px;
-}
-.top-bar__searchinput {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  /* auditoría A-05: sin outline:none — el :focus-visible global da el foco
-     (y el contenedor ya marca :focus-within con el borde primario) */
-  color: var(--md-sys-color-on-surface);
-  font: inherit;
-}
-.top-bar__searchinput::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
 }
 .top-bar__avatar {
   display: none;
@@ -311,7 +284,7 @@
   height: 56px;
   margin: 0 6px;
   border: none;
-  border-radius: 18px;
+  border-radius: var(--tz-shape-card);
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
   display: grid;

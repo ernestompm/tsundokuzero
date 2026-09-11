@@ -36,16 +36,29 @@ interface Lectura {
   kind: 'main' | 'bis'
   closedAt: string | null
   media: number | null
+  /** quién la propuso, para la hoja de capitanía */
+  proposedBy: string | null
 }
 
-/** Hoja de capitanía: qué propuso cada uno y cómo le fue */
+/**
+ * La hoja de capitanía, repensada.
+ *
+ * Era un ranking: cada capitán con su nota media al lado, ordenados de
+ * mejor a peor. Con uno o dos libros por persona esa media no significa
+ * nada —es ruido presentado como dato— y además era lo único competitivo
+ * en una app que va de leer acompañado.
+ *
+ * Ahora no es una tabla de clasificación: es una estantería. Lo que se
+ * ve de cada capitán son LOS LIBROS QUE NOS HA TRAÍDO, con sus portadas.
+ * La nota sigue estando, pequeña y pegada a cada libro, que es de lo
+ * único de lo que se puede decir algo con seis lectores.
+ */
 interface Capitania {
   userId: string
   name: string
   avatar: string | null
-  libros: number
-  bises: number
-  media: number | null
+  /** lo que ha traído, de lo más reciente a lo más antiguo */
+  libros: Lectura[]
   terminadas: number
 }
 
@@ -67,6 +80,15 @@ function voterNames(voters: { name: string }[]): string {
   return `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`
 }
 
+/** Las tres preguntas que se le hacen a un club. */
+const PESTANAS = [
+  { id: 'ahora' as const, icon: 'auto_stories', label: 'Ahora' },
+  { id: 'gente' as const, icon: 'group', label: 'La gente' },
+  { id: 'memoria' as const, icon: 'menu_book', label: 'Memoria' },
+]
+
+type Pestana = (typeof PESTANAS)[number]['id']
+
 export default function ClubPage() {
   const { session, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
@@ -77,6 +99,7 @@ export default function ClubPage() {
   const [pollState, setPollState] = useState<PollState | null>(null)
   const [historial, setHistorial] = useState<Lectura[]>([])
   const [capitanias, setCapitanias] = useState<Capitania[]>([])
+  const [pestana, setPestana] = useState<Pestana>('ahora')
   // Insignias por miembro (migr. 030), derivadas de la vista
   const [stats, setStats] = useState<Map<string, MemberStats>>(new Map())
   const [busy, setBusy] = useState(false)
@@ -170,7 +193,7 @@ export default function ClubPage() {
     // ---- Historial de lecturas y hoja de capitanía (migr. 028) ----
     const { data: lecturas } = await supabase
       .from('club_readings')
-      .select('book_id, kind, closed_at, started_at')
+      .select('book_id, kind, closed_at, started_at, proposed_by')
       .eq('club_id', clubData.id)
       .order('started_at', { ascending: false })
       .limit(24)
@@ -188,8 +211,7 @@ export default function ClubPage() {
         arr.push(n.rating)
         notasPorLibro.set(n.book_id, arr)
       }
-      setHistorial(
-        (lecturas ?? []).flatMap((l) => {
+      const lista: Lectura[] = (lecturas ?? []).flatMap((l) => {
           const b = libroPorId.get(l.book_id)
           if (!b) return []
           const ns = notasPorLibro.get(l.book_id) ?? []
@@ -202,12 +224,45 @@ export default function ClubPage() {
               kind: l.kind,
               closedAt: l.closed_at,
               media: ns.length ? ns.reduce((a, c) => a + c, 0) / ns.length : null,
+              proposedBy: l.proposed_by,
             },
           ]
-        }),
-      )
+      })
+      setHistorial(lista)
+
+      // La hoja de capitanía sale de aquí mismo: quién trajo qué. Ya no
+      // hay ranking que pedirle al servidor porque ya no hay ranking.
+      const porCapitan = new Map<string, Lectura[]>()
+      for (const l of lista) {
+        if (!l.proposedBy) continue
+        const arr = porCapitan.get(l.proposedBy) ?? []
+        arr.push(l)
+        porCapitan.set(l.proposedBy, arr)
+      }
+      if (porCapitan.size > 0) {
+        const { data: perfilesCap } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', [...porCapitan.keys()])
+        const perfilPorId = new Map((perfilesCap ?? []).map((p) => [p.id, p]))
+        setCapitanias(
+          [...porCapitan.entries()]
+            .map(([userId, libros]) => ({
+              userId,
+              name: perfilPorId.get(userId)?.display_name ?? 'Capitán',
+              avatar: perfilPorId.get(userId)?.avatar_url ?? null,
+              libros,
+              terminadas: libros.filter((l) => l.closedAt != null).length,
+            }))
+            // Por lo último que trajo cada uno: es un registro, no una tabla
+            .sort((a, b) => b.libros.length - a.libros.length),
+        )
+      } else {
+        setCapitanias([])
+      }
     } else {
       setHistorial([])
+      setCapitanias([])
     }
 
     const { data: filas } = await supabase
@@ -215,36 +270,6 @@ export default function ClubPage() {
       .select('*')
       .eq('club_id', clubData.id)
     setStats(new Map((filas ?? []).map((f) => [f.user_id, f as MemberStats])))
-
-    const { data: hojas } = await supabase
-      .from('club_captain_record')
-      .select('user_id, libros, bises, media_estrellas, lecturas_terminadas')
-      .eq('club_id', clubData.id)
-    if (hojas && hojas.length > 0) {
-      const perfiles = new Map(
-        ((
-          await supabase
-            .from('profiles')
-            .select('id, display_name, avatar_url')
-            .in('id', hojas.map((h) => h.user_id))
-        ).data ?? []).map((p) => [p.id, p]),
-      )
-      setCapitanias(
-        hojas
-          .map((h) => ({
-            userId: h.user_id,
-            name: perfiles.get(h.user_id)?.display_name ?? 'Capitán',
-            avatar: perfiles.get(h.user_id)?.avatar_url ?? null,
-            libros: h.libros,
-            bises: h.bises,
-            media: h.media_estrellas,
-            terminadas: h.lecturas_terminadas,
-          }))
-          .sort((a, b) => (b.media ?? 0) - (a.media ?? 0)),
-      )
-    } else {
-      setCapitanias([])
-    }
 
     if (poll) {
       const [{ data: options }, { data: votes }] = await Promise.all([
@@ -397,266 +422,356 @@ export default function ClubPage() {
         </div>
       </div>
 
-      {book && (
-        <button className="club-book" onClick={() => navigate(`/book/${book.id}`)}>
-          <BookCover
-            title={book.title}
-            author={book.author}
-            coverUrl={book.cover_url}
-            size="md"
-          />
-          <span className="club-book__info">
-            <span className="label-small club-kicker">Libro del mes</span>
-            <span className="title-medium serif">{book.title}</span>
-            <span className="body-small on-surface-variant">{book.author}</span>
-          </span>
-          <span className="material-symbols-rounded on-surface-variant" aria-hidden="true">
-            chevron_right
-          </span>
-        </button>
-      )}
 
-      {/* Lo que viene después, para ir consiguiéndolo */}
-      <NextRead />
-
-      {/* Insights: tu avance frente al grupo */}
-      {book && members.length > 1 && (
-        <div className="club-insights">
-          <span className="material-symbols-rounded club-insights__icon" aria-hidden="true">
-            trending_up
-          </span>
-          <div>
-            <p className="body-medium">
-              {myChapter === 0 ? (
-                <>
-                  El grupo va por el capítulo <b>{groupAvg}</b> de media.
-                  ¡Empieza para unirte a la conversación!
-                </>
-              ) : aheadOf === 0 ? (
-                <>
-                  Vas por el capítulo <b>{myChapter}</b>. El grupo va por el{' '}
-                  <b>{groupAvg}</b> de media — acelera para alcanzarlos.
-                </>
-              ) : (
-                <>
-                  Vas por el capítulo <b>{myChapter}</b>, por delante de{' '}
-                  <b>{aheadOf}</b> de {others}. Media del grupo: cap. {groupAvg}.
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {pollState && (
-        <div className="club-poll">
-          <div className="club-poll__head">
-            <span className="title-medium serif">{pollState.poll.title}</span>
-            <span className="body-small on-surface-variant">
-              {`Votación abierta · 1 voto por persona${
-                pollState.poll.closes_at
-                  ? ` · se cierra sola el ${new Date(
-                      pollState.poll.closes_at,
-                    ).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`
-                  : ''
-              }`}
+      {/* ================= Las tres preguntas de un club =================
+           Eran ocho secciones apiladas con el mismo peso. No se ha quitado
+           nada: lo que cambia es que cada cosa está donde se la busca. */}
+      <div className="club-pestanas" role="tablist" aria-label="Secciones del club">
+        {PESTANAS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            id={`club-tab-${t.id}`}
+            aria-selected={pestana === t.id}
+            aria-controls={`club-panel-${t.id}`}
+            className={`club-pestana label-large${pestana === t.id ? " activa" : ""}`}
+            onClick={() => setPestana(t.id)}
+          >
+            <span className="material-symbols-rounded" aria-hidden="true">
+              {t.icon}
             </span>
-          </div>
-
-          {/* Auditoría A-01: aviso inline si la acción no se pudo completar */}
-          {actionError && (
-            <p className="club-banner club-banner--error body-small" role="alert">
-              {actionError}
-            </p>
-          )}
-
-          <div className="club-poll__options">
-            {pollState.options.map((o) => {
-              const pct =
-                pollState.totalVotes > 0
-                  ? Math.round((o.votes / pollState.totalVotes) * 100)
-                  : 0
-              const mine = pollState.myVote === o.id
-              return (
-                <div key={o.id} className={`poll-option${mine ? ' mine' : ''}`}>
-                  <button
-                    className="poll-option__vote"
-                    disabled={busy}
-                    onClick={() => void vote(o.id)}
-                  >
-                    <span className="poll-option__row">
-                      <span className="title-small">
-                        {mine ? '◉ ' : '○ '}
-                        {o.book_title}
-                      </span>
-                      <span className="label-medium on-surface-variant">
-                        {o.votes} {o.votes === 1 ? 'voto' : 'votos'}
-                      </span>
-                    </span>
-                    <span className="body-small on-surface-variant">
-                      {o.book_author}
-                    </span>
-                    <span className="poll-option__bar">
-                      <span
-                        className="poll-option__fill"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </span>
-                    {/* Quién ha votado (el voto es visible dentro del club) */}
-                    {o.voters.length > 0 && (
-                      <span className="poll-option__voters">
-                        <AvatarStack
-                          people={o.voters.slice(0, 4)}
-                          extra={Math.max(0, o.voters.length - 4)}
-                        />
-                        <span className="body-small on-surface-variant">
-                          {voterNames(o.voters)}
-                        </span>
-                      </span>
-                    )}
-                    {o.note && (
-                      <span className="body-small poll-option__note serif">
-                        «{o.note}»
-                      </span>
-                    )}
-                  </button>
-                  {/* Los candidatos son libros del catálogo: su ficha, a un toque */}
-                  {o.book_id && (
-                    <button
-                      className="poll-option__ficha label-medium"
-                      onClick={() => navigate(`/book/${o.book_id}`)}
-                    >
-                      Ver sinopsis y ficha
-                      <span className="material-symbols-rounded" aria-hidden="true">
-                        chevron_right
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {iAmCaptain && (
-            <md-text-button disabled={busy || undefined} onClick={() => void closePoll()}>
-              Cerrar votación (capitán)
-            </md-text-button>
-          )}
-        </div>
-      )}
-
-      {(iAmCaptain || isSuperAdmin) && !pollState && (
-        <md-outlined-button
-          className="club-manage-btn"
-          onClick={() => navigate('/club/capitania')}
-        >
-          <span slot="icon" className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
-          Proponer nueva votación
-        </md-outlined-button>
-      )}
-
-      <h2 className="title-small club-sec">
-        Miembros
-        {book ? ' · avance' : ''}
-      </h2>
-      {/* Lo que hemos leído: el club tiene memoria (migr. 028) */}
-      {historial.length > 0 && (
-        <>
-          <h2 className="title-small club-sec">Lo que hemos leído</h2>
-          <div className="club-history">
-            {historial.map((l) => (
-              <Link
-                key={`${l.bookId}-${l.closedAt ?? 'abierta'}`}
-                to={`/book/${l.bookId}/opinions`}
-                className="club-read"
-              >
-                <BookCover
-                  title={l.title}
-                  author={l.author}
-                  coverUrl={l.coverUrl}
-                  size="sm"
-                />
-                <span className="club-read__main">
-                  <span className="title-small serif club-read__title">{l.title}</span>
-                  <span className="body-small on-surface-variant">
-                    {l.author}
-                    {l.media != null ? ` · ${l.media.toFixed(1)} ★` : ' · sin valorar'}
-                  </span>
-                </span>
-                {l.kind === 'bis' && (
-                  <span className="label-small club-read__bis" title="Lectura extra del mes">
-                    el bis
-                  </span>
-                )}
-                {l.closedAt === null && (
-                  <span className="label-small club-read__now">leyendo</span>
-                )}
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Hoja de capitanía: qué propuso cada uno y cómo le fue */}
-      {capitanias.length > 0 && (
-        <>
-          <h2 className="title-small club-sec">Hoja de capitanía</h2>
-          <p className="body-small on-surface-variant club-sec__sub">
-            Se cuentan las estrellas, pero también cuánta gente terminó el libro:
-            acertar no es solo gustar.
-          </p>
-          <div className="club-captains">
-            {capitanias.map((c) => (
-              <div key={c.userId} className="club-captain">
-                <Avatar name={c.name} url={c.avatar} size={38} />
-                <span className="club-captain__main">
-                  <span className="title-small">{c.name}</span>
-                  <span className="body-small on-surface-variant">
-                    {c.libros} {c.libros === 1 ? 'libro' : 'libros'}
-                    {c.bises > 0 ? ` · ${c.bises} bis` : ''}
-                    {` · ${c.terminadas} ${c.terminadas === 1 ? 'lectura terminada' : 'lecturas terminadas'}`}
-                  </span>
-                </span>
-                <span className="club-captain__nota serif">
-                  {c.media != null ? c.media.toFixed(1) : '—'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <h2 className="title-small club-sec">Miembros</h2>
-      <div className="club-members">
-        {members.map((m) => (
-          <div key={m.id} className="club-member">
-            <Link to={`/u/${m.username}`} className="club-member__id">
-              <Avatar name={m.display_name} url={m.avatar_url} size={40} />
-              <span className="club-member__names">
-                <span className="title-small">
-                  {m.display_name}
-                  {m.role === 'captain' && (
-                    <span
-                      className="label-small"
-                      style={{ color: 'var(--md-sys-color-primary)' }}
-                    >
-                      {' '}
-                      ★ capitán
-                    </span>
-                  )}
-                </span>
-                <span className="body-small on-surface-variant">
-                  @{m.username}
-                  {book && m.chapter > 0 ? ` · cap. ${m.chapter}` : ''}
-                </span>
-                {stats.get(m.id) && (
-                  <BadgeDots badges={badgesDe(stats.get(m.id)!)} max={4} />
-                )}
-              </span>
-            </Link>
-          </div>
+            {t.label}
+          </button>
         ))}
       </div>
+
+      {pestana === 'ahora' && (
+        <div
+          className="club-panel"
+          role="tabpanel"
+          id="club-panel-ahora"
+          aria-labelledby="club-tab-ahora"
+        >
+        {book && (
+          <button className="club-book" onClick={() => navigate(`/book/${book.id}`)}>
+            <BookCover
+              title={book.title}
+              author={book.author}
+              coverUrl={book.cover_url}
+              size="md"
+            />
+            <span className="club-book__info">
+              <span className="label-small club-kicker">Libro del mes</span>
+              <span className="title-medium serif">{book.title}</span>
+              <span className="body-small on-surface-variant">{book.author}</span>
+            </span>
+            <span className="material-symbols-rounded on-surface-variant" aria-hidden="true">
+              chevron_right
+            </span>
+          </button>
+        )}
+
+        {/* Lo que viene después, para ir consiguiéndolo */}
+        <NextRead />
+
+        {/* Insights: tu avance frente al grupo */}
+        {book && members.length > 1 && (
+          <div className="club-insights">
+            <span className="material-symbols-rounded club-insights__icon" aria-hidden="true">
+              trending_up
+            </span>
+            <div>
+              <p className="body-medium">
+                {myChapter === 0 ? (
+                  <>
+                    El grupo va por el capítulo <b>{groupAvg}</b> de media.
+                    ¡Empieza para unirte a la conversación!
+                  </>
+                ) : aheadOf === 0 ? (
+                  <>
+                    Vas por el capítulo <b>{myChapter}</b>. El grupo va por el{' '}
+                    <b>{groupAvg}</b> de media — acelera para alcanzarlos.
+                  </>
+                ) : (
+                  <>
+                    Vas por el capítulo <b>{myChapter}</b>, por delante de{' '}
+                    <b>{aheadOf}</b> de {others}. Media del grupo: cap. {groupAvg}.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {pollState && (
+          <div className="club-poll">
+            <div className="club-poll__head">
+              <span className="title-medium serif">{pollState.poll.title}</span>
+              <span className="body-small on-surface-variant">
+                {`Votación abierta · 1 voto por persona${
+                  pollState.poll.closes_at
+                    ? ` · se cierra sola el ${new Date(
+                        pollState.poll.closes_at,
+                      ).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`
+                    : ''
+                }`}
+              </span>
+            </div>
+
+            {/* Auditoría A-01: aviso inline si la acción no se pudo completar */}
+            {actionError && (
+              <p className="club-banner club-banner--error body-small" role="alert">
+                {actionError}
+              </p>
+            )}
+
+            <div className="club-poll__options">
+              {pollState.options.map((o) => {
+                const pct =
+                  pollState.totalVotes > 0
+                    ? Math.round((o.votes / pollState.totalVotes) * 100)
+                    : 0
+                const mine = pollState.myVote === o.id
+                return (
+                  <div key={o.id} className={`poll-option${mine ? ' mine' : ''}`}>
+                    <button
+                      className="poll-option__vote"
+                      disabled={busy}
+                      onClick={() => void vote(o.id)}
+                    >
+                      <span className="poll-option__row">
+                        <span className="title-small">
+                          {mine ? '◉ ' : '○ '}
+                          {o.book_title}
+                        </span>
+                        <span className="label-medium on-surface-variant">
+                          {o.votes} {o.votes === 1 ? 'voto' : 'votos'}
+                        </span>
+                      </span>
+                      <span className="body-small on-surface-variant">
+                        {o.book_author}
+                      </span>
+                      <span className="poll-option__bar">
+                        <span
+                          className="poll-option__fill"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </span>
+                      {/* Quién ha votado (el voto es visible dentro del club) */}
+                      {o.voters.length > 0 && (
+                        <span className="poll-option__voters">
+                          <AvatarStack
+                            people={o.voters.slice(0, 4)}
+                            extra={Math.max(0, o.voters.length - 4)}
+                          />
+                          <span className="body-small on-surface-variant">
+                            {voterNames(o.voters)}
+                          </span>
+                        </span>
+                      )}
+                      {o.note && (
+                        <span className="body-small poll-option__note serif">
+                          «{o.note}»
+                        </span>
+                      )}
+                    </button>
+                    {/* Los candidatos son libros del catálogo: su ficha, a un toque */}
+                    {o.book_id && (
+                      <button
+                        className="poll-option__ficha label-medium"
+                        onClick={() => navigate(`/book/${o.book_id}`)}
+                      >
+                        Ver sinopsis y ficha
+                        <span className="material-symbols-rounded" aria-hidden="true">
+                          chevron_right
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {iAmCaptain && (
+              <md-text-button disabled={busy || undefined} onClick={() => void closePoll()}>
+                Cerrar votación (capitán)
+              </md-text-button>
+            )}
+          </div>
+        )}
+
+        {(iAmCaptain || isSuperAdmin) && !pollState && (
+          <md-outlined-button
+            className="club-manage-btn"
+            onClick={() => navigate('/club/capitania')}
+          >
+            <span slot="icon" className="material-symbols-rounded" aria-hidden="true">how_to_vote</span>
+            Proponer nueva votación
+          </md-outlined-button>
+        )}
+
+        </div>
+      )}
+
+      {pestana === 'gente' && (
+        <div
+          className="club-panel"
+          role="tabpanel"
+          id="club-panel-gente"
+          aria-labelledby="club-tab-gente"
+        >
+        <h2 className="title-small club-sec">
+          Miembros
+          {book ? ' · avance' : ''}
+        </h2>
+        {capitanias.length > 0 && (
+          <>
+            <h2 className="title-small club-sec">Lo que nos ha traído cada uno</h2>
+            <p className="body-small on-surface-variant club-sec__sub">
+              La hoja de capitanía no es una clasificación: es la estantería de
+              cada capitán. Las estrellas van pegadas al libro, que es de lo
+              único de lo que se puede decir algo siendo seis.
+            </p>
+            <div className="club-captains">
+              {capitanias.map((c) => (
+                <div key={c.userId} className="club-captain">
+                  <div className="club-captain__head">
+                    <Avatar name={c.name} url={c.avatar} size={34} />
+                    <span className="club-captain__main">
+                      <span className="title-small">{c.name}</span>
+                      <span className="body-small on-surface-variant">
+                        {c.libros.length}{' '}
+                        {c.libros.length === 1 ? 'lectura propuesta' : 'lecturas propuestas'}
+                        {c.libros.some((l) => l.kind === 'bis')
+                          ? ` · ${c.libros.filter((l) => l.kind === 'bis').length} bis`
+                          : ''}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="club-captain__baldas">
+                    {c.libros.map((l) => (
+                      <button
+                        key={l.bookId + l.closedAt}
+                        className="club-balda"
+                        onClick={() => navigate(`/book/${l.bookId}`)}
+                        title={`${l.title}${l.media != null ? ` · ${l.media.toFixed(1)} estrellas` : ''}`}
+                      >
+                        <BookCover
+                          title={l.title}
+                          author={l.author}
+                          coverUrl={l.coverUrl}
+                          size="sm"
+                        />
+                        <span className="label-small club-balda__nota">
+                          {l.media != null ? (
+                            <>
+                              <span
+                                className="material-symbols-rounded"
+                                aria-hidden="true"
+                              >
+                                star
+                              </span>
+                              {l.media.toFixed(1)}
+                            </>
+                          ) : (
+                            'Sin notas'
+                          )}
+                        </span>
+                        {l.kind === 'bis' && (
+                          <span className="label-small club-balda__bis">Bis</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <h2 className="title-small club-sec">Miembros</h2>
+        <div className="club-members">
+          {members.map((m) => (
+            <div key={m.id} className="club-member">
+              <Link to={`/u/${m.username}`} className="club-member__id">
+                <Avatar name={m.display_name} url={m.avatar_url} size={40} />
+                <span className="club-member__names">
+                  <span className="title-small">
+                    {m.display_name}
+                    {m.role === 'captain' && (
+                      <span
+                        className="label-small"
+                        style={{ color: 'var(--md-sys-color-primary)' }}
+                      >
+                        {' '}
+                        ★ capitán
+                      </span>
+                    )}
+                  </span>
+                  <span className="body-small on-surface-variant">
+                    @{m.username}
+                    {book && m.chapter > 0 ? ` · cap. ${m.chapter}` : ''}
+                  </span>
+                  {stats.get(m.id) && (
+                    <BadgeDots badges={badgesDe(stats.get(m.id)!)} max={4} />
+                  )}
+                </span>
+              </Link>
+            </div>
+          ))}
+        </div>
+        </div>
+      )}
+
+      {pestana === 'memoria' && (
+        <div
+          className="club-panel"
+          role="tabpanel"
+          id="club-panel-memoria"
+          aria-labelledby="club-tab-memoria"
+        >
+        {/* Lo que hemos leído: el club tiene memoria (migr. 028) */}
+        {historial.length > 0 && (
+          <>
+            <h2 className="title-small club-sec">Lo que hemos leído</h2>
+            <div className="club-history">
+              {historial.map((l) => (
+                <Link
+                  key={`${l.bookId}-${l.closedAt ?? 'abierta'}`}
+                  to={`/book/${l.bookId}/opinions`}
+                  className="club-read"
+                >
+                  <BookCover
+                    title={l.title}
+                    author={l.author}
+                    coverUrl={l.coverUrl}
+                    size="sm"
+                  />
+                  <span className="club-read__main">
+                    <span className="title-small serif club-read__title">{l.title}</span>
+                    <span className="body-small on-surface-variant">
+                      {l.author}
+                      {l.media != null ? ` · ${l.media.toFixed(1)} ★` : ' · sin valorar'}
+                    </span>
+                  </span>
+                  {l.kind === 'bis' && (
+                    <span className="label-small club-read__bis" title="Lectura extra del mes">
+                      el bis
+                    </span>
+                  )}
+                  {l.closedAt === null && (
+                    <span className="label-small club-read__now">leyendo</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Hoja de capitanía: qué propuso cada uno y cómo le fue */}
+        </div>
+      )}
+
     </section>
   )
 }

@@ -16,7 +16,8 @@
   width: 100%;
   max-width: 560px;
   background: var(--md-sys-color-surface-container-high);
-  border-radius: 28px 28px 0 0;
+  border-radius: var(--md-sys-shape-corner-extra-large)
+    var(--md-sys-shape-corner-extra-large) 0 0;
   padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.22);
   animation: sheet-rise 240ms var(--md-sys-motion-easing-emphasized);
@@ -26,7 +27,7 @@
     align-items: center;
   }
   .sheet {
-    border-radius: 28px;
+    border-radius: var(--md-sys-shape-corner-extra-large);
     margin-bottom: 0;
   }
 }
@@ -245,7 +246,7 @@
   flex: none;
   width: 44px;
   height: 66px;
-  border-radius: 6px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
   display: grid;
   place-items: center;
   background: var(--md-sys-color-surface-container-highest);
