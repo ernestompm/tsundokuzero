@@ -91,9 +91,17 @@ export default function ClubAdminPage() {
         .sort((a) => (a.role === 'captain' ? -1 : 1)),
     )
 
-    // El código de invitación solo lo puede leer un administrador
-    const { data: code } = await supabase.rpc('admin_get_invite_code')
-    if (typeof code === 'string') setCodigo(code)
+    // El código de ESTE club, que lo ve su capitán (migr. 038). Sirve a
+    // la vez para registrarse y para entrar en el club: es el único que
+    // hay que dictarle a nadie.
+    const { data: code, error: codeErr } = await supabase.rpc('club_invite_code')
+    if (!codeErr && typeof code === 'string') {
+      setCodigo(code)
+    } else {
+      // Sin la migración 038 todavía: el código global de siempre
+      const { data: viejo } = await supabase.rpc('admin_get_invite_code')
+      if (typeof viejo === 'string') setCodigo(viejo)
+    }
   }, [session])
 
   useEffect(() => {
@@ -451,7 +459,8 @@ export default function ClubAdminPage() {
       <div className="manage-card">
         <h2 className="title-small manage-card__title">Invitar</h2>
         <p className="body-medium">
-          Quien se registre con el código entra directamente en el club.
+          Quien se registre con este código entra directamente en{' '}
+          <b>{club.name}</b>. Es el único que hace falta dictar.
         </p>
         <div className="admin-invite">
           <span className="admin-invite__dato">
@@ -472,7 +481,8 @@ export default function ClubAdminPage() {
           </md-outlined-button>
         </div>
         <p className="body-small on-surface-variant">
-          El código se cambia desde Administración, en la pestaña Usuarios.
+          El código es de este club y no caduca. Quien ya tiene cuenta lo
+          escribe en la pantalla del club para entrar.
         </p>
       </div>
     </section>

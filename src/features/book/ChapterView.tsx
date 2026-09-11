@@ -10,6 +10,8 @@ import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
 import { useConfirm } from '../../components/ConfirmProvider'
+import { useSwear } from '../../components/SwearProvider'
+import SwornReply from '../../components/SwornReply'
 import type { DiscussionKind } from '../../lib/database.types'
 import {
   KIND_LABEL,
@@ -35,7 +37,11 @@ interface Props {
     body: string,
     toClub: boolean,
   ) => Promise<boolean> | void
-  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  onReply?: (
+    discussionId: string,
+    body: string,
+    jurado: boolean,
+  ) => Promise<boolean> | void
   onEditDiscussion?: (id: string, body: string) => Promise<boolean> | void
   onDeleteDiscussion?: (id: string) => void
   onDeleteComment?: (id: string) => void
@@ -118,6 +124,8 @@ export default function ChapterView({
               onDelete={onDeleteDiscussion}
               onDeleteComment={onDeleteComment}
               onReact={onReact}
+              myChapter={data.myChapter ?? 0}
+              chapterNumber={data.chapterNumber}
             />
           ))}
         </div>
@@ -202,17 +210,28 @@ function DiscussionCard({
   onDelete,
   onDeleteComment,
   onReact,
+  myChapter,
+  chapterNumber,
 }: {
   d: ThreadDiscussion
   mine: boolean
   currentUserId?: string
-  onReply?: (discussionId: string, body: string) => Promise<boolean> | void
+  /** por dónde voy yo, para saber si mi respuesta se sellaría */
+  myChapter: number
+  /** capítulo del hilo */
+  chapterNumber: number
+  onReply?: (
+    discussionId: string,
+    body: string,
+    jurado: boolean,
+  ) => Promise<boolean> | void
   onEdit?: (id: string, body: string) => Promise<boolean> | void
   onDelete?: (id: string) => void
   onDeleteComment?: (id: string) => void
   onReact?: (discussionId: string, emoji: string | null) => void
 }) {
   const confirm = useConfirm()
+  const jurar = useSwear()
   const [replying, setReplying] = useState(false)
   const [reply, setReply] = useState('')
   const [editing, setEditing] = useState(false)
@@ -222,7 +241,15 @@ function DiscussionCard({
   const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    const ok = await onReply(d.id, text)
+    // Si voy por delante, mi respuesta se sellaría para quien venga
+    // detrás: se pregunta antes (migr. 037). Si no hay nadie detrás,
+    // `jurar` resuelve solo y no interrumpe a nadie.
+    const juramento =
+      myChapter > chapterNumber
+        ? await jurar({ discussionId: d.id, chapterNumber })
+        : 'sellado'
+    if (juramento === 'cancelado') return
+    const ok = await onReply(d.id, text, juramento === 'jurado')
     if (ok !== false) {
       setReply('')
       setReplying(false)
@@ -346,7 +373,14 @@ function DiscussionCard({
               <PersonLink username={c.authorUsername}>
                 <Avatar name={c.authorName} url={c.authorAvatar} size={26} />
               </PersonLink>
-              {c.body == null ? (
+              {c.body == null && c.canReveal ? (
+                <SwornReply
+                  commentId={c.id}
+                  authorId={c.authorId}
+                  authorName={c.authorName}
+                  authorChapter={c.unlockChapter ?? chapterNumber}
+                />
+              ) : c.body == null ? (
                 <p className="body-small disc__comment-locked" style={{ flex: 1 }}>
                   <span className="material-symbols-rounded" aria-hidden="true">lock</span>
                   <span>
@@ -403,9 +437,11 @@ function DiscussionCard({
               value={reply}
               rows={2}
               autoFocus
+              maxLength={1500}
               onChange={setReply}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Intro hace párrafo; se envía con el botón o Ctrl/⌘+Intro
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
                   void send()
                 }

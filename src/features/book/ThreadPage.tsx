@@ -58,7 +58,9 @@ export default function ThreadPage() {
         .maybeSingle(),
       supabase
         .from('thread_comments')
-        .select('id, author_id, body, created_at, author_chapter, unlocked')
+        .select(
+          'id, author_id, body, created_at, author_chapter, unlocked, sworn_safe, can_reveal',
+        )
         .eq('discussion_id', discussionId)
         .order('created_at', { ascending: true }),
       supabase
@@ -114,6 +116,8 @@ export default function ThreadPage() {
         authorUsername: byId.get(c.author_id)?.username,
         body: c.unlocked ? c.body : null,
         unlockChapter: c.author_chapter,
+        swornSafe: c.sworn_safe,
+        canReveal: c.can_reveal,
         createdAt: timeAgo(c.created_at),
       })),
     })
@@ -166,13 +170,14 @@ export default function ThreadPage() {
       busy={busy}
       actionError={actionError}
       currentUserId={session?.user.id}
-      onReply={(body) => {
+      onReply={(body, jurado) => {
         if (!session) return
         return run(
           supabase.from('discussion_comments').insert({
             discussion_id: data.discussionId,
             author_id: session.user.id,
             body,
+            sworn_safe: jurado,
           }),
         )
       }}

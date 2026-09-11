@@ -10,7 +10,9 @@ import { Avatar, Card } from '../../components/ui'
 import Reactions from '../../components/Reactions'
 import ReportButton from '../../components/ReportButton'
 import LockedTeaser from '../../components/LockedTeaser'
+import SwornReply from '../../components/SwornReply'
 import { useConfirm } from '../../components/ConfirmProvider'
+import { useSwear } from '../../components/SwearProvider'
 import { KIND_LABEL, type ThreadViewData } from './chapterTypes'
 import './thread.css'
 
@@ -21,7 +23,7 @@ interface Props {
   actionError?: string | null
   currentUserId?: string
   /** puede devolver éxito/fallo (auditoría A-01); `void` vale (previews) */
-  onReply?: (body: string) => Promise<boolean> | void
+  onReply?: (body: string, jurado: boolean) => Promise<boolean> | void
   onReact?: (emoji: string | null) => void
   onDeleteComment?: (id: string) => void
   onDeleteDiscussion?: () => void
@@ -39,13 +41,25 @@ export default function ThreadView({
 }: Props) {
   const navigate = useNavigate()
   const confirm = useConfirm()
+  const jurar = useSwear()
   const [reply, setReply] = useState('')
 
   // auditoría A-01: el texto solo se limpia si la operación fue bien
   const send = async () => {
     const text = reply.trim()
     if (!text || !onReply) return
-    const ok = await onReply(text)
+    // Si voy por delante del hilo, mi respuesta se sellaría para quien
+    // venga detrás: se pregunta antes de publicarla (migr. 037). Si no
+    // hay nadie detrás, `jurar` resuelve solo y no interrumpe.
+    const juramento =
+      data.myChapter > data.chapterNumber
+        ? await jurar({
+            discussionId: data.discussionId,
+            chapterNumber: data.chapterNumber,
+          })
+        : 'sellado'
+    if (juramento === 'cancelado') return
+    const ok = await onReply(text, juramento === 'jurado')
     if (ok !== false) setReply('')
   }
 
@@ -176,7 +190,14 @@ export default function ThreadView({
               <Avatar name={c.authorName} url={c.authorAvatar} size={34} />
             </PersonLink>
             <div className="thread-reply__content">
-              {c.body == null ? (
+              {c.body == null && c.canReveal ? (
+                <SwornReply
+                  commentId={c.id}
+                  authorId={c.authorId}
+                  authorName={c.authorName}
+                  authorChapter={c.unlockChapter ?? data.chapterNumber}
+                />
+              ) : c.body == null ? (
                 <p className="body-medium disc__comment-locked">
                   <span className="material-symbols-rounded" aria-hidden="true">lock</span>
                   <span>
@@ -221,6 +242,15 @@ export default function ThreadView({
                   <p className="body-medium thread-reply__body">
                     <MentionText text={c.body} />
                   </p>
+                  {c.swornSafe && c.unlockChapter != null &&
+                    c.unlockChapter > data.myChapter && (
+                      <span className="body-small jurada-sello">
+                        <span className="material-symbols-rounded" aria-hidden="true">
+                          lock_open
+                        </span>
+                        Abierta bajo juramento
+                      </span>
+                    )}
                 </>
               )}
             </div>
@@ -237,9 +267,13 @@ export default function ThreadView({
             ariaLabel="Tu respuesta al hilo"
             value={reply}
             rows={2}
+            maxLength={1500}
             onChange={setReply}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              // Intro hace párrafo. Se envía con el botón o con Ctrl/⌘+Intro:
+              // desde que se respetan los saltos de línea, robar el Intro
+              // era quitarle a la gente la única tecla para separar ideas.
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
                 void send()
               }

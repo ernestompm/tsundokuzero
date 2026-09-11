@@ -7,6 +7,7 @@ import { Avatar } from './ui'
 import { useAuth } from '../auth/AuthContext'
 import { useCompose } from './ComposeProvider'
 import ReleaseNotes from './ReleaseNotes'
+import DevNoteSheet from './DevNoteSheet'
 import { useModalBehavior } from './modal'
 import { isDarkActive, setThemeMode } from '../theme/theme'
 import './AppShell.css'
@@ -78,6 +79,8 @@ export default function AppShell() {
   const [drawer, setDrawer] = useState(false)
   // Novedades: se abren solas una vez por versión, o a mano desde el pie
   const [verNovedades, setVerNovedades] = useState(false)
+  // Notas de desarrollo: solo para probadores (migr. 038)
+  const [verNota, setVerNota] = useState(false)
   const [topQuery, setTopQuery] = useState('')
   // Drawer accesible (auditoría C-02): Escape, focus trap y restauración
   const drawerRef = useModalBehavior(drawer, () => setDrawer(false))
@@ -381,6 +384,18 @@ export default function AppShell() {
           </form>
 
           <span className="top-bar__actions">
+            {/* Probadores: contar un fallo sin salir de donde estás */}
+            {(profile?.beta_tester || isSuperAdmin) && (
+              <md-icon-button
+                class="top-bar__beta"
+                aria-label="Contar algo del desarrollo"
+                onClick={() => setVerNota(true)}
+              >
+                <span className="material-symbols-rounded" aria-hidden="true">
+                  flag
+                </span>
+              </md-icon-button>
+            )}
             <md-icon-button
               class="top-bar__searchbtn"
               aria-label="Buscar"
@@ -433,6 +448,8 @@ export default function AppShell() {
 
       {/* Novedades de la versión: automáticas la primera vez, y a demanda
           desde la versión del pie del menú */}
+      <DevNoteSheet open={verNota} onClose={() => setVerNota(false)} />
+
       <ReleaseNotes
         key={verNovedades ? 'manual' : 'auto'}
         forceOpen={verNovedades}

@@ -21,7 +21,8 @@ export default function MentionText({
 }) {
   const trozos = partirMenciones(text ?? '')
   return (
-    <span className={className}>
+    // `mention-text` lleva el white-space que respeta los saltos de línea
+    <span className={`mention-text${className ? ` ${className}` : ''}`}>
       {trozos.map((t, i) =>
         t.tipo === 'mencion' ? (
           <Link

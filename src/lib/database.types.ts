@@ -25,6 +25,10 @@ export type Profile = {
   replies_seen_at: string | null
   reactions_seen_at: string | null
   ahead_seen_at: string | null
+  /** puede dejar notas de desarrollo desde dentro (migr. 038) */
+  beta_tester: boolean
+  /** permiso de un solo uso para fundar un club (migr. 038) */
+  can_create_club: boolean
   created_at: string
 }
 
@@ -122,6 +126,10 @@ export type NotificationType =
   | 'recommendation'
   | 'mention'
   | 'mention_wait'
+  /** te han respondido desde más adelante, bajo juramento (migr. 037) */
+  | 'reply_sworn'
+  /** todo el club tiene ya el libro de la próxima lectura (migr. 038) */
+  | 'all_ready'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -256,6 +264,29 @@ export type DiscussionComment = {
   created_at: string
   /** capítulo por el que iba el autor al responder (lo fija un trigger) */
   author_chapter: number | null
+  /** su autor juró que no destripa nada por delante del hilo (migr. 037) */
+  sworn_safe: boolean
+}
+
+/** nota de desarrollo dejada por un probador (migr. 038) */
+export type DevNote = {
+  id: string
+  author_id: string
+  kind: 'fallo' | 'idea' | 'texto'
+  body: string
+  /** la pantalla desde la que se escribió, sin la cual no hay quien lo sitúe */
+  path: string | null
+  status: 'open' | 'doing' | 'done' | 'wontfix'
+  reply: string | null
+  created_at: string
+  resolved_at: string | null
+}
+
+/** «ya lo tengo»: quien tiene ya el libro de la próxima lectura (migr. 038) */
+export type BookReady = {
+  book_id: string
+  user_id: string
+  created_at: string
 }
 
 export type Post = {
@@ -291,6 +322,8 @@ export type Club = {
   captain_term_count: number
   captain_max_days: number | null
   captain_term_ends_at: string | null
+  /** código con el que se entra en ESTE club (migr. 038) */
+  invite_code: string | null
   created_at: string
 }
 
@@ -391,6 +424,12 @@ export type Database = {
       >
       app_settings: TableDef<AppSetting, 'key' | 'value', 'updated_at'>
       blocks: TableDef<Block, 'blocker_id' | 'blocked_id', 'created_at'>
+      dev_notes: TableDef<
+        DevNote,
+        'author_id' | 'body',
+        'id' | 'created_at'
+      >
+      book_ready: TableDef<BookReady, 'book_id' | 'user_id', 'created_at'>
     }
     Views: {
       /** cuánta gente ha votado ya en cada votación (migr. 031) */
@@ -497,6 +536,10 @@ export type Database = {
           book_id: string
           unlocked: boolean
           body: string | null
+          /** su autor juró que no hay spoiler (migr. 037) */
+          sworn_safe: boolean
+          /** cerrada, pero jurada: puedes abrirla tú (migr. 037) */
+          can_reveal: boolean
         }
         Relationships: []
       }
@@ -512,6 +555,10 @@ export type Database = {
           is_super_admin: boolean
           club_role: ClubRole | null
           created_at: string
+          /** probador: puede dejar notas de desarrollo (migr. 038) */
+          beta_tester: boolean
+          /** permiso pendiente de gastar para fundar un club (migr. 038) */
+          can_create_club: boolean
         }[]
       }
       admin_set_super_admin: {
@@ -576,6 +623,44 @@ export type Database = {
           total_chapters: number
           cuantas: number
           quien: string | null
+        }[]
+      }
+      /* ---------- migr. 037: la respuesta jurada ---------- */
+      reveal_comment: { Args: { p_comment: string }; Returns: string }
+      quien_espera: {
+        Args: { p_discussion: string }
+        Returns: {
+          user_id: string
+          display_name: string
+          avatar_url: string | null
+          chapter: number
+        }[]
+      }
+      record_jurado: {
+        Args: { p_user: string }
+        Returns: { jurados: number; fallos: number }[]
+      }
+      /* ---------- migr. 038: probadores, clubes y «ya lo tengo» ---------- */
+      is_beta: { Args: Record<string, never>; Returns: boolean }
+      admin_set_flag: {
+        Args: { target: string; flag: 'beta_tester' | 'can_create_club'; value: boolean }
+        Returns: undefined
+      }
+      create_club: {
+        Args: { p_name: string; p_description?: string | null }
+        Returns: string
+      }
+      join_club: { Args: { p_code: string }; Returns: string }
+      my_club: { Args: Record<string, never>; Returns: Club[] }
+      club_invite_code: { Args: Record<string, never>; Returns: string | null }
+      club_ready: {
+        Args: { p_book: string }
+        Returns: {
+          user_id: string
+          display_name: string
+          avatar_url: string | null
+          listo: boolean
+          soy_yo: boolean
         }[]
       }
       club_activity: {

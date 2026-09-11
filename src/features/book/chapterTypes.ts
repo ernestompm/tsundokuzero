@@ -10,6 +10,10 @@ export interface ThreadComment {
   /** null = bloqueada: su autor iba más adelante que tú */
   body: string | null
   unlockChapter?: number
+  /** su autor juró que no destripa nada (migr. 037) */
+  swornSafe?: boolean
+  /** cerrada, pero jurada: puedes abrirla tú si quieres (migr. 037) */
+  canReveal?: boolean
   createdAt: string
 }
 

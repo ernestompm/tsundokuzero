@@ -98,3 +98,118 @@
   max-width: 200px;
   font-size: 16px;
 }
+
+/* =====================================================================
+   Capitanía reescrita: una frase, un botón, y lo demás en calma
+   ===================================================================== */
+
+.capi__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container);
+}
+/* Cuando falta algo que rompe el candado, el aviso no puede ser sutil */
+.capi__hero--alerta {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.capi__kicker {
+  color: var(--md-sys-color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.capi__hero--alerta .capi__kicker {
+  color: var(--md-sys-color-on-error-container);
+}
+
+.capi__titular {
+  margin: 0;
+  line-height: 1.2;
+}
+.capi__detalle {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  max-width: 62ch;
+}
+.capi__hero--alerta .capi__detalle {
+  color: var(--md-sys-color-on-error-container);
+}
+
+.capi__accion {
+  margin-top: 10px;
+}
+.capi__fila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.capi__num {
+  width: 150px;
+}
+.capi__votos {
+  width: min(100%, 340px);
+}
+.capi__panel {
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* ---------- Las líneas de abajo: informan, no mandan ---------- */
+
+.capi__lista {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.capi__linea {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--md-sys-color-surface-container-highest);
+}
+.capi__linea:first-child {
+  border-top: none;
+}
+
+.capi__linea-icono {
+  font-size: 20px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex: none;
+  margin-top: 1px;
+}
+.capi__linea-txt {
+  flex: 1;
+  min-width: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.capi__linea-txt b {
+  color: var(--md-sys-color-on-surface);
+}
+.capi__linea-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: none;
+}
+
+@media (max-width: 560px) {
+  .capi__linea {
+    flex-wrap: wrap;
+  }
+  .capi__linea-acciones {
+    width: 100%;
+    padding-left: 32px;
+  }
+}

@@ -1,5 +1,13 @@
 /* Menciones: «@carlos, esto me ha recordado a ti» (migr. 035) */
 
+/* Los saltos de línea que escribe la gente se respetan tal cual. El
+   servidor ya recorta los excesos (migr. 037), así que aquí no hay que
+   defenderse de nada: basta con no comérselos. */
+.mention-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .mencion {
   color: var(--md-sys-color-primary);
   font-weight: 500;
@@ -85,4 +93,16 @@
 }
 .mencion-espera__txt .body-small {
   opacity: 0.85;
+}
+
+/* Contador de caracteres: discreto y solo cuando queda poco (migr. 037) */
+.mentionbox__cuenta {
+  display: block;
+  margin-top: 4px;
+  text-align: right;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mentionbox__cuenta.pasado {
+  color: var(--md-sys-color-error);
+  font-weight: 500;
 }

@@ -10,7 +10,11 @@ export const SAMPLE_THREAD: ThreadViewData = {
   authorName: 'Alba Ferrer',
   authorUsername: 'alba',
   kind: 'theory',
-  body: 'La biblioteca no es un lugar: creo que cada estantería es una decisión que Nora no tomó. Fijaos en cómo la describe la señora Elm, siempre en términos de caminos y bifurcaciones.',
+  // Dos párrafos a propósito: los saltos de línea ya se respetan (migr. 037)
+  body: [
+    'La biblioteca no es un lugar: creo que cada estantería es una decisión que Nora no tomó.',
+    'Fijaos en cómo la describe la señora Elm, siempre en términos de caminos y bifurcaciones. No es casualidad.',
+  ].join('\n\n'),
   isClub: true,
   createdAt: 'hace 2 h',
   reactions: { '❤️': 6, '💡': 2 },
@@ -39,6 +43,17 @@ export const SAMPLE_THREAD: ThreadViewData = {
       body: null,
       unlockChapter: 40,
       createdAt: 'hace 10 min',
+    },
+    // Jurada: cerrada para ti, pero su autora dice que no destripa nada
+    {
+      id: 'c4',
+      authorId: 'm',
+      authorName: 'Marina Álvarez',
+      body: null,
+      unlockChapter: 31,
+      swornSafe: true,
+      canReveal: true,
+      createdAt: 'hace 5 min',
     },
   ],
 }

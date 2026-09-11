@@ -9,6 +9,8 @@ import { friendlyError } from '../../lib/errors'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
 import NextRead from './NextRead'
+import NoClub from './NoClub'
+import { clubActual, olvidarClub } from '../../lib/clubCache'
 import { BadgeDots } from '../../components/Badges'
 import { badgesDe, type MemberStats } from '../../lib/badges'
 import { Avatar, AvatarStack, BookCover } from '../../components/ui'
@@ -87,12 +89,10 @@ export default function ClubPage() {
 
   const load = useCallback(async () => {
     if (!session) return
-    const { data: clubData } = await supabase
-      .from('clubs')
-      .select('*')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
+    // MI club, no «el primero de la tabla»: desde que se pueden fundar
+    // clubes nuevos (migr. 038) eso ya no significa nada.
+    olvidarClub()
+    const clubData = await clubActual()
     if (!clubData) {
       // Sin club: se sale del estado de carga para mostrar el aviso (C-03)
       setLoading(false)
@@ -291,22 +291,10 @@ export default function ClubPage() {
     )
   }
 
-  // Sin club activo (auditoría C-03): mensaje amable + vuelta al inicio
+  // Sin club: ya no es un callejón sin salida — se entra con código o se
+  // funda el propio, si hay permiso (migr. 038).
   if (!club) {
-    return (
-      <section style={{ textAlign: 'center', padding: 48 }}>
-        <p className="body-large">Todavía no hay ningún club activo.</p>
-        <p className="body-medium on-surface-variant">
-          Cuando se cree el club de lectura, aparecerá aquí.
-        </p>
-        <md-filled-button
-          style={{ marginTop: 16 }}
-          onClick={() => navigate('/')}
-        >
-          Volver al inicio
-        </md-filled-button>
-      </section>
-    )
+    return <NoClub onEntrado={() => void load()} />
   }
 
   const iAmCaptain =

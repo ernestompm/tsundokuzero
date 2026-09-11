@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { clubActual } from '../../lib/clubCache'
 import { BookCover } from '../../components/ui'
 import { AVISO_AFILIADO, conAfiliado } from '../../lib/affiliate'
+import ReadyStrip from '../../components/ReadyStrip'
 import './nextread.css'
 
 interface Proxima {
@@ -103,6 +104,9 @@ export default function NextRead({ compacta = false }: { compacta?: boolean }) {
           <p className="body-small nextread__aviso">
             Ve haciéndote con él para empezar a la vez que el resto.
           </p>
+
+          {/* Quién lo tiene ya y quién falta (migr. 038) */}
+          <ReadyStrip bookId={data.bookId} />
 
           {data.buyUrl && (
             <>

@@ -69,7 +69,9 @@ export default function ChapterPage() {
     const { data: rawComments } = discIds.length
       ? await supabase
           .from('thread_comments')
-          .select('id, discussion_id, author_id, body, created_at, author_chapter, unlocked')
+          .select(
+            'id, discussion_id, author_id, body, created_at, author_chapter, unlocked, sworn_safe, can_reveal',
+          )
           .in('discussion_id', discIds)
           .order('created_at', { ascending: true })
       : { data: [] }
@@ -131,6 +133,8 @@ export default function ChapterPage() {
           authorUsername: usernameById.get(c.author_id),
           body: c.unlocked ? c.body : null,
           unlockChapter: c.author_chapter,
+          swornSafe: c.sworn_safe,
+          canReveal: c.can_reveal,
           createdAt: timeAgo(c.created_at),
         })),
     }))
@@ -198,13 +202,14 @@ export default function ChapterPage() {
       currentUserId={session?.user.id}
       clubAvailable={clubId != null}
       onPublish={publish}
-      onReply={(discussionId, body) => {
+      onReply={(discussionId, body, jurado) => {
         if (!session) return
         return run(
           supabase.from('discussion_comments').insert({
             discussion_id: discussionId,
             author_id: session.user.id,
             body,
+            sworn_safe: jurado,
           }),
         )
       }}

@@ -4,6 +4,7 @@ import '@material/web/progress/circular-progress.js'
 import { AuthProvider } from './auth/AuthContext'
 import { ComposeProvider } from './components/ComposeProvider'
 import { ConfirmProvider } from './components/ConfirmProvider'
+import { SwearProvider } from './components/SwearProvider'
 import RequireAuth from './auth/RequireAuth'
 import TermsGate from './auth/TermsGate'
 import AppShell from './components/AppShell'
@@ -48,63 +49,65 @@ export default function App() {
   return (
     <AuthProvider>
       <ConfirmProvider>
-        <ComposeProvider>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
+        <SwearProvider>
+          <ComposeProvider>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
 
-              {/* Escaparate público: toda la info de la app → /login */}
-              <Route path="/welcome" element={<LandingPage />} />
+                {/* Escaparate público: toda la info de la app → /login */}
+                <Route path="/welcome" element={<LandingPage />} />
 
-              {/* Textos legales: PÚBLICOS, sin login (LSSI art. 10, RGPD 12-13) */}
-              <Route path="/legal/:doc" element={<LegalPage />} />
+                {/* Textos legales: PÚBLICOS, sin login (LSSI art. 10, RGPD 12-13) */}
+                <Route path="/legal/:doc" element={<LegalPage />} />
 
-              {/* Vistas de diseño: solo en desarrollo (auditoría B-06) */}
-              {import.meta.env.DEV && (
-                <Route path="/preview/*" element={<PreviewRoutes />} />
-              )}
+                {/* Vistas de diseño: solo en desarrollo (auditoría B-06) */}
+                {import.meta.env.DEV && (
+                  <Route path="/preview/*" element={<PreviewRoutes />} />
+                )}
 
-              <Route element={<RequireAuth />}>
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                {/* Desde el enlace del correo de recuperación (C-01) */}
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                {/* TermsGate: exige aceptación vigente de términos (RGPD art. 7) */}
-                <Route element={<TermsGate />}>
-                  <Route element={<AppShell />}>
-                    <Route index element={<FeedPage />} />
-                    <Route path="nuevo" element={<NewsPage />} />
-                    <Route path="explore" element={<ExplorePage />} />
-                    <Route path="library" element={<LibraryPage />} />
-                    <Route path="book" element={<ClubBookRedirect />} />
-                    <Route path="book/:bookId" element={<BookPage />} />
-                    <Route path="book/:bookId/opinions" element={<OpinionsPage />} />
-                    <Route
-                      path="book/:bookId/chapter/:number"
-                      element={<ChapterPage />}
-                    />
-                    <Route path="thread/:discussionId" element={<ThreadPage />} />
-                    <Route path="club" element={<ClubPage />} />
-                    <Route path="club/capitania" element={<CaptainPage />} />
-                    <Route path="club/admin" element={<ClubAdminPage />} />
-                    {/* Enlaces antiguos a la gestión unificada */}
-                    <Route
-                      path="club/manage"
-                      element={<Navigate to="/club/capitania" replace />}
-                    />
-                    <Route path="me" element={<ProfilePage />} />
-                    <Route path="u/:username" element={<UserProfilePage />} />
-                    <Route path="author/:authorId" element={<AuthorPage />} />
-                    <Route
-                      path="notifications"
-                      element={<NotificationsPage />}
-                    />
-                    <Route path="admin" element={<AdminPage />} />
+                <Route element={<RequireAuth />}>
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  {/* Desde el enlace del correo de recuperación (C-01) */}
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  {/* TermsGate: exige aceptación vigente de términos (RGPD art. 7) */}
+                  <Route element={<TermsGate />}>
+                    <Route element={<AppShell />}>
+                      <Route index element={<FeedPage />} />
+                      <Route path="nuevo" element={<NewsPage />} />
+                      <Route path="explore" element={<ExplorePage />} />
+                      <Route path="library" element={<LibraryPage />} />
+                      <Route path="book" element={<ClubBookRedirect />} />
+                      <Route path="book/:bookId" element={<BookPage />} />
+                      <Route path="book/:bookId/opinions" element={<OpinionsPage />} />
+                      <Route
+                        path="book/:bookId/chapter/:number"
+                        element={<ChapterPage />}
+                      />
+                      <Route path="thread/:discussionId" element={<ThreadPage />} />
+                      <Route path="club" element={<ClubPage />} />
+                      <Route path="club/capitania" element={<CaptainPage />} />
+                      <Route path="club/admin" element={<ClubAdminPage />} />
+                      {/* Enlaces antiguos a la gestión unificada */}
+                      <Route
+                        path="club/manage"
+                        element={<Navigate to="/club/capitania" replace />}
+                      />
+                      <Route path="me" element={<ProfilePage />} />
+                      <Route path="u/:username" element={<UserProfilePage />} />
+                      <Route path="author/:authorId" element={<AuthorPage />} />
+                      <Route
+                        path="notifications"
+                        element={<NotificationsPage />}
+                      />
+                      <Route path="admin" element={<AdminPage />} />
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </Suspense>
-        </ComposeProvider>
+              </Routes>
+            </Suspense>
+          </ComposeProvider>
+        </SwearProvider>
       </ConfirmProvider>
     </AuthProvider>
   )

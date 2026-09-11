@@ -6,11 +6,12 @@ import '@material/web/button/text-button.js'
 import '@material/web/progress/circular-progress.js'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
-import { olvidarClub } from '../../lib/clubCache'
+import { clubActual, olvidarClub } from '../../lib/clubCache'
 import { useAuth } from '../../auth/AuthContext'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { Avatar, BookCover, ProgressBar } from '../../components/ui'
 import PageHeader from '../../components/PageHeader'
+import ReadyStrip from '../../components/ReadyStrip'
 import BookMap, { type MapReader } from '../book/BookMap'
 import PollComposer from './PollComposer'
 import type { Book, Club } from '../../lib/database.types'
@@ -44,20 +45,26 @@ function fechaCorta(iso: string | null) {
 }
 
 /**
- * Capitanía: el puesto de mando del capitán.
+ * Capitanía.
  *
- * DISEÑO. Antes era un panel de control con diez botones sueltos y había
- * que saberse el orden de las cosas. El ciclo del club es en realidad muy
- * simple y siempre está en uno de cuatro momentos:
+ * DISEÑO (reescrito otra vez, y con razón). La versión anterior seguía
+ * siendo un panel: tres tarjetas con título de carpeta —«Lo que leéis
+ * ahora», «Lo que viene después», «Cómo va el club»— y dentro de cada una,
+ * botones. El capitán entraba y tenía que leerse la pantalla entera para
+ * deducir qué le tocaba hacer.
  *
- *   sin nada  →  votando  →  elegido, sin empezar  →  leyendo  →  ...
+ * Un capitán no quiere un panel: quiere que le digan qué toca. Así que
+ * ahora hay UNA frase arriba que dice en qué momento está el club y UN
+ * botón que hace lo siguiente. Todo lo demás —los otros hilos abiertos,
+ * las acciones raras— baja a una lista de líneas tranquilas que no piden
+ * nada.
  *
- * Así que la pantalla enseña en qué momento estás y CUÁL ES EL PASO
- * SIGUIENTE, uno solo y destacado. El resto de acciones existen, pero
- * viven detrás de «Más opciones» porque casi nunca hacen falta.
- *
- * La votación además ya no depende de que el capitán se acuerde: se cierra
- * sola cuando vota el último o cuando llega su fecha (migr. 031).
+ * El orden de urgencia, que es lo único que hay que entender aquí:
+ *   1. faltan los capítulos  → sin eso el candado anti-spoiler no funciona
+ *   2. estáis leyendo        → terminar cuando toque
+ *   3. hay próxima elegida   → arrancarla (y ver quién tiene ya el libro)
+ *   4. hay votación          → no hacer nada, se cierra sola
+ *   5. no hay nada           → abrir la votación
  */
 export default function CaptainPage() {
   const { session, isSuperAdmin } = useAuth()
@@ -75,26 +82,23 @@ export default function CaptainPage() {
   const [busy, setBusy] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
   const [chaptersDraft, setChaptersDraft] = useState('')
-  const [masOpciones, setMasOpciones] = useState(false)
-  const [eligiendo, setEligiendo] = useState<'ninguno' | 'proxima' | 'ahora' | 'bis'>('ninguno')
+  /** qué panel secundario está abierto; 'ninguno' casi siempre */
+  const [panel, setPanel] = useState<
+    'ninguno' | 'proxima' | 'ahora' | 'bis' | 'votar' | 'gente'
+  >('ninguno')
   const [proximaFecha, setProximaFecha] = useState('')
 
   const load = useCallback(async () => {
     if (!session) return
 
-    // Esta pantalla cambia el club constantemente: la caché compartida
-    // no puede servir datos viejos aquí.
+    // Esta pantalla cambia el club constantemente: la caché compartida no
+    // puede servir datos viejos aquí.
     olvidarClub()
 
     // La votación puede haber vencido mientras nadie miraba (migr. 031)
     await supabase.rpc('close_poll_if_due')
 
-    const { data: c } = await supabase
-      .from('clubs')
-      .select('*')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
+    const c = await clubActual()
     if (!c) {
       setAllowed(false)
       return
@@ -191,7 +195,7 @@ export default function CaptainPage() {
         : { kind: 'info', text: texto },
     )
     setBusy(false)
-    setEligiendo('ninguno')
+    setPanel('ninguno')
     await load()
   }
 
@@ -267,6 +271,8 @@ export default function CaptainPage() {
     )
   }
 
+  /* ============ Dónde está el club ============ */
+
   const total = book?.total_chapters ?? 0
   const terminados = avances.filter((a) => a.status === 'finished').length
   const empezados = avances.filter((a) => a.chapter > 0).length
@@ -278,6 +284,9 @@ export default function CaptainPage() {
   const lectores: MapReader[] = avances
     .filter((a) => a.chapter > 0)
     .map((a) => ({ id: a.id, name: a.name, avatar: a.avatar, chapter: a.chapter, isMe: a.isMe }))
+
+  const faltanCapitulos = !!book && book.chapters_confirmed === false
+  const todosTerminados = avances.length > 0 && terminados === avances.length
 
   const elegibles = books.filter(
     (b) => b.id !== club.current_book_id && b.id !== club.next_book_id,
@@ -305,8 +314,109 @@ export default function CaptainPage() {
     </div>
   )
 
+  /* ---------- El titular: una frase y un botón ---------- */
+
+  let titular: string
+  let detalle: string
+  let accion: React.ReactNode = null
+
+  if (faltanCapitulos) {
+    titular = `Faltan los capítulos de «${book!.title}»`
+    detalle =
+      'Entró como candidato de una votación, así que su número de capítulos es provisional. El candado anti-spoiler depende de ese número: hasta que lo confirmes, nadie está protegido del todo.'
+    accion = (
+      <div className="capi__fila">
+        <input
+          className="tz-input body-medium capi__num"
+          type="number"
+          min={1}
+          max={500}
+          inputMode="numeric"
+          placeholder="Nº de capítulos"
+          aria-label={`Número de capítulos de ${book!.title}`}
+          value={chaptersDraft}
+          onChange={(e) => setChaptersDraft(e.target.value)}
+        />
+        <md-filled-button
+          disabled={busy || !chaptersDraft.trim() || undefined}
+          onClick={() => void confirmarCapitulos()}
+        >
+          Confirmar
+        </md-filled-button>
+      </div>
+    )
+  } else if (book) {
+    titular = todosTerminados
+      ? 'Lo habéis terminado todos'
+      : empezados === 0
+        ? `Nadie ha abierto «${book.title}» todavía`
+        : `El club va por el capítulo ${mediaGrupo} de ${total}`
+    detalle = todosTerminados
+      ? nextBook
+        ? `Ciérralo y arranca «${nextBook.title}»: se abren las reseñas de todos a la vez.`
+        : 'Ciérralo y se abren las reseñas de todos a la vez. Es el estreno.'
+      : empezados === 0
+        ? 'Dale unos días. Cuando alguien marque su progreso lo verás aquí.'
+        : `Han terminado ${terminados} de ${avances.length}. Cuando termine el último se abren las reseñas.`
+    accion = (
+      <md-filled-button disabled={busy || undefined} onClick={() => void terminarLectura()}>
+        {nextBook ? `Terminar y empezar «${nextBook.title}»` : 'Terminar la lectura'}
+      </md-filled-button>
+    )
+  } else if (nextBook) {
+    titular = `Toca empezar «${nextBook.title}»`
+    detalle = club.next_starts_at
+      ? `Estaba previsto para el ${fechaCorta(club.next_starts_at)}. Arráncalo cuando lo tengáis.`
+      : 'Ya está elegido. Solo falta que le des al botón para que todos puedan marcar progreso.'
+    accion = (
+      <md-filled-button disabled={busy || undefined} onClick={() => void empezarProxima()}>
+        Empezar «{nextBook.title}»
+      </md-filled-button>
+    )
+  } else if (votacion) {
+    titular = 'Estáis votando. No tienes que hacer nada'
+    detalle = `Han votado ${votacion.votos} de ${votacion.miembros}. Se cierra sola en cuanto vote el último${
+      votacion.closesAt ? `, y como muy tarde el ${fechaCorta(votacion.closesAt)}` : ''
+    }.`
+    accion = (
+      <div className="capi__votos">
+        <ProgressBar
+          percent={
+            votacion.miembros > 0
+              ? Math.round((votacion.votos / votacion.miembros) * 100)
+              : 0
+          }
+        />
+      </div>
+    )
+  } else {
+    titular = 'El club no está leyendo nada'
+    detalle =
+      'Pega los ISBN o busca los títulos y la votación se abre sola. Se cerrará cuando haya votado todo el club.'
+    accion = (
+      <md-filled-button disabled={busy || undefined} onClick={() => setPanel('votar')}>
+        Abrir una votación
+      </md-filled-button>
+    )
+  }
+
+  /** Una línea tranquila de las de abajo. */
+  const linea = (
+    icono: string,
+    texto: React.ReactNode,
+    acciones: React.ReactNode,
+  ) => (
+    <div className="capi__linea">
+      <span className="material-symbols-rounded capi__linea-icono" aria-hidden="true">
+        {icono}
+      </span>
+      <span className="body-medium capi__linea-txt">{texto}</span>
+      <span className="capi__linea-acciones">{acciones}</span>
+    </div>
+  )
+
   return (
-    <section className="club-manage">
+    <section className="club-manage capitania">
       <PageHeader
         title="Capitanía"
         sub={club.name}
@@ -322,230 +432,77 @@ export default function CaptainPage() {
         </p>
       )}
 
-      {/* ================= 1 · Lo que el club lee ahora ================= */}
-      <div className="manage-card">
-        <h2 className="title-small manage-card__title">Lo que leéis ahora</h2>
+      {/* ============ Lo que toca ahora ============ */}
+      <div className={`capi__hero${faltanCapitulos ? ' capi__hero--alerta' : ''}`}>
+        <span className="label-medium capi__kicker">Lo que toca ahora</span>
+        <h2 className="title-large serif capi__titular">{titular}</h2>
+        <p className="body-medium capi__detalle">{detalle}</p>
+        <div className="capi__accion">{accion}</div>
 
-        {book ? (
-          <>
-            <div className="manage-current-book">
-              <BookCover title={book.title} author={book.author} coverUrl={book.cover_url} size="md" />
-              <span className="body-medium">
-                <b>{book.title}</b>
-                <br />
-                <span className="on-surface-variant">
-                  {book.author} · {book.total_chapters} capítulos
-                </span>
-                <br />
-                <span className="body-small on-surface-variant">
-                  {empezados === 0
-                    ? 'Todavía no ha empezado nadie'
-                    : terminados === avances.length
-                      ? 'Lo habéis terminado todos'
-                      : `${terminados} de ${avances.length} terminados · el grupo va por el ${mediaGrupo}`}
-                </span>
-              </span>
-            </div>
+        {/* Quién tiene ya el libro: lo que de verdad decide si se arranca */}
+        {!book && nextBook && <ReadyStrip bookId={nextBook.id} />}
 
-            {book.chapters_confirmed === false && (
-              <div className="manage-chapters-warn">
-                <p className="body-medium">
-                  Los capítulos son provisionales, porque el libro entró como candidato de
-                  una votación. Confírmalos: el candado anti-spoiler depende de ese número.
-                </p>
-                <div className="manage-chapters-warn__row">
-                  <input
-                    className="tz-input body-medium"
-                    type="number"
-                    min={1}
-                    max={500}
-                    inputMode="numeric"
-                    placeholder="Nº de capítulos"
-                    aria-label={`Número de capítulos de ${book.title}`}
-                    value={chaptersDraft}
-                    onChange={(e) => setChaptersDraft(e.target.value)}
-                  />
-                  <md-filled-button
-                    disabled={busy || !chaptersDraft.trim() || undefined}
-                    onClick={() => void confirmarCapitulos()}
-                  >
-                    Confirmar
-                  </md-filled-button>
-                </div>
-              </div>
-            )}
-
-            {/* El paso siguiente, uno solo y destacado */}
-            <div className="capitan__paso">
-              <md-filled-button disabled={busy || undefined} onClick={() => void terminarLectura()}>
-                {nextBook ? `Terminar y empezar «${nextBook.title}»` : 'Terminar la lectura'}
-              </md-filled-button>
-              <span className="body-small on-surface-variant">
-                {nextBook
-                  ? 'Se abren las reseñas de este y arranca el siguiente.'
-                  : 'Se abren las reseñas de todos y pasa al historial.'}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="capitan__mas label-medium"
-              onClick={() => setMasOpciones((v) => !v)}
-            >
-              {masOpciones ? 'Menos opciones' : 'Más opciones'}
-            </button>
-
-            {masOpciones && (
-              <div className="capitan__extras">
-                <md-text-button
-                  disabled={busy || undefined}
-                  onClick={() =>
-                    void hecho('Reseñas abiertas para todo el club.', async () =>
-                      supabase.rpc('premiere_reviews'),
-                    )
-                  }
-                >
-                  Abrir las reseñas ya
-                </md-text-button>
-                <md-text-button
-                  disabled={busy || undefined}
-                  onClick={() => setEligiendo(eligiendo === 'bis' ? 'ninguno' : 'bis')}
-                >
-                  Pedir el bis
-                </md-text-button>
-                <md-text-button
-                  disabled={busy || undefined}
-                  onClick={() => setEligiendo(eligiendo === 'ahora' ? 'ninguno' : 'ahora')}
-                >
-                  Cambiar de libro
-                </md-text-button>
-              </div>
-            )}
-
-            {eligiendo === 'bis' && (
-              <div className="manage-bis">
-                <p className="body-medium">
-                  <b>El bis</b> es la lectura extra de este mes, la que se pide cuando el
-                  club se ha ventilado el libro antes de tiempo.
-                </p>
-                {selector((id) =>
-                  void hecho('¡Bis en marcha!', async () =>
-                    supabase.rpc('start_club_bis', { p_book: id }),
-                  ),
-                )}
-              </div>
-            )}
-
-            {eligiendo === 'ahora' &&
-              selector((id) =>
-                void hecho('Libro del club cambiado.', async () =>
-                  supabase.from('clubs').update({ current_book_id: id }).eq('id', club.id),
-                ),
-              )}
-          </>
-        ) : (
-          <>
-            <p className="body-medium on-surface-variant">
-              El club no está leyendo nada ahora mismo.
-            </p>
-            {nextBook ? (
-              <div className="capitan__paso">
-                <md-filled-button disabled={busy || undefined} onClick={() => void empezarProxima()}>
-                  Empezar «{nextBook.title}»
-                </md-filled-button>
-                <span className="body-small on-surface-variant">
-                  Ya lo habéis elegido. Solo falta arrancarlo.
-                </span>
-              </div>
-            ) : (
-              <div className="capitan__paso">
-                <md-outlined-button
-                  disabled={busy || undefined}
-                  onClick={() => setEligiendo(eligiendo === 'ahora' ? 'ninguno' : 'ahora')}
-                >
-                  Elegir un libro directamente
-                </md-outlined-button>
-                <span className="body-small on-surface-variant">
-                  O abre una votación abajo y que lo decida el club.
-                </span>
-              </div>
-            )}
-            {eligiendo === 'ahora' &&
-              selector((id) =>
-                void hecho('Ya tenéis libro.', async () =>
-                  supabase.from('clubs').update({ current_book_id: id }).eq('id', club.id),
-                ),
-              )}
-          </>
+        {panel === 'votar' && (
+          <div className="capi__panel">
+            <PollComposer
+              onCreated={() => {
+                setBanner({ kind: 'info', text: 'Votación abierta. El club ya tiene el aviso.' })
+                setPanel('ninguno')
+                void load()
+              }}
+              onCancel={() => setPanel('ninguno')}
+            />
+          </div>
         )}
       </div>
 
-      {/* ================= 2 · Lo que viene después ================= */}
-      <div className="manage-card">
-        <h2 className="title-small manage-card__title">Lo que viene después</h2>
-
-        {votacion ? (
-          /* --- Votando --- */
-          <>
-            <div className="capitan__votacion">
-              <span className="title-small">{votacion.title}</span>
-              <div className="capitan__votos">
-                <ProgressBar
-                  percent={
-                    votacion.miembros > 0
-                      ? Math.round((votacion.votos / votacion.miembros) * 100)
-                      : 0
-                  }
-                />
-                <span className="label-medium on-surface-variant">
-                  {votacion.votos} de {votacion.miembros}
-                </span>
-              </div>
-              <p className="body-small on-surface-variant">
-                Se cierra sola en cuanto vote todo el mundo
-                {votacion.closesAt ? `, y como muy tarde el ${fechaCorta(votacion.closesAt)}` : ''}.
-                No tienes que hacer nada.
-              </p>
-            </div>
-            <div className="capitan__extras">
+      {/* ============ Lo demás, sin pedir nada ============ */}
+      <div className="capi__lista">
+        {/* Votación en marcha mientras se lee: es información, no tarea */}
+        {votacion && (book || nextBook) &&
+          linea(
+            'how_to_vote',
+            <>
+              <b>{votacion.title}</b> · han votado {votacion.votos} de{' '}
+              {votacion.miembros}. Se cierra sola.
+            </>,
+            <>
               <md-text-button disabled={busy || undefined} onClick={() => void cerrarVotacionYa()}>
                 Cerrarla ya
               </md-text-button>
               <md-text-button disabled={busy || undefined} onClick={() => void descartarVotacion()}>
                 Descartarla
               </md-text-button>
-            </div>
-          </>
-        ) : nextBook ? (
-          /* --- Ya elegido, esperando a empezar --- */
-          <>
-            <div className="manage-current-book">
-              <BookCover
-                title={nextBook.title}
-                author={nextBook.author}
-                coverUrl={nextBook.cover_url}
-                size="md"
-              />
-              <span className="body-medium">
-                <b>{nextBook.title}</b>
-                <br />
-                <span className="on-surface-variant">{nextBook.author}</span>
-                <br />
-                <span className="body-small on-surface-variant">
-                  {club.next_starts_at
-                    ? `Se empieza el ${fechaCorta(club.next_starts_at)}`
-                    : 'Sin fecha de comienzo'}
-                </span>
-              </span>
-            </div>
-            <p className="body-small on-surface-variant">
-              Ya sale en el Inicio de todos para que les dé tiempo a conseguirlo.
-              {book ? ' Se arranca al terminar la lectura de ahora.' : ''}
-            </p>
-            <div className="capitan__extras">
+            </>,
+          )}
+
+        {votacion && !book && !nextBook &&
+          linea(
+            'how_to_vote',
+            <>Si tienes prisa, puedes cerrarla o tirarla.</>,
+            <>
+              <md-text-button disabled={busy || undefined} onClick={() => void cerrarVotacionYa()}>
+                Cerrarla ya
+              </md-text-button>
+              <md-text-button disabled={busy || undefined} onClick={() => void descartarVotacion()}>
+                Descartarla
+              </md-text-button>
+            </>,
+          )}
+
+        {/* La próxima lectura, cuando ya se está leyendo otra cosa */}
+        {book && nextBook &&
+          linea(
+            'menu_book',
+            <>
+              Después toca <b>{nextBook.title}</b>
+              {club.next_starts_at ? `, el ${fechaCorta(club.next_starts_at)}` : ''}. Ya
+              sale en el Inicio de todos.
+            </>,
+            <>
               <md-text-button
                 disabled={busy || undefined}
-                onClick={() => setEligiendo(eligiendo === 'proxima' ? 'ninguno' : 'proxima')}
+                onClick={() => setPanel(panel === 'proxima' ? 'ninguno' : 'proxima')}
               >
                 Cambiarla
               </md-text-button>
@@ -559,119 +516,182 @@ export default function CaptainPage() {
               >
                 Quitarla
               </md-text-button>
-            </div>
-            {eligiendo === 'proxima' &&
-              selector((id) =>
-                void hecho('Próxima lectura cambiada.', async () =>
-                  supabase.rpc('set_next_book', { p_book: id, p_starts_at: null }),
-                ),
-              )}
-          </>
-        ) : (
-          /* --- Nada decidido: abrir votación o elegir a dedo --- */
-          <>
-            <p className="body-small on-surface-variant">
-              Pega los ISBN o busca los títulos y la votación se abre sola. Se cerrará
-              cuando haya votado todo el club o al llegar su fecha.
-            </p>
-            <PollComposer
-              onCreated={() => {
-                setBanner({ kind: 'info', text: 'Votación abierta. El club ya tiene el aviso.' })
-                void load()
-              }}
-              onCancel={() => setBanner(null)}
-            />
-            <div className="capitan__extras">
-              <md-text-button
-                disabled={busy || undefined}
-                onClick={() => setEligiendo(eligiendo === 'proxima' ? 'ninguno' : 'proxima')}
-              >
-                O elegir la próxima sin votación
-              </md-text-button>
-            </div>
-            {eligiendo === 'proxima' && (
-              <>
-                <label className="label-medium capitan__fecha">
-                  ¿Cuándo se empieza? Opcional
-                  <input
-                    className="tz-input body-medium"
-                    type="date"
-                    value={proximaFecha}
-                    onChange={(e) => setProximaFecha(e.target.value)}
-                  />
-                </label>
-                {selector((id) =>
-                  void hecho('Próxima lectura fijada.', async () =>
-                    supabase.rpc('set_next_book', {
-                      p_book: id,
-                      p_starts_at: proximaFecha
-                        ? new Date(proximaFecha + 'T09:00:00').toISOString()
-                        : null,
-                    }),
-                  ),
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* ================= 3 · Cómo va el club ================= */}
-      {book && (
-        <div className="manage-card">
-          <h2 className="title-small manage-card__title">Cómo va el club</h2>
-
-          {lectores.length > 0 && (
-            <BookMap
-              totalChapters={total}
-              myChapter={yo?.chapter ?? 0}
-              heat={heat}
-              readers={lectores}
-            />
+            </>,
           )}
 
-          <div className="capitan__avances">
-            {avances.map((a) => {
-              const pct = total > 0 ? Math.round((a.chapter / total) * 100) : 0
-              return (
-                <div key={a.id} className="capitan__avance">
-                  <Avatar name={a.name} url={a.avatar} size={36} />
-                  <div className="capitan__avance-main">
-                    <span className="title-small">
-                      {a.name}
-                      {a.isMe && <span className="body-small on-surface-variant"> · tú</span>}
-                    </span>
-                    <div className="capitan__avance-barra">
-                      <ProgressBar percent={pct} />
-                      <span className="label-medium on-surface-variant capitan__avance-cap">
-                        {a.status === 'finished'
-                          ? 'Terminado'
-                          : a.chapter > 0
-                            ? `Cap. ${a.chapter}`
-                            : 'Sin empezar'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        {/* Elegir la próxima a dedo, sin pasar por votación */}
+        {book && !nextBook && !votacion &&
+          linea(
+            'menu_book',
+            <>Todavía no hay próxima lectura. Se puede votar o elegirla a dedo.</>,
+            <>
+              <md-text-button disabled={busy || undefined} onClick={() => setPanel('votar')}>
+                Abrir votación
+              </md-text-button>
+              <md-text-button
+                disabled={busy || undefined}
+                onClick={() => setPanel(panel === 'proxima' ? 'ninguno' : 'proxima')}
+              >
+                Elegirla
+              </md-text-button>
+            </>,
+          )}
+
+        {/* El bis: la lectura extra cuando el club se ventila el libro */}
+        {book &&
+          linea(
+            'auto_stories',
+            <>
+              <b>El bis</b> es la lectura extra de este mes, la que se pide cuando
+              os habéis ventilado el libro antes de tiempo.
+            </>,
+            <md-text-button
+              disabled={busy || undefined}
+              onClick={() => setPanel(panel === 'bis' ? 'ninguno' : 'bis')}
+            >
+              Pedir el bis
+            </md-text-button>,
+          )}
+
+        {/* Cosas raras, que existen pero casi nunca hacen falta */}
+        {book &&
+          linea(
+            'lock_open',
+            <>
+              Abrir las reseñas sin esperar al último. El estreno deja de ser una
+              sorpresa, pero a veces hace falta.
+            </>,
+            <md-text-button
+              disabled={busy || undefined}
+              onClick={() =>
+                void hecho('Reseñas abiertas para todo el club.', async () =>
+                  supabase.rpc('premiere_reviews'),
+                )
+              }
+            >
+              Abrir reseñas ya
+            </md-text-button>,
+          )}
+
+        {linea(
+          'edit',
+          <>Cambiar el libro del club a dedo, sin cerrar el actual.</>,
+          <md-text-button
+            disabled={busy || undefined}
+            onClick={() => setPanel(panel === 'ahora' ? 'ninguno' : 'ahora')}
+          >
+            Cambiar de libro
+          </md-text-button>,
+        )}
+
+        {isSuperAdmin &&
+          linea(
+            'settings',
+            <>Emblema, capitanía, miembros y enlaces de compra.</>,
+            <md-text-button onClick={() => navigate('/club/admin')}>
+              Administrar el club
+            </md-text-button>,
+          )}
+      </div>
+
+      {/* Paneles que abre una de las líneas de arriba */}
+      {panel === 'bis' && (
+        <div className="manage-card">
+          <h2 className="title-small manage-card__title">Elegir el bis</h2>
+          {selector((id) =>
+            void hecho('¡Bis en marcha!', async () =>
+              supabase.rpc('start_club_bis', { p_book: id }),
+            ),
+          )}
         </div>
       )}
 
-      {isSuperAdmin && (
-        <div className="manage-card capitan__admin">
-          <p className="body-medium">
-            Los ajustes del club, la capitanía y los miembros están en la{' '}
-            <button
-              type="button"
-              className="capitan__enlace"
-              onClick={() => navigate('/club/admin')}
-            >
-              administración del club
-            </button>
-            .
-          </p>
+      {panel === 'ahora' && (
+        <div className="manage-card">
+          <h2 className="title-small manage-card__title">
+            {book ? 'Cambiar el libro del club' : 'Elegir libro'}
+          </h2>
+          {selector((id) =>
+            void hecho('Libro del club cambiado.', async () =>
+              supabase.from('clubs').update({ current_book_id: id }).eq('id', club.id),
+            ),
+          )}
+        </div>
+      )}
+
+      {panel === 'proxima' && (
+        <div className="manage-card">
+          <h2 className="title-small manage-card__title">Elegir la próxima lectura</h2>
+          <label className="label-medium capitan__fecha">
+            ¿Cuándo se empieza? Opcional
+            <input
+              className="tz-input body-medium"
+              type="date"
+              value={proximaFecha}
+              onChange={(e) => setProximaFecha(e.target.value)}
+            />
+          </label>
+          {selector((id) =>
+            void hecho('Próxima lectura fijada.', async () =>
+              supabase.rpc('set_next_book', {
+                p_book: id,
+                p_starts_at: proximaFecha
+                  ? new Date(proximaFecha + 'T09:00:00').toISOString()
+                  : null,
+              }),
+            ),
+          )}
+        </div>
+      )}
+
+      {/* ============ Cómo va cada uno ============ */}
+      {book && lectores.length > 0 && (
+        <div className="manage-card">
+          <h2 className="title-small manage-card__title">Cómo va cada uno</h2>
+
+          <BookMap
+            totalChapters={total}
+            myChapter={yo?.chapter ?? 0}
+            heat={heat}
+            readers={lectores}
+          />
+
+          <button
+            type="button"
+            className="capitan__mas label-medium"
+            onClick={() => setPanel(panel === 'gente' ? 'ninguno' : 'gente')}
+          >
+            {panel === 'gente' ? 'Ocultar el detalle' : 'Ver capítulo por capítulo'}
+          </button>
+
+          {panel === 'gente' && (
+            <div className="capitan__avances">
+              {avances.map((a) => {
+                const pct = total > 0 ? Math.round((a.chapter / total) * 100) : 0
+                return (
+                  <div key={a.id} className="capitan__avance">
+                    <Avatar name={a.name} url={a.avatar} size={36} />
+                    <div className="capitan__avance-main">
+                      <span className="title-small">
+                        {a.name}
+                        {a.isMe && <span className="body-small on-surface-variant"> · tú</span>}
+                      </span>
+                      <div className="capitan__avance-barra">
+                        <ProgressBar percent={pct} />
+                        <span className="label-medium on-surface-variant capitan__avance-cap">
+                          {a.status === 'finished'
+                            ? 'Terminado'
+                            : a.chapter > 0
+                              ? `Cap. ${a.chapter}`
+                              : 'Sin empezar'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </section>

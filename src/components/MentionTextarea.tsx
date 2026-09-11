@@ -17,6 +17,8 @@ interface Props {
   ariaLabel?: string
   autoFocus?: boolean
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  /** tope de caracteres; el contador solo aparece cuando queda poco */
+  maxLength?: number
 }
 
 /**
@@ -35,11 +37,17 @@ export default function MentionTextarea({
   ariaLabel,
   autoFocus,
   onKeyDown,
+  maxLength,
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const [gente, setGente] = useState<Mencionable[]>([])
   const [sugerencias, setSugerencias] = useState<Mencionable[]>([])
   const [activa, setActiva] = useState(0)
+
+  // El contador no está siempre a la vista: aparece cuando quedan 120
+  // caracteres. Antes de eso solo es ruido mientras escribes.
+  const restantes = maxLength != null ? maxLength - value.length : null
+  const avisa = restantes != null && restantes <= 120
 
   useEffect(() => {
     void mencionables().then(setGente)
@@ -83,6 +91,7 @@ export default function MentionTextarea({
         placeholder={placeholder}
         aria-label={ariaLabel}
         autoFocus={autoFocus}
+        maxLength={maxLength}
         value={value}
         onChange={(e) => {
           onChange(e.target.value)
@@ -116,6 +125,17 @@ export default function MentionTextarea({
           onKeyDown?.(e)
         }}
       />
+
+      {avisa && (
+        <span
+          className={`mentionbox__cuenta label-small${restantes! < 0 ? ' pasado' : ''}`}
+          aria-live="polite"
+        >
+          {restantes! >= 0
+            ? `Quedan ${restantes} caracteres`
+            : `Te sobran ${-restantes!} caracteres`}
+        </span>
+      )}
 
       {sugerencias.length > 0 && (
         <ul className="mentionbox__lista" role="listbox" aria-label="Personas a mencionar">

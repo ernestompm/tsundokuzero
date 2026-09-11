@@ -89,6 +89,20 @@ function describe(
         body: `${who} compartió un pensamiento nuevo 💭`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
       }
+    case 'reply_sworn':
+      return {
+        title: 'Tsundoku Zero',
+        body: n.chapter_number
+          ? `${who} te respondió desde el capítulo ${n.chapter_number} y jura que no hay spoiler 🤝`
+          : `${who} te respondió y jura que no hay spoiler 🤝`,
+        url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
+      }
+    case 'all_ready':
+      return {
+        title: 'Tsundoku Zero',
+        body: 'Ya tenéis todos el libro. Podéis empezar cuando quieras 📖',
+        url: '/club/captain',
+      }
     case 'mention_wait':
       return {
         title: 'Tsundoku Zero',

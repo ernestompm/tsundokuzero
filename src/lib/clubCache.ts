@@ -20,13 +20,20 @@ export function clubActual(): Promise<Club | null> {
   if (pendiente) return pendiente
   const p: Promise<Club | null> = (async () => {
     try {
-      const { data } = await supabase
+      // `my_club()` devuelve MI club, no «el primero de la tabla»: desde
+      // que se pueden fundar clubes nuevos (migr. 038), lo segundo ya no
+      // significa nada. Si la migración aún no está, se cae al método de
+      // siempre para no dejar la app en blanco.
+      const { data, error } = await supabase.rpc('my_club')
+      if (!error) return ((data as Club[] | null) ?? [])[0] ?? null
+
+      const { data: fallback } = await supabase
         .from('clubs')
         .select('*')
         .order('created_at')
         .limit(1)
         .maybeSingle()
-      return (data as Club | null) ?? null
+      return (fallback as Club | null) ?? null
     } catch {
       // Un fallo no debe dejar la caché envenenada
       pendiente = null

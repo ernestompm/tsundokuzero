@@ -19,10 +19,10 @@ import {
   LEGAL_ORDER,
   LEGAL_DOCS,
 } from '../legal/legalContent'
-import type { Book, DiscussionKind, Report } from '../../lib/database.types'
+import type { Book, DevNote, DiscussionKind, Report } from '../../lib/database.types'
 import './admin.css'
 
-type Tab = 'summary' | 'users' | 'content' | 'reports' | 'books' | 'legal'
+type Tab = 'summary' | 'users' | 'content' | 'reports' | 'notes' | 'books' | 'legal'
 
 export default function AdminPage() {
   const { isSuperAdmin, loading } = useAuth()
@@ -41,6 +41,7 @@ export default function AdminPage() {
             ['users', 'Usuarios'],
             ['content', 'Moderación'],
             ['reports', 'Denuncias'],
+            ['notes', 'Probadores'],
             ['books', 'Libros'],
             ['legal', 'Legal'],
           ] as [Tab, string][]
@@ -59,6 +60,7 @@ export default function AdminPage() {
       {tab === 'users' && <UsersTab />}
       {tab === 'content' && <ContentTab />}
       {tab === 'reports' && <ReportsTab />}
+      {tab === 'notes' && <NotesTab />}
       {tab === 'books' && <BooksTab />}
       {tab === 'legal' && <LegalTab />}
     </section>
@@ -137,6 +139,10 @@ interface AdminUser {
   is_super_admin: boolean
   club_role: string | null
   created_at: string
+  /** probador: puede dejar notas de desarrollo (migr. 038) */
+  beta_tester: boolean
+  /** permiso pendiente de gastar para fundar un club (migr. 038) */
+  can_create_club: boolean
 }
 
 function UsersTab() {
@@ -203,6 +209,22 @@ function UsersTab() {
     })
     if (error)
       setError(friendlyError(error, 'No se pudo cambiar el permiso de administración.')) // auditoría A-04
+    else await load()
+    setSavingId(null)
+  }
+
+  /** Probador y permiso de fundar club: los dos interruptores nuevos. */
+  const toggleFlag = async (
+    u: AdminUser,
+    flag: 'beta_tester' | 'can_create_club',
+  ) => {
+    setSavingId(u.id)
+    const { error } = await supabase.rpc('admin_set_flag', {
+      target: u.id,
+      flag,
+      value: !u[flag],
+    })
+    if (error) setError(friendlyError(error, 'No se pudo cambiar el permiso.'))
     else await load()
     setSavingId(null)
   }
@@ -300,6 +322,24 @@ function UsersTab() {
             />
             admin
           </label>
+          <label className="admin-switch label-small">
+            <md-switch
+              aria-label={`Probador: ${u.display_name}`}
+              selected={u.beta_tester || undefined}
+              disabled={savingId === u.id || undefined}
+              onChange={() => void toggleFlag(u, 'beta_tester')}
+            />
+            probador
+          </label>
+          <label className="admin-switch label-small" title="Se gasta al fundar el club">
+            <md-switch
+              aria-label={`Puede fundar un club: ${u.display_name}`}
+              selected={u.can_create_club || undefined}
+              disabled={savingId === u.id || undefined}
+              onChange={() => void toggleFlag(u, 'can_create_club')}
+            />
+            funda club
+          </label>
           {u.id !== session?.user.id && (
             <button
               className="admin-danger"
@@ -311,6 +351,168 @@ function UsersTab() {
               <span className="material-symbols-rounded" aria-hidden="true">person_remove</span>
             </button>
           )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ===================== Probadores ===================== */
+
+const NOTA_ESTADO: [DevNote['status'], string][] = [
+  ['open', 'Pendiente'],
+  ['doing', 'En ello'],
+  ['done', 'Hecho'],
+  ['wontfix', 'Descartado'],
+]
+
+const NOTA_TIPO: Record<DevNote['kind'], string> = {
+  fallo: 'Falla',
+  idea: 'Idea',
+  texto: 'Texto',
+}
+
+/**
+ * Lo que cuentan los probadores desde dentro de la app (migr. 038).
+ * Cada nota llega con la pantalla desde la que se escribió, que suele ser
+ * la mitad de la información.
+ */
+function NotesTab() {
+  const [notas, setNotas] = useState<DevNote[] | null>(null)
+  const [quien, setQuien] = useState<Map<string, string>>(new Map())
+  const [error, setError] = useState<string | null>(null)
+  const [verCerradas, setVerCerradas] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('dev_notes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) {
+      setError(
+        /dev_notes|schema cache/i.test(error.message)
+          ? 'Falta ejecutar la migración 038 (probadores).'
+          : friendlyError(error, 'No se pudieron cargar las notas.'),
+      )
+      setNotas([])
+      return
+    }
+    const lista = (data as DevNote[] | null) ?? []
+    setNotas(lista)
+    const ids = [...new Set(lista.map((n) => n.author_id))]
+    if (ids.length > 0) {
+      const { data: perfiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', ids)
+      setQuien(new Map((perfiles ?? []).map((p) => [p.id, p.display_name])))
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const cambiar = async (n: DevNote, status: DevNote['status']) => {
+    setBusy(n.id)
+    const { error } = await supabase
+      .from('dev_notes')
+      .update({
+        status,
+        resolved_at: status === 'open' || status === 'doing' ? null : new Date().toISOString(),
+      })
+      .eq('id', n.id)
+    if (error) setError(friendlyError(error, 'No se pudo cambiar el estado.'))
+    else await load()
+    setBusy(null)
+  }
+
+  const responder = async (n: DevNote, reply: string) => {
+    setBusy(n.id)
+    const { error } = await supabase
+      .from('dev_notes')
+      .update({ reply: reply.trim() || null })
+      .eq('id', n.id)
+    if (error) setError(friendlyError(error, 'No se pudo guardar la respuesta.'))
+    else await load()
+    setBusy(null)
+  }
+
+  if (notas === null) return <Spinner error={error} />
+
+  const abiertas = notas.filter((n) => n.status === 'open' || n.status === 'doing')
+  const cerradas = notas.filter((n) => n.status === 'done' || n.status === 'wontfix')
+  const visibles = verCerradas ? cerradas : abiertas
+
+  return (
+    <div className="admin-list">
+      {error && <p className="admin-error body-medium">{error}</p>}
+
+      <div className="admin-tabs">
+        <button
+          className={`admin-tab label-large${!verCerradas ? ' active' : ''}`}
+          onClick={() => setVerCerradas(false)}
+        >
+          Abiertas ({abiertas.length})
+        </button>
+        <button
+          className={`admin-tab label-large${verCerradas ? ' active' : ''}`}
+          onClick={() => setVerCerradas(true)}
+        >
+          Cerradas ({cerradas.length})
+        </button>
+      </div>
+
+      {visibles.length === 0 && (
+        <p className="body-medium on-surface-variant">
+          {verCerradas ? 'Nada cerrado todavía.' : 'Ninguna nota pendiente.'}
+        </p>
+      )}
+
+      {visibles.map((n) => (
+        <div key={n.id} className="admin-card">
+          <span className="label-medium">
+            {NOTA_TIPO[n.kind]} · {quien.get(n.author_id) ?? 'alguien'} ·{' '}
+            {timeAgo(n.created_at)}
+          </span>
+          {n.path && (
+            <p className="body-small on-surface-variant" style={{ margin: '2px 0 0' }}>
+              en <code>{n.path}</code>
+            </p>
+          )}
+          <p className="body-medium" style={{ whiteSpace: 'pre-wrap', margin: '6px 0' }}>
+            {n.body}
+          </p>
+
+          <div className="admin-book__row">
+            <input
+              className="tz-input admin-input body-medium"
+              placeholder="Contestarle (lo ve en su nota)…"
+              aria-label="Respuesta a la nota"
+              defaultValue={n.reply ?? ''}
+              disabled={busy === n.id}
+              onBlur={(e) => {
+                if (e.target.value.trim() !== (n.reply ?? '')) {
+                  void responder(n, e.target.value)
+                }
+              }}
+            />
+          </div>
+
+          <div className="admin-tabs" style={{ marginTop: 6 }}>
+            {NOTA_ESTADO.map(([key, label]) => (
+              <button
+                key={key}
+                className={`admin-tab label-large${n.status === key ? ' active' : ''}`}
+                disabled={busy === n.id}
+                onClick={() => void cambiar(n, key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       ))}
     </div>

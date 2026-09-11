@@ -28,6 +28,13 @@ const MAP: [RegExp, string][] = [
     /failed to fetch|networkerror|load failed|network request/i,
     'No hay conexión. Comprueba tu red e inténtalo otra vez.',
   ],
+  // Va ANTES de la regla genérica de `violates`: pasarse de caracteres no
+  // es un problema de permisos y decir «no tienes permiso» despista.
+  [
+    /_body_tope|body_check|length\(body\)/i,
+    'Te has pasado de largo: el máximo son 1500 caracteres.',
+  ],
+  [/escribe algo antes de publicarlo/i, 'Escribe algo antes de publicarlo.'],
   [
     /row-level security|permission denied|not allowed|violates/i,
     'No tienes permiso para hacer esto.',

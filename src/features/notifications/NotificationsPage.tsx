@@ -62,6 +62,16 @@ export default function NotificationsPage() {
         if (n.type === 'reply') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'respondió a tu idea'
+        } else if (n.type === 'reply_sworn') {
+          // Va por delante de quien lo recibe: se dice que existe y que
+          // está jurada, nunca qué dice (migr. 037)
+          to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
+          detail = n.chapter_number
+            ? `respondió desde el capítulo ${n.chapter_number} y jura que no hay spoiler. Tú decides si lo abres`
+            : 'respondió y jura que no hay spoiler. Tú decides si lo abres'
+        } else if (n.type === 'all_ready') {
+          to = '/club/captain'
+          detail = 'Ya tenéis todos el libro. Podéis empezar cuando quieras'
         } else if (n.type === 'unlock') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'
           detail = 'Se ha desbloqueado una respuesta a tu mensaje'
@@ -201,10 +211,13 @@ export default function NotificationsPage() {
             const systemMsg =
               n.type === 'unlock' ||
               n.type === 'book_done' ||
-              n.type === 'moderation'
+              n.type === 'moderation' ||
+              n.type === 'all_ready'
             const icon =
-              n.type === 'reply'
+              n.type === 'reply' || n.type === 'reply_sworn'
                 ? 'chat_bubble'
+                : n.type === 'all_ready'
+                  ? 'check_circle'
                 : n.type === 'follow'
                   ? 'group'
                   : n.type === 'unlock'

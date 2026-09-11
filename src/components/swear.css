@@ -1,0 +1,113 @@
+/* El juramento y la respuesta jurada (migr. 037) */
+
+.jura__caras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0 2px;
+}
+.jura__cara {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.jura__juro {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  cursor: pointer;
+}
+.jura__juro input {
+  margin-top: 2px;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--md-sys-color-primary);
+  flex: none;
+}
+
+.jura__aviso {
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+
+.jura__acciones {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------- La respuesta jurada, en el hilo ---------- */
+
+.jurada {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 13px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+}
+.jurada__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.jurada__head .material-symbols-rounded {
+  font-size: 18px;
+  color: var(--md-sys-color-primary);
+}
+.jurada__quien {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 500;
+}
+.jurada__historial {
+  display: block;
+  margin-top: 3px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.jurada__historial.roto {
+  color: var(--md-sys-color-error);
+}
+.jurada__acciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.jurada__error {
+  display: block;
+  margin-top: 6px;
+  color: var(--md-sys-color-error);
+}
+
+/* Denunciar el juramento roto: discreto, pero a un toque */
+.jurada__denuncia {
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  border-radius: var(--md-sys-shape-corner-small);
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.jurada__denuncia:hover {
+  color: var(--md-sys-color-error);
+}
+
+/* Marca en una respuesta ya abierta que llegó bajo juramento */
+.jurada-sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--md-sys-color-primary);
+}
+.jurada-sello .material-symbols-rounded {
+  font-size: 15px;
+}

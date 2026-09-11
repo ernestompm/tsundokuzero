@@ -298,6 +298,7 @@ export default function ComposeSheet({
               }
               rows={4}
               autoFocus
+              maxLength={1500}
               value={body}
               onChange={setBody}
             />

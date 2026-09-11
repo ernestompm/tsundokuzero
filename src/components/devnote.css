@@ -1,0 +1,70 @@
+/* Notas de desarrollo de los probadores (migr. 038) */
+
+.devnote__ruta {
+  margin: -6px 0 10px;
+}
+.devnote__ruta code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.devnote__gracias {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 0 4px;
+}
+
+.devnote__titulo {
+  margin: 18px 0 6px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.devnote__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.devnote__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+}
+.devnote__texto {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.devnote__respuesta {
+  color: var(--md-sys-color-primary);
+}
+
+.devnote__estado {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.devnote__estado.doing {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.devnote__estado.done {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.devnote__estado.wontfix {
+  text-decoration: line-through;
+}
+
+/* La entrada en la barra: discreta, y solo para probadores */
+.top-bar__beta {
+  --md-icon-button-icon-color: var(--md-sys-color-tertiary, var(--md-sys-color-primary));
+}
