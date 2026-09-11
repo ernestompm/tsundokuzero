@@ -155,9 +155,21 @@ function systemPrefersDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
+/**
+ * Por defecto, CLARO. No el del sistema.
+ *
+ * La identidad de Tsundoku es papel: crema, tinta verde oscura y mucho
+ * aire. Quien abría la app desde un móvil en modo oscuro se encontraba de
+ * entrada con una versión de la marca que no es la marca, sin haber
+ * elegido nada. El oscuro sigue ahí, pero ahora se elige a mano desde el
+ * menú, que es lo que significa una preferencia.
+ */
 export function getThemeMode(): ThemeMode {
   const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'light' || stored === 'dark' ? stored : 'system'
+  if (stored === 'light' || stored === 'dark' || stored === 'system') {
+    return stored
+  }
+  return 'light'
 }
 
 export function isDarkActive(): boolean {
@@ -178,8 +190,9 @@ function apply(dark: boolean) {
 }
 
 export function setThemeMode(mode: ThemeMode) {
-  if (mode === 'system') localStorage.removeItem(STORAGE_KEY)
-  else localStorage.setItem(STORAGE_KEY, mode)
+  // 'system' se guarda explícitamente: ausencia de clave ya significa
+  // «claro», así que borrarla no serviría para seguir al sistema.
+  localStorage.setItem(STORAGE_KEY, mode)
   apply(isDarkActive())
 }
 
