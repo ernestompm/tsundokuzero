@@ -491,7 +491,7 @@
 }
 .admin-emblema__emoji.activo {
   border-color: var(--md-sys-color-primary);
-  background: var(--md-sys-color-secondary-container);
+  background: var(--tz-signal-soft);
 }
 .admin-emblema__color {
   width: 28px;

@@ -15,8 +15,8 @@
   height: 22px;
   padding: 0 7px;
   border-radius: var(--md-sys-shape-corner-full);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
+  background: var(--tz-signal);
+  color: var(--tz-on-signal);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }

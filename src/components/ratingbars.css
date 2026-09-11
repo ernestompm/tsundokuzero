@@ -26,21 +26,23 @@
   display: flex;
   gap: 4px;
 }
+/* Los segmentos ORGANIZAN, no estructuran: van en Picholine. En Scarab
+   parecían una batería de móvil y se comían la tarjeta entera. */
 .rbars__seg {
   flex: 1;
-  height: 12px;
+  height: 10px;
   border: none;
   padding: 0;
   border-radius: 999px;
-  background: var(--md-sys-color-surface-container-highest);
+  background: var(--tz-editorial-sage-soft);
   cursor: pointer;
   transition: background var(--md-sys-motion-duration-short) ease;
 }
 .rbars__seg:hover {
-  background: color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-surface-container-highest));
+  background: color-mix(in srgb, var(--md-sys-color-secondary) 40%, var(--tz-editorial-sage-soft));
 }
 .rbars__seg.filled {
-  background: var(--md-sys-color-primary);
+  background: var(--md-sys-color-secondary);
 }
 
 /* ---------- Comparativa: club contra tú ---------- */
@@ -66,7 +68,7 @@
   position: relative;
   height: 10px;
   border-radius: 999px;
-  background: var(--md-sys-color-surface-container-highest);
+  background: var(--tz-editorial-sage-soft);
   overflow: visible;
 }
 .rbars__fill {
@@ -74,16 +76,18 @@
   border-radius: 999px;
 }
 .rbars__fill--club {
-  background: var(--md-sys-color-primary);
+  background: var(--md-sys-color-secondary);
 }
 /* Tu nota: una marca vertical sobre la barra del club */
+/* Dónde estás TÚ respecto a la media del club: eso sí es una marca que
+   hay que encontrar de un vistazo, así que la señala el Vermillion. */
 .rbars__mark {
   position: absolute;
-  top: -4px;
+  top: -5px;
   width: 3px;
-  height: 18px;
+  height: 20px;
   margin-left: -1.5px;
   border-radius: 2px;
-  background: var(--md-sys-color-tertiary, var(--md-sys-color-on-surface));
+  background: var(--tz-signal);
   box-shadow: 0 0 0 2px var(--md-sys-color-surface);
 }

@@ -168,8 +168,9 @@
 }
 .compose__kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--md-sys-color-primary);
+  letter-spacing: 0.11em;
+  font-weight: 600;
+  color: var(--md-sys-color-secondary);
 }
 .compose__cambiar {
   flex: none;
@@ -224,8 +225,8 @@
   background: var(--md-sys-color-surface-container);
 }
 .compose__opcion.activa {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
 }
 .compose__opcion-txt {
   flex: 1;

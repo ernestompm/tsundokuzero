@@ -1,20 +1,28 @@
-/* La próxima lectura del club (migr. 030) */
+/* La próxima lectura del club (migr. 030).
+   Esto es CONTENIDO editorial —una ficha de libro—, no interfaz: por eso
+   va sobre Glad Yellow y no sobre una superficie gris. Es de los pocos
+   bloques que llevan color de carácter, y lo lleva porque es un anuncio. */
 .nextread {
-  padding: 16px;
+  padding: 18px;
   margin-bottom: 14px;
-  border-radius: var(--md-sys-shape-corner-large);
-  background: var(--md-sys-color-surface-container-low);
-  border: 1px dashed var(--md-sys-color-outline-variant);
+  border-radius: var(--tz-shape-card);
+  background: var(--tz-editorial-yellow-soft);
+  color: var(--tz-on-editorial-yellow);
+  border: 1px solid
+    color-mix(in srgb, var(--tz-editorial-yellow) 70%, var(--tz-rule));
 }
 .nextread__kicker {
   display: inline-block;
   margin-bottom: 12px;
-  padding: 3px 12px;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.11em;
+  font-weight: 700;
+  color: var(--tz-signal-strong);
+}
+/* Dentro del bloque amarillo, el texto secundario se apoya en su tinta
+   propia: el gris verdoso de la interfaz ahí se ve desteñido. */
+.nextread .on-surface-variant {
+  color: color-mix(in srgb, var(--tz-on-editorial-yellow) 78%, transparent);
 }
 .nextread__cuerpo {
   display: flex;

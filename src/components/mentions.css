@@ -8,8 +8,10 @@
   overflow-wrap: anywhere;
 }
 
+/* Nombrar a alguien es señalarle. Es de las poquísimas cosas que llevan
+   Vermillion dentro de un párrafo, y por eso salta a la vista. */
 .mencion {
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
   font-weight: 500;
   text-decoration: none;
 }

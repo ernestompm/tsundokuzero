@@ -371,14 +371,9 @@
   margin-bottom: 12px;
   border-radius: var(--tz-shape-card);
   border: none;
-  background: linear-gradient(
-    135deg,
-    var(--md-sys-color-primary),
-    color-mix(in srgb, var(--md-sys-color-primary) 82%, black)
-  );
-  color: var(--md-sys-color-on-primary);
-  box-shadow: 0 6px 18px
-    color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+  box-shadow: none;
   cursor: pointer;
   text-align: left;
   transition: transform 120ms var(--md-sys-motion-easing-standard);
@@ -393,7 +388,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--md-sys-color-on-primary) 18%, transparent);
+  background: var(--tz-signal);
+  color: var(--tz-on-signal);
 }
 .poll-banner__text {
   flex: 1;

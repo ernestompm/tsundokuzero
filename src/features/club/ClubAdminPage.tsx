@@ -17,7 +17,10 @@ import './club.css'
 
 /** Emblemas posibles: pocos y con sentido para un club de lectura. */
 const EMBLEMAS = ['📖', '📚', '🕯️', '🦉', '🔖', '🗝️', '🌙', '☕', '🪶', '🧭']
-const COLORES = ['#e1e9d8', '#f0e2d7', '#f1e8c8', '#dbe4ee', '#ece0ee', '#fdfdfb']
+/* Fondos de emblema: tintas suaves de la paleta de marca. Antes había un
+   azul y un lila que no eran de nadie y rompían la identidad del club en
+   cuanto alguien los elegía. */
+const COLORES = ['#DCE2D6', '#F5E1AC', '#E2E3D8', '#F4DDD4', '#D2DACE', '#FFFCFB']
 
 interface Member {
   id: string

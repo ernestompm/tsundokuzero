@@ -197,8 +197,8 @@
   cursor: pointer;
 }
 .kind-chip.active {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
   border-color: transparent;
 }
 .club-toggle {

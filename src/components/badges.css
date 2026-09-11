@@ -18,12 +18,12 @@
   font-size: 15px;
 }
 .badge--oro {
-  background: var(--md-sys-color-tertiary-container, #f1e8c8);
-  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+  background: var(--md-sys-color-tertiary-container, #f5e1ac);
+  color: var(--md-sys-color-on-tertiary-container, #3d2f06);
 }
 .badge--salvia {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
 }
 .badge--tierra {
   background: var(--md-sys-color-surface-container-highest);
@@ -53,12 +53,12 @@
   font-size: 12px;
 }
 .badgedot--oro {
-  background: var(--md-sys-color-tertiary-container, #f1e8c8);
-  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+  background: var(--md-sys-color-tertiary-container, #f5e1ac);
+  color: var(--md-sys-color-on-tertiary-container, #3d2f06);
 }
 .badgedot--salvia {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
 }
 .badgedot--tierra {
   background: var(--md-sys-color-surface-container-highest);
@@ -88,12 +88,12 @@
   place-items: center;
 }
 .badgecard--oro .badgecard__icon {
-  background: var(--md-sys-color-tertiary-container, #f1e8c8);
-  color: var(--md-sys-color-on-tertiary-container, #6b5410);
+  background: var(--md-sys-color-tertiary-container, #f5e1ac);
+  color: var(--md-sys-color-on-tertiary-container, #3d2f06);
 }
 .badgecard--salvia .badgecard__icon {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
 }
 .badgecard--tierra .badgecard__icon {
   background: var(--md-sys-color-surface-container-highest);

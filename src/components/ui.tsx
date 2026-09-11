@@ -4,15 +4,26 @@ import './ui.css'
 
 /* ===================== Portada de libro ===================== */
 
+/**
+ * Portadas inventadas para los libros sin imagen.
+ *
+ * Antes eran ocho colores sueltos —azul, morado, marrón— que no eran de
+ * nadie y hacían que una estantería pareciera una pantalla de aplicación.
+ * Ahora salen todas de la paleta de marca, así que una rejilla de libros
+ * sin portada se lee como una colección de una editorial: mismo papel,
+ * misma tinta, variaciones dentro de una familia.
+ *
+ * El amarillo y el salvia llevan tinta oscura; los oscuros, crema.
+ */
 const COVER_PALETTE = [
-  { bg: '#3E5240', fg: '#EFEDE3' },
-  { bg: '#6B4A3A', fg: '#F2E7DC' },
-  { bg: '#41506B', fg: '#E6EAF2' },
-  { bg: '#7A6A4E', fg: '#F5EEDF' },
-  { bg: '#5E4B33', fg: '#F1E6D6' },
-  { bg: '#7A3B2E', fg: '#F5E1DA' },
-  { bg: '#3E5449', fg: '#E4EFE9' },
-  { bg: '#4A4258', fg: '#E9E5F0' },
+  { bg: '#2C3D37', fg: '#F4EFEE' }, // Scarab
+  { bg: '#566955', fg: '#F4EFEE' }, // Picholine
+  { bg: '#F5E1AC', fg: '#3D2F06' }, // Glad Yellow
+  { bg: '#A5A88F', fg: '#252C1F' }, // Bud
+  { bg: '#BC5339', fg: '#FFF6F2' }, // Orange Vermillion
+  { bg: '#1F2B27', fg: '#E3E8DC' }, // Scarab profundo
+  { bg: '#7E6220', fg: '#FBF6EA' }, // Glad Yellow tostado
+  { bg: '#8E9A7E', fg: '#20281C' }, // Bud oscurecido
 ]
 
 function coverColor(seed: string) {
@@ -60,7 +71,19 @@ export function BookCover({
 
 /* ===================== Avatar ===================== */
 
-const AVATAR_BG = ['#3E5449', '#5E4B33', '#7A3B2E', '#4A4258', '#41506B', '#6B4A3A']
+/**
+ * Iniciales cuando no hay foto. Mayoría en la familia verde —son caras,
+ * no etiquetas, y no deben convertirse en una macedonia— con dos tonos
+ * cálidos para que un grupo no se vea monocorde.
+ */
+const AVATAR_PALETTE = [
+  { bg: '#2C3D37', fg: '#F4EFEE' },
+  { bg: '#566955', fg: '#F4EFEE' },
+  { bg: '#7E6220', fg: '#FBF6EA' },
+  { bg: '#A5A88F', fg: '#252C1F' },
+  { bg: '#BC5339', fg: '#FFF6F2' },
+  { bg: '#3E5148', fg: '#E6EDE2' },
+]
 
 export function Avatar({
   name,
@@ -79,7 +102,7 @@ export function Avatar({
     .toUpperCase()
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  const bg = AVATAR_BG[h % AVATAR_BG.length]
+  const { bg, fg } = AVATAR_PALETTE[h % AVATAR_PALETTE.length]
   if (url) {
     return (
       <img
@@ -93,7 +116,13 @@ export function Avatar({
   return (
     <span
       className="avatar avatar--gen"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.36 }}
+      style={{
+        width: size,
+        height: size,
+        background: bg,
+        color: fg,
+        fontSize: size * 0.36,
+      }}
       aria-hidden
     >
       {initials}

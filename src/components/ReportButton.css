@@ -29,7 +29,7 @@
   display: grid;
   place-items: center;
   padding: var(--tz-space-4);
-  background: color-mix(in srgb, var(--md-sys-color-scrim, #000) 45%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-scrim, #16201c) 45%, transparent);
 }
 
 .report-dialog {

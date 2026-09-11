@@ -186,21 +186,23 @@
   text-align: left;
 }
 .drawer__link.active {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
   font-weight: 600;
 }
 .drawer__link .material-symbols-rounded {
   font-size: 22px;
 }
+/* Tener avisos sin leer no es un error: es una llamada de atención, y
+   para eso está el Vermillion. El rojo queda libre para lo que va mal. */
 .drawer__badge {
   margin-left: auto;
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
+  background: var(--tz-signal);
+  color: var(--tz-on-signal);
   display: grid;
   place-items: center;
 }
@@ -269,8 +271,10 @@
   transition: color var(--md-sys-motion-duration-short)
     var(--md-sys-motion-easing-standard);
 }
+/* El destino en el que estás SEÑALA. Es el único naranja de la barra, y
+   por eso se encuentra sin buscarlo. */
 .nav-item.active {
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal);
 }
 .nav-icon-pill {
   position: relative;
@@ -395,8 +399,8 @@
     font-size: 24px;
   }
   .side-item.active {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
+    background: var(--tz-signal-soft);
+    color: var(--tz-signal-strong);
     font-weight: 600;
   }
   .main {
@@ -443,8 +447,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
+  background: var(--tz-signal);
+  color: var(--tz-on-signal);
   font-family: var(--md-ref-typeface-plain);
   font-size: 10px;
   font-weight: 700;

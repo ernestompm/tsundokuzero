@@ -120,9 +120,10 @@
 }
 
 .capi__kicker {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.11em;
+  font-weight: 600;
 }
 .capi__hero--alerta .capi__kicker {
   color: var(--md-sys-color-on-error-container);

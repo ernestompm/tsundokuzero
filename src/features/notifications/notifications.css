@@ -17,8 +17,8 @@
   text-align: left;
 }
 .noti-row.unread {
-  background: var(--md-sys-color-secondary-container);
-  border-color: transparent;
+  background: var(--tz-signal-soft);
+  border-color: color-mix(in srgb, var(--tz-signal) 45%, transparent);
 }
 .noti-row__text {
   flex: 1;

@@ -35,18 +35,80 @@
      repetirlo a pelo por los css de cada feature. */
   --tz-shape-card: 20px;
 
-  /* Sombras tokenizadas (auditoría M-14): tarjeta en reposo y elevada */
+  /* Sombras tokenizadas (auditoría M-14): tarjeta en reposo y elevada.
+     El negro es verdoso (Scarab muy oscuro), no neutro: una sombra gris
+     sobre crema se ve sucia. */
   --tz-shadow-card:
-    0 1px 2px rgba(35, 35, 30, 0.03),
-    0 6px 20px rgba(35, 35, 30, 0.05);
+    0 1px 2px rgba(22, 32, 28, 0.04),
+    0 6px 20px rgba(22, 32, 28, 0.06);
   --tz-shadow-raised:
-    0 2px 6px rgba(0, 0, 0, 0.14),
-    0 12px 32px rgba(0, 0, 0, 0.18);
+    0 2px 6px rgba(22, 32, 28, 0.16),
+    0 14px 36px rgba(22, 32, 28, 0.2);
+
+  /* =================================================================
+     PALETA DE MARCA
+     Los seis colores, con el papel que juega cada uno. Lo que NO está
+     aquí está en theme.ts mapeado sobre los tokens de Material.
+
+       Scarab            estructura
+       Angel Feather     respira
+       Picholine         organiza
+       Orange Vermillion señala
+       Glad Yellow / Bud carácter editorial
+     ================================================================= */
+
+  /* --- Vermillion: SEÑALA. Activo, selección, progreso, identidad.
+         Vive fuera de los tokens de Material a propósito: si fuera
+         `primary` acabaría en todos los botones y perdería justo lo que
+         le da fuerza, que es aparecer poco. Regla: si puedes no usarlo,
+         no lo uses. --- */
+  --tz-signal: #bc5339;
+  /* Sobre crema, el Vermillion puro se queda en 4,2:1. Para TEXTO
+     pequeño se usa esta versión, que llega a 5,4:1. */
+  --tz-signal-strong: #a3442d;
+  --tz-on-signal: #fff6f2;
+  --tz-signal-soft: #f4ddd4;
+
+  /* --- Glad Yellow: carácter editorial. Fichas, citas, destacados. --- */
+  --tz-editorial-yellow: #f5e1ac;
+  --tz-editorial-yellow-soft: #faf0d6;
+  --tz-on-editorial-yellow: #3d2f06;
+
+  /* --- Bud: carácter editorial en su versión callada. Filetes,
+         bordes, superficies secundarias. --- */
+  --tz-editorial-sage: #a5a88f;
+  --tz-editorial-sage-soft: #e2e3d8;
+  --tz-on-editorial-sage: #2f3527;
+
+  /* --- El papel: blanco roto, más claro que el fondo. No es color de
+         marca, es el que da profundidad y evita que toda la pantalla
+         sea el mismo beige. --- */
+  --tz-paper: var(--md-sys-color-surface-container-lowest);
+  /* Filete editorial: la línea fina que separa sin hacer ruido */
+  --tz-rule: var(--md-sys-color-outline-variant);
+  --tz-ink: var(--md-sys-color-on-surface);
 
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
+  --tz-signal: #e0805f;
+  --tz-signal-strong: #eb9273;
+  --tz-on-signal: #3a1409;
+  --tz-signal-soft: #4a2417;
+
+  --tz-editorial-yellow: #5c4a18;
+  --tz-editorial-yellow-soft: #3d3111;
+  --tz-on-editorial-yellow: #f5e1ac;
+
+  --tz-editorial-sage: #6e7461;
+  --tz-editorial-sage-soft: #333c31;
+  --tz-on-editorial-sage: #dfe2d4;
+
+  --tz-shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.34);
+
   color-scheme: dark;
 }
 
@@ -94,16 +156,25 @@ body {
   flex-direction: column;
 }
 
+/* Con Scarab como tinta principal, un enlace en `primary` sería del MISMO
+   color que el texto: invisible. Los enlaces del cuerpo los organiza
+   Picholine, con una línea fina que aparece al pasar. */
 a {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
 }
 
 /* ===== Foco visible (auditoría A-05, WCAG 2.4.11) =====
    Indicador de foco de teclado uniforme en toda la app. Los inputs de
    texto además cambian el borde (regla por componente). */
 :focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--tz-signal);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -144,26 +215,70 @@ select:focus-visible {
   top: 12px;
 }
 
-/* ===== Typescale MD3 (clases utilitarias) ===== */
-/* Display y headline usan la serif editorial de marca (Fraunces). */
-.display-large { font-family: var(--md-ref-typeface-brand); font-size: 57px; line-height: 62px; font-weight: 460; letter-spacing: -0.5px; }
-.display-medium { font-family: var(--md-ref-typeface-brand); font-size: 45px; line-height: 52px; font-weight: 460; letter-spacing: -0.25px; }
-.display-small { font-family: var(--md-ref-typeface-brand); font-size: 36px; line-height: 44px; font-weight: 460; }
-.headline-large { font-family: var(--md-ref-typeface-brand); font-size: 32px; line-height: 40px; font-weight: 460; }
-.headline-medium { font-family: var(--md-ref-typeface-brand); font-size: 28px; line-height: 36px; font-weight: 460; }
-.headline-small { font-family: var(--md-ref-typeface-brand); font-size: 24px; line-height: 32px; font-weight: 500; }
-.title-large { font-size: 22px; line-height: 28px; font-weight: 500; }
-.title-medium { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0.15px; }
-.title-small { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.1px; }
-.body-large { font-size: 16px; line-height: 24px; font-weight: 400; letter-spacing: 0.5px; }
-.body-medium { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: 0.25px; }
-.body-small { font-size: 12px; line-height: 16px; font-weight: 400; letter-spacing: 0.4px; }
+/* ===== Typescale =====
+   Display y headline usan la serif editorial de marca (Fraunces), con su
+   eje óptico activado: a tamaño grande la letra se afina y gana contraste
+   de trazo, que es lo que la hace parecer imprenta y no interfaz.
+
+   Los cuerpos de texto van MÁS interlineados y MENOS espaciados que el
+   typescale de Material: el «letter-spacing» generoso de MD3 está pensado
+   para etiquetas de interfaz y en un párrafo largo se lee como un cartel.
+   Aquí se lee mucho, así que manda la lectura. */
+.display-large { font-family: var(--md-ref-typeface-brand); font-size: 57px; line-height: 60px; font-weight: 450; letter-spacing: -1.2px; font-variation-settings: 'opsz' 144, 'SOFT' 25, 'WONK' 1; }
+.display-medium { font-family: var(--md-ref-typeface-brand); font-size: 45px; line-height: 50px; font-weight: 450; letter-spacing: -0.9px; font-variation-settings: 'opsz' 100, 'SOFT' 25, 'WONK' 1; }
+.display-small { font-family: var(--md-ref-typeface-brand); font-size: 36px; line-height: 42px; font-weight: 460; letter-spacing: -0.6px; font-variation-settings: 'opsz' 72, 'SOFT' 20, 'WONK' 1; }
+.headline-large { font-family: var(--md-ref-typeface-brand); font-size: 32px; line-height: 38px; font-weight: 460; letter-spacing: -0.5px; font-variation-settings: 'opsz' 60, 'SOFT' 20, 'WONK' 1; }
+.headline-medium { font-family: var(--md-ref-typeface-brand); font-size: 28px; line-height: 34px; font-weight: 470; letter-spacing: -0.4px; font-variation-settings: 'opsz' 48, 'SOFT' 18; }
+.headline-small { font-family: var(--md-ref-typeface-brand); font-size: 24px; line-height: 30px; font-weight: 500; letter-spacing: -0.3px; font-variation-settings: 'opsz' 36, 'SOFT' 18; }
+.title-large { font-size: 22px; line-height: 28px; font-weight: 500; letter-spacing: -0.2px; }
+.title-medium { font-size: 16px; line-height: 23px; font-weight: 600; letter-spacing: 0; }
+.title-small { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0; }
+.body-large { font-size: 16px; line-height: 26px; font-weight: 400; letter-spacing: 0.1px; }
+.body-medium { font-size: 14px; line-height: 22px; font-weight: 400; letter-spacing: 0.1px; }
+.body-small { font-size: 12px; line-height: 18px; font-weight: 400; letter-spacing: 0.2px; }
 .label-large { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }
-.label-medium { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.5px; }
-.label-small { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 0.5px; }
+.label-medium { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.4px; }
+.label-small { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 0.4px; }
 
 .on-surface-variant { color: var(--md-sys-color-on-surface-variant); }
 .serif { font-family: var(--tz-typeface-serif); }
+
+/* La serif en tamaños de título también quiere su corte óptico */
+.title-large.serif,
+.title-medium.serif {
+  font-variation-settings: 'opsz' 30, 'SOFT' 16;
+}
+
+/* ===== Antetítulo editorial =====
+   La etiqueta en versalitas espaciadas que encabeza una sección. Es la
+   voz de revista de la app y va en Picholine, no en Scarab: organiza,
+   no estructura. */
+.tz-kicker {
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-secondary);
+}
+
+/* ===== Cita editorial =====
+   Un párrafo destacado sobre Glad Yellow, con su filete. Para lo que es
+   contenido y no interfaz: citas del libro, textos de recomendación. */
+.tz-quote {
+  margin: 0;
+  padding: var(--tz-space-4) var(--tz-space-5);
+  border-left: 3px solid var(--tz-signal);
+  border-radius: 0 var(--md-sys-shape-corner-medium)
+    var(--md-sys-shape-corner-medium) 0;
+  background: var(--tz-editorial-yellow-soft);
+  color: var(--tz-on-editorial-yellow);
+  font-family: var(--tz-typeface-serif);
+  font-size: 17px;
+  line-height: 27px;
+  font-variation-settings: 'opsz' 30, 'SOFT' 20, 'WONK' 1;
+}
 
 /* ===== Transición de página (cada pantalla entra con un fade sutil) ===== */
 @media (prefers-reduced-motion: no-preference) {
@@ -204,11 +319,12 @@ select:focus-visible {
   }
 }
 
-/* Slider de progreso (Libro y onboarding) */
+/* Slider de progreso (Libro y onboarding). Marcar por dónde vas es EL
+   gesto de esta app, y el progreso es de lo que señala: Vermillion. */
 .progress-slider {
   width: 100%;
   margin: 10px 0 2px;
-  accent-color: var(--md-sys-color-primary);
+  accent-color: var(--tz-signal);
   cursor: pointer;
 }
 

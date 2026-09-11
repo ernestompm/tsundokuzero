@@ -67,7 +67,7 @@
 
 /* ---- Ficha: sinopsis, compra, valoración ---- */
 .book-author-link {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   font-weight: 600;
 }
 .book-rating-line {
@@ -80,7 +80,10 @@
   margin-top: 12px;
 }
 .book-synopsis {
-  line-height: 1.6;
+  font-family: var(--tz-typeface-serif);
+  font-size: 16px;
+  line-height: 1.62;
+  font-variation-settings: 'opsz' 24, 'SOFT' 16;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -93,9 +96,15 @@
 .book-synopsis-toggle {
   background: none;
   border: none;
+  /* En línea se solapaba con el botón de comprar: es su propia fila */
+  display: block;
+  width: fit-content;
   padding: var(--tz-space-2) 0 0;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
 }
 .book-buy {
   display: inline-block;

@@ -22,9 +22,10 @@
 .reaction:hover {
   transform: translateY(-1px);
 }
+/* La reacción que has puesto TÚ es una selección: la señala el Vermillion */
 .reaction.mine {
-  background: var(--md-sys-color-secondary-container);
-  border-color: transparent;
+  background: var(--tz-signal-soft);
+  border-color: var(--tz-signal);
 }
 .reaction__emoji {
   font-size: 15px;
@@ -36,7 +37,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .reaction.mine .reaction__count {
-  color: var(--md-sys-color-on-secondary-container);
+  color: var(--tz-signal-strong);
 }
 .reactions__who .material-symbols-rounded {
   font-size: 16px;

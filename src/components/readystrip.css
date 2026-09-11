@@ -6,9 +6,13 @@
   align-items: flex-start;
   gap: 8px;
   margin-top: 10px;
-  padding: 11px 13px;
+  padding: 12px 14px;
   border-radius: var(--md-sys-shape-corner-medium);
-  background: var(--md-sys-color-surface-container-high);
+  /* Vive dentro del bloque amarillo de la próxima lectura: va en papel
+     para levantarse de él, no en una superficie gris que lo ensucie. */
+  background: var(--tz-paper);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
 }
 
 .listos__frase {
@@ -30,8 +34,9 @@
   filter: grayscale(1);
   transition: opacity 0.15s ease, filter 0.15s ease;
 }
+/* Tenerlo ya es un estado activo: lo señala el Vermillion */
 .listos__cara.si {
   opacity: 1;
   filter: none;
-  box-shadow: 0 0 0 2px var(--md-sys-color-primary);
+  box-shadow: 0 0 0 2px var(--tz-signal);
 }

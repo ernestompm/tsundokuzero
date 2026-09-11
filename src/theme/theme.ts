@@ -1,9 +1,36 @@
 /**
- * Identidad visual de Tsundoku Zero: editorial y serena — papel crema,
- * verde salvia y acentos de arcilla. La paleta está hecha a mano y se
- * mapea sobre los tokens de Material Design 3 (`--md-sys-color-*`), de
- * modo que los componentes de @material/web siguen funcionando pero con
- * el aspecto de la marca, en claro y oscuro.
+ * Identidad visual de Tsundoku Zero.
+ *
+ * LA PALETA Y SU JERARQUÍA
+ * ------------------------
+ * Seis colores de marca, y lo importante no son los colores sino el peso
+ * que tiene cada uno. Repartirlos por igual sería justo lo contrario de
+ * lo que queremos:
+ *
+ *   Scarab           #2C3D37   estructura   tipografía, navegación, botones
+ *   Angel Feather    #F4EFEE   respira      el fondo de todo, con aire
+ *   Picholine        #566955   organiza     texto secundario, filtros, iconos
+ *   Orange Vermillion #BC5339  señala       activo, selección, progreso
+ *   Glad Yellow      #F5E1AC   carácter     fichas, citas, bloques editoriales
+ *   Bud              #A5A88F   carácter     filetes, bordes, superficies suaves
+ *
+ * La estructura de la app es crema + verde oscuro. Los demás colores
+ * aparecen DENTRO del contenido, no repartidos por la interfaz.
+ *
+ * El Vermillion vive fuera de los tokens de Material a propósito (está en
+ * `index.css` como `--tz-signal`): si fuera `primary` acabaría en todos
+ * los botones y perdería justo lo que le da fuerza, que es aparecer poco.
+ *
+ * LA CAPA DE PAPEL
+ * ----------------
+ * Además del crema de fondo hay un blanco roto casi puro
+ * (`surface-container-lowest`, alias `--tz-paper`) que se usa en tarjetas
+ * y capas. No es color de marca: es el que genera profundidad y evita que
+ * toda la pantalla sea el mismo beige.
+ *
+ * Todo esto se mapea sobre los tokens de Material Design 3
+ * (`--md-sys-color-*`), así que los componentes de @material/web siguen
+ * funcionando pero con la voz de la marca, en claro y en oscuro.
  */
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -13,83 +40,115 @@ const STORAGE_KEY = 'tz-theme-mode'
 type Palette = Record<string, string>
 
 const LIGHT: Palette = {
-  primary: '#40513B',
-  'on-primary': '#FFFFFF',
-  'primary-container': '#C7D8BD',
-  'on-primary-container': '#1B2A18',
-  secondary: '#565F52',
-  'on-secondary': '#FFFFFF',
-  'secondary-container': '#DCE4D3',
-  'on-secondary-container': '#171E13',
-  tertiary: '#8A5A3F',
-  'on-tertiary': '#FFFFFF',
-  'tertiary-container': '#F3DBCB',
-  'on-tertiary-container': '#2F1608',
-  error: '#B3261E',
-  'on-error': '#FFFFFF',
-  'error-container': '#F7DDD7',
-  'on-error-container': '#410E0B',
-  background: '#F6F3EC',
-  'on-background': '#23231E',
-  surface: '#F6F3EC',
-  'on-surface': '#23231E',
-  'surface-variant': '#E3DECF',
-  'on-surface-variant': '#6B6659',
-  outline: '#9C9585',
-  'outline-variant': '#D4CEBF',
-  'surface-container-lowest': '#FFFFFF',
-  'surface-container-low': '#F1EDE4',
-  'surface-container': '#ECE7DD',
-  'surface-container-high': '#E6E1D6',
-  'surface-container-highest': '#E0DACE',
-  'surface-dim': '#DEDACF',
-  'surface-bright': '#F6F3EC',
-  'inverse-surface': '#302F2A',
-  'inverse-on-surface': '#F2EFE7',
-  'inverse-primary': '#ABC79F',
-  'surface-tint': '#40513B',
-  shadow: '#000000',
-  scrim: '#000000',
+  /* --- Scarab: estructura. Botones importantes y tipografía principal --- */
+  primary: '#2C3D37',
+  'on-primary': '#F4EFEE',
+  'primary-container': '#D2DACE',
+  'on-primary-container': '#16241F',
+
+  /* --- Picholine: organiza. Segundo nivel de jerarquía --- */
+  secondary: '#566955',
+  'on-secondary': '#F4EFEE',
+  'secondary-container': '#DCE2D6',
+  'on-secondary-container': '#25302A',
+
+  /* --- Glad Yellow: carácter editorial. El contenedor ES el amarillo;
+         el tono sólido es su versión oscura, para iconos y estrellas --- */
+  tertiary: '#7E6220',
+  'on-tertiary': '#FBF6EA',
+  'tertiary-container': '#F5E1AC',
+  'on-tertiary-container': '#3D2F06',
+
+  /* --- Error: rojo profundo, deliberadamente MÁS oscuro y menos naranja
+         que el Vermillion, para que «algo va mal» y «mira aquí» no se
+         confundan nunca --- */
+  error: '#8E2A24',
+  'on-error': '#FBF1EE',
+  'error-container': '#F6DCD3',
+  'on-error-container': '#40100C',
+
+  /* --- Angel Feather: respira --- */
+  background: '#F4EFEE',
+  'on-background': '#2C3D37',
+  surface: '#F4EFEE',
+  'on-surface': '#2C3D37',
+  'surface-variant': '#E4DCDB',
+  'on-surface-variant': '#566955',
+
+  /* --- Bud: filetes y bordes. El `outline` va oscurecido para que
+         aguante como límite de control (3:1); el `variant` es el filete
+         decorativo, que sí puede ser tenue --- */
+  outline: '#7E836E',
+  'outline-variant': '#C9CBBB',
+
+  /* --- La escala de superficies. `lowest` es el papel: MÁS claro que el
+         fondo, para que las tarjetas se levanten en vez de hundirse --- */
+  'surface-container-lowest': '#FFFCFB',
+  'surface-container-low': '#F9F5F4',
+  'surface-container': '#EFE8E7',
+  'surface-container-high': '#E9E1E0',
+  'surface-container-highest': '#E2D9D8',
+  'surface-dim': '#E2DAD9',
+  'surface-bright': '#FBF8F7',
+
+  'inverse-surface': '#2C3D37',
+  'inverse-on-surface': '#F0EAE9',
+  'inverse-primary': '#B6C3B2',
+  'surface-tint': '#2C3D37',
+
+  /* Negro verdoso, no negro puro: las sombras y los velos quedan cálidos */
+  shadow: '#16201C',
+  scrim: '#16201C',
 }
 
 const DARK: Palette = {
-  primary: '#ABC79F',
-  'on-primary': '#163017',
-  'primary-container': '#2E402B',
-  'on-primary-container': '#C7E2BB',
-  secondary: '#C0C8B5',
-  'on-secondary': '#2A3226',
-  'secondary-container': '#40483B',
-  'on-secondary-container': '#DCE4D3',
-  tertiary: '#E7B695',
-  'on-tertiary': '#47260F',
-  'tertiary-container': '#6B4327',
-  'on-tertiary-container': '#F3DBCB',
-  error: '#F2B8B5',
-  'on-error': '#601410',
-  'error-container': '#8C1D18',
-  'on-error-container': '#F9DEDC',
-  background: '#1B1B17',
-  'on-background': '#E7E3D8',
-  surface: '#1B1B17',
-  'on-surface': '#E7E3D8',
-  'surface-variant': '#47463C',
-  'on-surface-variant': '#C9C3B3',
-  outline: '#928C7D',
-  'outline-variant': '#47463C',
-  'surface-container-lowest': '#151510',
-  'surface-container-low': '#23231E',
-  'surface-container': '#272722',
-  'surface-container-high': '#32322C',
-  'surface-container-highest': '#3D3D36',
-  'surface-dim': '#1B1B17',
-  'surface-bright': '#413F39',
-  'inverse-surface': '#E7E3D8',
-  'inverse-on-surface': '#302F2A',
-  'inverse-primary': '#40513B',
-  'surface-tint': '#ABC79F',
+  /* En oscuro se invierte el papel de Scarab: deja de ser la tinta y pasa
+     a ser la superficie. La tinta la pone Angel Feather. */
+  primary: '#BCCBB6',
+  'on-primary': '#1E2A25',
+  'primary-container': '#3E5148',
+  'on-primary-container': '#D6E2D1',
+
+  secondary: '#A9B6A4',
+  'on-secondary': '#22302A',
+  'secondary-container': '#3A4A40',
+  'on-secondary-container': '#D3DECE',
+
+  tertiary: '#E6CE90',
+  'on-tertiary': '#3B2E06',
+  'tertiary-container': '#5C4A18',
+  'on-tertiary-container': '#F5E1AC',
+
+  error: '#F0B0A6',
+  'on-error': '#5B120D',
+  'error-container': '#7E241C',
+  'on-error-container': '#FADDD7',
+
+  background: '#1A231F',
+  'on-background': '#EDE6E5',
+  surface: '#1A231F',
+  'on-surface': '#EDE6E5',
+  'surface-variant': '#3C4A43',
+  'on-surface-variant': '#B3BBAD',
+
+  outline: '#8B9382',
+  'outline-variant': '#3C4A43',
+
+  'surface-container-lowest': '#141B18',
+  'surface-container-low': '#1F2A25',
+  'surface-container': '#24302B',
+  'surface-container-high': '#2C3D37',
+  'surface-container-highest': '#354841',
+  'surface-dim': '#141B18',
+  'surface-bright': '#3A4E46',
+
+  'inverse-surface': '#EDE6E5',
+  'inverse-on-surface': '#2C3D37',
+  'inverse-primary': '#2C3D37',
+  'surface-tint': '#BCCBB6',
+
   shadow: '#000000',
-  scrim: '#000000',
+  scrim: '#0C110F',
 }
 
 function systemPrefersDark(): boolean {

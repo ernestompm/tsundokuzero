@@ -26,6 +26,12 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    icon: 'auto_stories',
+    titulo: 'Otra cara',
+    texto:
+      'Tsundoku tiene paleta y tipografía nuevas: papel crema, verde oscuro para la letra y el naranja reservado para lo que de verdad hay que mirar. Las portadas inventadas y las caras sin foto salen ahora de esa misma familia, así que una estantería se lee como una colección y no como una pantalla de aplicación.',
+  },
+  {
     icon: 'lock_open',
     titulo: 'El juramento',
     texto:
