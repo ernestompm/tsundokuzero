@@ -25,6 +25,10 @@
   font-size: 0.78em;
   line-height: 1.15;
   font-weight: 500;
+  /* Sin esto, «Biblioteca» se salía por el lado y la portada enseñaba
+     «La Biblio». `break-word` parte solo cuando no queda otra. */
+  overflow-wrap: break-word;
+  hyphens: auto;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -32,6 +36,7 @@
 }
 .book-cover__author {
   margin-top: auto;
+  overflow-wrap: break-word;
   font-family: var(--md-ref-typeface-plain);
   font-size: 0.5em;
   letter-spacing: 0.06em;

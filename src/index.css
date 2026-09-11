@@ -370,7 +370,7 @@ select:focus-visible {
 }
 .locked-teaser__label .material-symbols-rounded {
   font-size: 18px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 /* ===== Material Symbols (subconjunto SELF-HOSTED — RGPD: cero peticiones
@@ -468,11 +468,11 @@ select:focus-visible {
 }
 
 .consent-toggle.active .material-symbols-rounded {
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
 }
 
 .consent-toggle a {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 /* Texto solo para lectores de pantalla: describe en palabras lo que una

@@ -101,7 +101,7 @@ function describe(
       return {
         title: 'Tsundoku Zero',
         body: 'Ya tenéis todos el libro. Podéis empezar cuando quieras 📖',
-        url: '/club/captain',
+        url: '/club/capitania',
       }
     case 'mention_wait':
       return {

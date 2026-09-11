@@ -36,7 +36,7 @@
   gap: 5px;
 }
 .richtext li::marker {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 .richtext blockquote {

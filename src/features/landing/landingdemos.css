@@ -52,7 +52,7 @@
 }
 .ldemo__valor {
   font-variant-numeric: tabular-nums;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
   font-weight: 500;
 }
 .ldemo__control--boton {
@@ -104,7 +104,7 @@
   font-size: 17px;
 }
 .lestreno__aviso {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
   font-weight: 500;
 }
 

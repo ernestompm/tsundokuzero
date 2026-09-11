@@ -112,7 +112,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .profile-setting__msg {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   font-weight: 600;
 }
 
@@ -201,7 +201,7 @@
 }
 
 .profile-data__row .material-symbols-rounded {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   flex-shrink: 0;
 }
 
@@ -348,5 +348,5 @@
   background: var(--md-sys-color-surface-container-low);
 }
 .profile-resumen__pendiente {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }

@@ -69,7 +69,7 @@
 }
 .news__vacio .material-symbols-rounded {
   font-size: 40px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 .news__vacio p {
   margin: 0;

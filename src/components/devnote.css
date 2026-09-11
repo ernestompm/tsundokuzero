@@ -42,7 +42,7 @@
   overflow-wrap: anywhere;
 }
 .devnote__respuesta {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 .devnote__estado {

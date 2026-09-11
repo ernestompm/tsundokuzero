@@ -124,7 +124,7 @@
 }
 .sheet__blocked-icon {
   font-size: 40px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 .sheet__blocked h2 {
   margin: 8px 0 6px;
@@ -259,7 +259,7 @@
   border: none;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   font: inherit;
   cursor: pointer;
 }

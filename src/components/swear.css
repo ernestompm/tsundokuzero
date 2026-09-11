@@ -59,7 +59,7 @@
 }
 .jurada__head .material-symbols-rounded {
   font-size: 18px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 .jurada__quien {
   color: var(--md-sys-color-on-surface);
@@ -106,7 +106,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
 }
 .jurada-sello .material-symbols-rounded {
   font-size: 15px;

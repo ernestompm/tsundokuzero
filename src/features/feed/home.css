@@ -468,14 +468,14 @@
 }
 .feed-reply__locked .material-symbols-rounded {
   font-size: 14px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 .feed-thread__more {
   align-self: flex-start;
   background: none;
   border: none;
   padding: 0;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   cursor: pointer;
 }
 
@@ -537,7 +537,7 @@
 }
 .feed-quote__locked .material-symbols-rounded {
   font-size: 14px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 /* ---- Caja de respuesta inline ---- */
@@ -623,7 +623,7 @@
 }
 .feed-empty__icon {
   font-size: 44px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   margin-bottom: 8px;
 }
 .feed-empty p {

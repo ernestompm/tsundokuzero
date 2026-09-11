@@ -70,7 +70,7 @@ export default function NotificationsPage() {
             ? `respondió desde el capítulo ${n.chapter_number} y jura que no hay spoiler. Tú decides si lo abres`
             : 'respondió y jura que no hay spoiler. Tú decides si lo abres'
         } else if (n.type === 'all_ready') {
-          to = '/club/captain'
+          to = '/club/capitania'
           detail = 'Ya tenéis todos el libro. Podéis empezar cuando quieras'
         } else if (n.type === 'unlock') {
           to = n.discussion_id ? `/thread/${n.discussion_id}` : '/'

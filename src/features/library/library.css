@@ -23,7 +23,7 @@
 }
 .library__empty-icon {
   font-size: 40px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   display: block;
   margin: 0 auto 8px;
 }
@@ -79,7 +79,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   margin-top: 4px;
 }
 .lib-item__done .material-symbols-rounded {

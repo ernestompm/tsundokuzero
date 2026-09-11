@@ -29,7 +29,7 @@
 .legal-brand em {
   font-style: italic;
   font-family: var(--tz-typeface-serif);
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
 }
 
 .legal-nav {
@@ -82,6 +82,6 @@
 }
 
 .legal-foot a {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 

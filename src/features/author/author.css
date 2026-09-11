@@ -51,7 +51,7 @@
 .author-web {
   display: inline-block;
   margin-top: 6px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 .author-bio {

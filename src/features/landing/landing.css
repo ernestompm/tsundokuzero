@@ -51,7 +51,7 @@
 .landing-logo__word em {
   font-style: italic;
   font-family: var(--tz-typeface-serif);
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
 }
 
 /* ===== Héroe ===== */
@@ -215,7 +215,7 @@
 }
 .landing-bubble--locked .material-symbols-rounded {
   font-size: 15px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 
 /* ===== Cifras de la casa ===== */
@@ -236,7 +236,7 @@
   font-size: clamp(34px, 6vw, 48px);
   line-height: 1.1;
   font-weight: 520;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
 }
 
 /* ===== Demo interactiva del candado ===== */
@@ -269,7 +269,7 @@
   flex: none;
   min-width: 64px;
   font-size: 19px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
   font-variant-numeric: tabular-nums;
 }
 .landing-demo__feed {
@@ -314,7 +314,7 @@
 }
 .landing-demo__lock .material-symbols-rounded {
   font-size: 15px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
 }
 .landing-demo__note {
   margin: 14px 2px 0;
@@ -377,7 +377,7 @@
   color: var(--md-sys-color-on-surface);
 }
 .landing-manifesto em {
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
 }
 
 /* ===== Secciones ===== */
@@ -417,7 +417,7 @@
 }
 .landing-card__icon {
   font-size: 26px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   display: inline-grid;
   place-items: center;
   width: 46px;

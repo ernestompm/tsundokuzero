@@ -95,7 +95,7 @@
   background: none;
   border: none;
   padding: 10px 6px;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   cursor: pointer;
   font: inherit;
   border-radius: var(--md-sys-shape-corner-full);

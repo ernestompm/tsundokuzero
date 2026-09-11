@@ -103,7 +103,7 @@
     color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
   width: 100%;
   background: none;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
   cursor: pointer;
   font-weight: 600;
 }
@@ -414,7 +414,7 @@
   font-size: 26px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-tertiary);
 }
 
 /* Invitación en la administración del club */

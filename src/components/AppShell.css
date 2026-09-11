@@ -32,7 +32,7 @@
 .logo__word em {
   font-style: italic;
   font-family: var(--tz-typeface-serif);
-  color: var(--md-sys-color-primary);
+  color: var(--tz-signal-strong);
 }
 
 /* ===================== Barra lateral (escritorio) ===================== */

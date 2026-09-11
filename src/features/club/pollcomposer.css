@@ -108,7 +108,7 @@
   border: 1px dashed var(--md-sys-color-outline-variant);
 }
 .pollc__vacio .material-symbols-rounded {
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   font-size: 28px;
 }
 .pollc__vacio p {
@@ -167,7 +167,7 @@
   border: none;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   font: inherit;
   cursor: pointer;
 }
@@ -207,7 +207,7 @@
   border: none;
   padding: 0;
   font: inherit;
-  color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-secondary);
   text-decoration: underline;
   cursor: pointer;
 }
