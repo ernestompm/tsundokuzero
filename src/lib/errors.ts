@@ -35,6 +35,12 @@ const MAP: [RegExp, string][] = [
     'Te has pasado de largo: el máximo son 1500 caracteres.',
   ],
   [/escribe algo antes de publicarlo/i, 'Escribe algo antes de publicarlo.'],
+  // Una clave ajena tampoco es un permiso: significa que eso lo está
+  // usando otra cosa. Decir «no tienes permiso» manda a mirar los roles.
+  [
+    /violates foreign key|foreign key constraint/i,
+    'No se puede borrar todavía: hay algo que depende de esto.',
+  ],
   // Una restricción de la base de datos no es un problema de permisos:
   // decir «no tienes permiso» cuando en realidad falta una migración
   // manda a buscar el fallo al sitio equivocado (pasó de verdad con el
