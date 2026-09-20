@@ -8,12 +8,15 @@ import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
 import { BadgeBoard } from '../../components/Badges'
+import Rachas from '../../components/Rachas'
+import ColeccionExLibris from '../../components/ColeccionExLibris'
 import { BookCover, Chip } from '../../components/ui'
 import {
   antiguedadEnPalabras,
   badgesDe,
   siguienteBadge,
   type MemberStats,
+  type Rachas as RachasData,
 } from '../../lib/badges'
 import { Avatar } from '../../components/ui'
 import { friendlyError } from '../../lib/errors'
@@ -139,6 +142,8 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   // Insignias del club (migr. 030): se derivan, no se guardan
   const [misStats, setMisStats] = useState<MemberStats | null>(null)
+  // Las rachas alimentan las insignias de racha y «lo siguiente»
+  const [rachas, setRachas] = useState<RachasData | null>(null)
   // El perfil dejó de ser una página de ajustes: ahora tiene dos caras
   const [tab, setTab] = useState<'perfil' | 'ajustes'>('perfil')
   const [estanteria, setEstanteria] = useState<
@@ -212,6 +217,10 @@ export default function ProfilePage() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setMisStats((data as MemberStats | null) ?? null))
+    void supabase.rpc('mis_rachas').then(({ data }) => {
+      const fila = Array.isArray(data) ? data[0] : data
+      if (fila) setRachas(fila as RachasData)
+    })
   }, [session])
 
   useEffect(() => {
@@ -706,7 +715,16 @@ export default function ProfilePage() {
             {misStats.libros_terminados}{' '}
             {misStats.libros_terminados === 1 ? 'libro terminado' : 'libros terminados'}
           </p>
-          <BadgeBoard badges={badgesDe(misStats)} siguiente={siguienteBadge(misStats)} />
+          <BadgeBoard
+            badges={badgesDe(misStats, rachas)}
+            siguiente={siguienteBadge(misStats, rachas)}
+          />
+
+          {/* Las rachas, junto a las insignias: es lo que está en juego */}
+          <Rachas compacta />
+
+          <h2 className="title-small profile-sec">Tus ex libris</h2>
+          <ColeccionExLibris />
         </>
       )}
 

@@ -71,9 +71,83 @@ export function antiguedadEnPalabras(joinedAt: string): string {
  * a menos. Cada familia da UNA sola insignia, la del nivel alcanzado, para
  * que la ficha no se llene de medallas repetidas.
  */
-export function badgesDe(s: MemberStats): Badge[] {
+/** Lo que devuelve `mis_rachas()` (migr. 045). */
+export interface Rachas {
+  dias_leyendo: number
+  dias_hablando: number
+  leido_hoy: boolean
+  hablado_hoy: boolean
+  mejor_leyendo: number
+  dias_totales: number
+}
+
+export function badgesDe(s: MemberStats, r?: Rachas | null): Badge[] {
   const out: Badge[] = []
   const meses = mesesEnElClub(s.joined_at)
+
+  // ---- Rachas: lo que hace volver mañana ----
+  // Van las primeras a propósito. Los totales cuentan lo que ya hiciste;
+  // la racha cuenta lo que tienes en juego ahora mismo, y eso es lo que
+  // hay que tener delante.
+  const rl = r?.dias_leyendo ?? 0
+  if (rl >= 100)
+    out.push({
+      id: 'racha-100',
+      icon: 'local_fire_department',
+      nombre: 'Cien días',
+      detalle: 'Cien días seguidos moviendo tu capítulo',
+      tono: 'oro',
+    })
+  else if (rl >= 30)
+    out.push({
+      id: 'racha-30',
+      icon: 'local_fire_department',
+      nombre: 'Un mes sin fallar',
+      detalle: 'Treinta días seguidos leyendo',
+      tono: 'oro',
+    })
+  else if (rl >= 7)
+    out.push({
+      id: 'racha-7',
+      icon: 'local_fire_department',
+      nombre: 'Una semana entera',
+      detalle: 'Siete días seguidos leyendo',
+      tono: 'salvia',
+    })
+  else if (rl >= 3)
+    out.push({
+      id: 'racha-3',
+      icon: 'local_fire_department',
+      nombre: 'Tres días seguidos',
+      detalle: 'La racha ha empezado',
+      tono: 'tierra',
+    })
+
+  const rh = r?.dias_hablando ?? 0
+  if (rh >= 30)
+    out.push({
+      id: 'voz-racha-30',
+      icon: 'forum',
+      nombre: 'El alma del club',
+      detalle: 'Treinta días seguidos diciendo algo',
+      tono: 'oro',
+    })
+  else if (rh >= 7)
+    out.push({
+      id: 'voz-racha-7',
+      icon: 'forum',
+      nombre: 'Siempre en la sala',
+      detalle: 'Siete días seguidos comentando',
+      tono: 'salvia',
+    })
+  else if (rh >= 3)
+    out.push({
+      id: 'voz-racha-3',
+      icon: 'forum',
+      nombre: 'No se calla',
+      detalle: 'Tres días seguidos comentando',
+      tono: 'tierra',
+    })
 
   // ---- Antigüedad ----
   if (s.orden_llegada <= 3) {
@@ -350,7 +424,20 @@ export function badgesDe(s: MemberStats): Badge[] {
  * diga qué falta en vez de solo qué hay. Devuelve null si no hay ninguna
  * cerca.
  */
-export function siguienteBadge(s: MemberStats): { nombre: string; falta: string } | null {
+export function siguienteBadge(
+  s: MemberStats,
+  r?: Rachas | null,
+): { nombre: string; falta: string } | null {
+  // Si hay racha viva, lo siguiente es no romperla: es la meta más cerca
+  // que tiene cualquiera, y la única que caduca esta noche.
+  const rl = r?.dias_leyendo ?? 0
+  if (rl > 0 && rl < 3)
+    return { nombre: 'Tres días seguidos', falta: `Llevas ${rl}. Mañana van ${rl + 1}` }
+  if (rl >= 3 && rl < 7)
+    return { nombre: 'Una semana entera', falta: `Te faltan ${7 - rl} días de racha` }
+  if (rl >= 7 && rl < 30)
+    return { nombre: 'Un mes sin fallar', falta: `Te faltan ${30 - rl} días de racha` }
+
   const t = s.libros_terminados
   const c = s.capitulos_leidos ?? 0
   // A quien acaba de llegar se le habla de capítulos, que es lo que puede

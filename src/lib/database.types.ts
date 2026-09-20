@@ -646,6 +646,30 @@ export type Database = {
       }
       /* ---------- migr. 038: probadores, clubes y «ya lo tengo» ---------- */
       is_beta: { Args: Record<string, never>; Returns: boolean }
+      /* ---------- migr. 045: rachas y coleccion ---------- */
+      mis_rachas: {
+        Args: Record<string, never>
+        Returns: {
+          dias_leyendo: number
+          dias_hablando: number
+          leido_hoy: boolean
+          hablado_hoy: boolean
+          mejor_leyendo: number
+          dias_totales: number
+        }[]
+      }
+      racha_de: { Args: { p_user: string; p_tipo: string }; Returns: number }
+      mis_exlibris: {
+        Args: Record<string, never>
+        Returns: {
+          book_id: string
+          title: string
+          author: string
+          cover_url: string | null
+          terminado_el: string
+          companeros: string[]
+        }[]
+      }
       marcar_insignias: { Args: { p_ids: string[] }; Returns: string[] }
       admin_set_flag: {
         Args: { target: string; flag: 'beta_tester' | 'can_create_club'; value: boolean }

@@ -10,12 +10,12 @@
  */
 
 /** Cambia esto en cada versión con novedades que merezca contar. */
-export const RELEASE_KEY = '0.14.0'
+export const RELEASE_KEY = '0.15.0'
 
-export const RELEASE_TITULO = 'Responder sin esperar un mes'
+export const RELEASE_TITULO = 'Que te apetezca volver mañana'
 
 export const RELEASE_ENTRADA =
-  'El candado anti-spoiler sigue siendo sagrado. Pero se llevaba por delante una cosa importante: las respuestas. Esto es lo que cambia.'
+  'Hasta ahora la app contaba lo que ya habías hecho. Los totales no hacen volver a nadie: lo que engancha es no querer romper una racha.'
 
 export interface Novedad {
   /** icono del subset (scripts/icons.txt) */
@@ -25,6 +25,24 @@ export interface Novedad {
 }
 
 export const NOVEDADES: Novedad[] = [
+  {
+    icon: 'local_fire_department',
+    titulo: 'Rachas',
+    texto:
+      'Días seguidos leyendo y días seguidos diciendo algo. Se ganan haciendo —mover tu capítulo, escribir—, nunca abriendo la app: una racha que se mantiene mirando el móvil premia mirar el móvil. Están en tu Inicio, y te dicen si hoy ya está o te falta.',
+  },
+  {
+    icon: 'star',
+    titulo: 'Logros que se celebran',
+    texto:
+      'Las insignias se ganaban en silencio y había que ir a buscarlas al perfil. Ahora salta un aviso con su medalla y confeti. Y hay insignias de racha: tres días, una semana, un mes sin fallar.',
+  },
+  {
+    icon: 'bookmark',
+    titulo: 'Tus ex libris',
+    texto:
+      'Cada libro que terminas con el club deja su estampa en tu perfil: el título, la fecha y con quién lo leíste. Se coleccionan, y se ven los huecos que faltan. Toca una para verla entera.',
+  },
   {
     icon: 'auto_stories',
     titulo: 'Otra cara',

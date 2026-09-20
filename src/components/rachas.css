@@ -1,0 +1,77 @@
+/* Rachas: días seguidos leyendo y días seguidos hablando (migr. 045) */
+
+.rachas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.rachas--compacta {
+  margin-bottom: 0;
+}
+
+.racha {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border-radius: var(--tz-shape-card);
+  background: var(--tz-paper);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
+}
+
+/* El día cumplido enciende la llama. Apagada no regaña: solo está
+   apagada, que ya dice bastante. */
+.racha__icono {
+  font-size: 26px;
+  flex: none;
+  color: var(--md-sys-color-outline);
+  transition: color var(--md-sys-motion-duration-medium)
+    var(--md-sys-motion-easing-standard);
+}
+.racha--viva {
+  background: var(--tz-signal-soft);
+  border-color: color-mix(in srgb, var(--tz-signal) 40%, transparent);
+}
+.racha--viva .racha__icono {
+  color: var(--tz-signal);
+}
+
+.racha__txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.racha__num {
+  font-family: var(--tz-typeface-serif);
+  font-variation-settings: 'opsz' 36, 'SOFT' 18;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.racha--viva .racha__num {
+  color: var(--tz-signal-strong);
+}
+.racha__que {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.racha--viva .racha__que {
+  color: color-mix(in srgb, var(--tz-signal-strong) 82%, transparent);
+}
+
+.rachas__record {
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+@media (max-width: 420px) {
+  .racha {
+    padding: 11px 12px;
+    gap: 9px;
+  }
+  .racha__icono { font-size: 22px; }
+  .racha__num { font-size: 18px; }
+}

@@ -16,6 +16,7 @@ import MentionTextarea from '../../components/MentionTextarea'
 import LockedTeaser from '../../components/LockedTeaser'
 import PushNudge from '../../components/PushNudge'
 import ClubStrip from '../../components/ClubStrip'
+import Rachas from '../../components/Rachas'
 import MentionText from '../../components/MentionText'
 import MentionsWaiting from '../../components/MentionsWaiting'
 import NextRead from '../club/NextRead'
@@ -238,6 +239,9 @@ export default function HomeView({
       )}
 
       {/* Menciones esperándote unos capítulos más adelante */}
+      {/* Lo que tienes en juego esta noche (migr. 045) */}
+      <Rachas />
+
       <MentionsWaiting />
 
       {/* ===== Tu club: quiénes sois y qué te has perdido ===== */}

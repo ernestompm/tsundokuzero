@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import '@material/web/button/filled-button.js'
 import '@material/web/button/text-button.js'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { badgesDe, type Badge, type MemberStats } from '../lib/badges'
+import { confeti } from '../lib/confeti'
 import { useModalBehavior } from './modal'
 import './badgecelebration.css'
 
@@ -27,6 +28,7 @@ export default function BadgeCelebration() {
   const { session, profile } = useAuth()
   const navigate = useNavigate()
   const [cola, setCola] = useState<Badge[]>([])
+  const medallaRef = useRef<HTMLSpanElement>(null)
 
   const cerrar = useCallback(() => {
     setCola((c) => c.slice(1))
@@ -71,6 +73,14 @@ export default function BadgeCelebration() {
     // `profile` cambia al refrescarlo; basta con el id para no repetir
   }, [session, profile])
 
+  // El confeti sale de la medalla, no del centro de la pantalla: así el
+  // ojo va a la insignia y no a los papelitos.
+  useEffect(() => {
+    if (cola.length === 0) return
+    const t = window.setTimeout(() => confeti(medallaRef.current), 260)
+    return () => window.clearTimeout(t)
+  }, [cola])
+
   if (cola.length === 0) return null
 
   const b = cola[0]
@@ -86,7 +96,11 @@ export default function BadgeCelebration() {
         aria-labelledby="celebra-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className={`celebra__medalla celebra__medalla--${b.tono}`} aria-hidden="true">
+        <span
+          ref={medallaRef}
+          className={`celebra__medalla celebra__medalla--${b.tono}`}
+          aria-hidden="true"
+        >
           <span className="material-symbols-rounded">{b.icon}</span>
         </span>
 

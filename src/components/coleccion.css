@@ -1,0 +1,88 @@
+/* La colección de ex libris, en el perfil (migr. 045) */
+
+.coleccion {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+.sello {
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform var(--md-sys-motion-duration-short)
+    var(--md-sys-motion-easing-standard);
+}
+.sello:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+/* Doble filete, como la estampa grande pero en miniatura */
+.sello__marco {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  text-align: center;
+  background: var(--tz-paper);
+  border: 2px solid var(--tz-editorial-sage);
+  border-radius: 3px;
+  box-shadow: var(--tz-shadow-card);
+  overflow: hidden;
+}
+.sello__marco::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--tz-editorial-sage) 55%, transparent);
+  border-radius: 2px;
+}
+
+.sello__titulo {
+  font-size: 13px;
+  line-height: 1.2;
+  font-style: italic;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 24, 'SOFT' 20;
+  color: var(--md-sys-color-on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+.sello__anio {
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
+  color: var(--tz-signal-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los huecos de la plancha: lo que falta tira más que lo que hay */
+.sello--hueco {
+  border: 1px dashed var(--tz-rule);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tz-rule) 12%, transparent);
+  cursor: default;
+}
+
+.coleccion__pie {
+  margin: 10px 0 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.coleccion__abierta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
