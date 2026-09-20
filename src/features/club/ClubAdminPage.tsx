@@ -252,11 +252,16 @@ export default function ClubAdminPage() {
     setBusy(false)
   }
 
-  const invitacion = `${window.location.origin}/welcome`
+  // El enlace lleva el código dentro: quien lo recibe solo tiene que
+  // tocarlo y el campo le llega relleno. Dictar seis letras por WhatsApp
+  // era justo el punto del alta donde se perdía la gente.
+  const invitacion = codigo
+    ? `${window.location.origin}/welcome?c=${encodeURIComponent(codigo)}`
+    : `${window.location.origin}/welcome`
 
   const copiar = async () => {
     const texto = codigo
-      ? `Únete a ${club.name} en Tsundoku Zero: ${invitacion}\nCódigo de invitación: ${codigo}`
+      ? `Únete a ${club.name} en Tsundoku Zero: ${invitacion}\n\nSi te pide el código: ${codigo}`
       : `Únete a ${club.name} en Tsundoku Zero: ${invitacion}`
     try {
       await navigator.clipboard.writeText(texto)

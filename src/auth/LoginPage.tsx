@@ -13,7 +13,6 @@ import { useAuth } from './AuthContext'
 import './auth.css'
 
 const GOOGLE_ENABLED = import.meta.env.VITE_AUTH_GOOGLE_ENABLED === 'true'
-const INVITE_CODE = import.meta.env.VITE_INVITE_CODE ?? ''
 
 type Mode = 'login' | 'signup' | 'forgot'
 
@@ -22,7 +21,15 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [invite, setInvite] = useState('')
+  // El código puede venir en el propio enlace («…/welcome?c=abcdef»), que
+  // es lo que se comparte por WhatsApp. Dictar seis letras es justo la
+  // parte del alta donde se pierde la gente.
+  const [invite, setInvite] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get('c') ??
+      localStorage.getItem('tz-invite') ??
+      '',
+  )
   // RGPD art. 7 + LOPDGDD art. 7: aceptación expresa y edad mínima (14)
   const [accepted, setAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -71,8 +78,17 @@ export default function LoginPage() {
       return
     }
 
-    if (mode === 'signup' && invite.trim() !== INVITE_CODE) {
-      setError('Código de invitación incorrecto.')
+    // AQUÍ NO SE VALIDA EL CÓDIGO.
+    //
+    // Se hacía: se comparaba contra `VITE_INVITE_CODE`, el código global
+    // que viaja en el build. Desde que cada club tiene el suyo (migr.
+    // 038), quien llegaba con el código de su club —seis letras— lo veía
+    // rechazado con «código erróneo» SIN QUE EL SERVIDOR LLEGARA A
+    // VERLO. El cliente no puede saber los códigos de los clubes, y
+    // tampoco debe: el único que puede decir si un código vale es el
+    // servidor, y lo hace en `complete_onboarding`.
+    if (mode === 'signup' && invite.trim() === '') {
+      setError('Escribe el código que te han pasado.')
       return
     }
 

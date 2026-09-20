@@ -196,7 +196,7 @@ function UsersTab() {
       error
         ? friendlyError(error, 'No se pudo guardar el código de invitación.') // auditoría A-04
         : inviteCode.trim()
-          ? 'Código guardado. Recuerda actualizar VITE_INVITE_CODE en Vercel para que el formulario de alta pida el mismo.'
+          ? 'Código guardado. Este es el código general; cada club tiene además el suyo, que vale igual para registrarse.'
           : 'Código vacío: el registro queda cerrado.',
     )
   }

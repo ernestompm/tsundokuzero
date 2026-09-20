@@ -210,7 +210,7 @@ export default function LandingPage() {
             Tsundoku <em>Zero</em>
           </span>
         </span>
-        <md-outlined-button onClick={() => navigate('/login')}>
+        <md-outlined-button onClick={() => navigate(`/login${window.location.search}`)}>
           Entrar
         </md-outlined-button>
       </header>
@@ -236,7 +236,7 @@ export default function LandingPage() {
             recomendáis lecturas y las reseñas se estrenan todas a la vez.
           </p>
           <div className="landing-hero__cta">
-            <md-filled-button onClick={() => navigate('/login')}>
+            <md-filled-button onClick={() => navigate(`/login${window.location.search}`)}>
               Entrar con mi invitación
             </md-filled-button>
             <span className="body-small on-surface-variant">
@@ -351,7 +351,7 @@ export default function LandingPage() {
       {/* ===== CTA final ===== */}
       <section className="landing-final" data-reveal>
         <h2 className="landing-final__title serif">El libro no avanza solo.</h2>
-        <md-filled-button onClick={() => navigate('/login')}>
+        <md-filled-button onClick={() => navigate(`/login${window.location.search}`)}>
           Entrar en Tsundoku Zero
         </md-filled-button>
       </section>

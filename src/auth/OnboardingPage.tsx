@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase'
 import { friendlyError } from '../lib/errors'
 import { ConsentCheckbox } from '../components/ConsentCheckbox'
 import { useAuth } from './AuthContext'
+import { olvidarClub } from '../lib/clubCache'
 import { TERMS_VERSION } from '../features/legal/legalContent'
 import type { Book, Chapter, Club } from '../lib/database.types'
 import './auth.css'
@@ -67,13 +68,14 @@ export default function OnboardingPage() {
     }
   }, [session, profile, navigate])
 
+  // El club del paso 2 es el MÍO: al completar el alta con el código de
+  // un club, `complete_onboarding` ya te ha metido en él (migr. 038/041).
+  // Antes se cogía «el primero de la tabla», así que quien entraba con el
+  // código del club B veía en esta pantalla el libro del club A.
   useEffect(() => {
     supabase
-      .from('clubs')
-      .select('*')
-      .order('created_at')
-      .limit(1)
-      .maybeSingle()
+      .rpc('my_club')
+      .then(({ data }) => ({ data: ((data as Club[] | null) ?? [])[0] ?? null }))
       .then(async ({ data: clubData }) => {
         setClub(clubData)
         if (clubData?.current_book_id) {
@@ -104,6 +106,12 @@ export default function OnboardingPage() {
    * invitación y la aceptación de términos se validan EN SERVIDOR y el
    * consentimiento queda registrado en la misma transacción (RGPD art. 7).
    */
+  /** ¿Estoy ya en un club? `my_club` devuelve el mío o nada. */
+  const esMiembro = async () => {
+    const { data } = await supabase.rpc('my_club')
+    return ((data as Club[] | null) ?? []).length > 0
+  }
+
   const createProfile = async (e: FormEvent) => {
     e.preventDefault()
     if (!session) return
@@ -174,16 +182,25 @@ export default function OnboardingPage() {
     setError(null)
     setBusy(true)
     try {
-      // Unirse al club: el trigger fija el rol (primer miembro = capitán)
-      // y crea los follows bidireccionales con los demás miembros.
-      const { error: joinError } = await supabase
-        .from('club_members')
-        .insert({ club_id: club.id, user_id: session.user.id })
-      if (joinError && joinError.code !== '23505') {
-        setError(
-          friendlyError(joinError, 'No se pudo completar la unión al club. Inténtalo de nuevo.'),
-        )
-        return
+      // NO se inserta en `club_members`: entrar en un club pasa por
+      // `join_club` o por `complete_onboarding`, que es quien ya te ha
+      // metido si el código era de un club (migr. 038/041). El insert
+      // directo dejó de estar permitido y aquí se quedó, así que el alta
+      // moría en el último paso con un «no tienes permiso» — ya siendo
+      // miembro. Si por lo que sea no lo eres, se reintenta con el código.
+      if (!(await esMiembro())) {
+        const { error: joinError } = await supabase.rpc('join_club', {
+          p_code: invite.trim(),
+        })
+        if (joinError) {
+          setError(
+            friendlyError(
+              joinError,
+              'Tu identidad está lista, pero no hemos podido meterte en el club. Entra y prueba con el código desde «Club».',
+            ),
+          )
+          return
+        }
       }
 
       if (book) {
@@ -202,6 +219,9 @@ export default function OnboardingPage() {
         }
       }
 
+      // Acabas de entrar en un club: la caché compartida todavía cree que
+      // no tienes ninguno y el Inicio saldría vacío.
+      olvidarClub()
       navigate('/', { replace: true })
     } finally {
       setBusy(false)
@@ -268,8 +288,9 @@ export default function OnboardingPage() {
                  infinito antes de entrar a la app. */
               <>
                 <p className="body-large" style={{ textAlign: 'center' }}>
-                  Tu identidad está lista, pero todavía no hay ningún club
-                  activo al que unirse.
+                  Tu identidad está lista. Todavía no estás en ningún club:
+                  entra y mete el código que te hayan pasado, o funda el tuyo
+                  si tienes permiso.
                 </p>
                 <md-filled-button
                   type="button"
