@@ -176,14 +176,32 @@
    dimensiones y ajustes propios. */
 .tz-input {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 11px 18px;
+  /* LA REGLA DE LOS CAMPOS, que antes no existía y se notaba: un campo de
+     UNA LÍNEA es una píldora —igual que los botones, el buscador y los
+     chips—; uno de varias líneas lleva el radio de tarjeta, porque ya no
+     es un control, es una superficie donde se escribe. Había cuatro
+     formas distintas repartidas por la app. */
+  border-radius: var(--md-sys-shape-corner-full);
   border: 1px solid var(--md-sys-color-outline-variant);
   background: var(--md-sys-color-surface-container-lowest);
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-ref-typeface-plain);
   font-size: 15px;
 }
+textarea.tz-input,
+.tz-input[rows] {
+  border-radius: var(--tz-shape-card);
+  padding: 12px 16px;
+  resize: vertical;
+}
+/* Los numéricos y las fechas son cortos: la píldora los deforma */
+.tz-input[type='number'],
+.tz-input[type='date'] {
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 11px 14px;
+}
+
 .tz-input::placeholder {
   color: var(--md-sys-color-on-surface-variant);
 }

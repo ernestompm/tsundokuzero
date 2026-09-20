@@ -63,6 +63,20 @@ export function RatingBarsInput({
  * Lectura: tu barra contra la media del club. La gracia no es tu nota,
  * es la distancia entre las dos.
  */
+/**
+ * Dónde cae una nota en la barra.
+ *
+ * La escala es de 1 a 5, no de 0 a 5: el mínimo que se puede poner es un
+ * 1. Dividiendo entre 5 —que es lo que hacía antes— un 5 caía justo en el
+ * borde derecho y la marca se salía media barra fuera, y un 1 pintaba un
+ * 20 % de barra que parecía «casi sin datos». Con (v−1)/4 el 1 es el
+ * principio de la barra, el 3 la mitad exacta y el 5 el final.
+ */
+function pct(v: number | null | undefined): number {
+  if (v == null) return 0
+  return Math.min(100, Math.max(0, ((v - 1) / 4) * 100))
+}
+
 export function RatingBarsCompare({
   mine,
   club,
@@ -93,13 +107,10 @@ export function RatingBarsCompare({
             <div className="rbars__track" aria-hidden="true">
               <div
                 className="rbars__fill rbars__fill--club"
-                style={{ width: `${((c ?? 0) / 5) * 100}%` }}
+                style={{ width: `${pct(c)}%` }}
               />
               {showMine && m != null && (
-                <span
-                  className="rbars__mark"
-                  style={{ left: `${(m / 5) * 100}%` }}
-                />
+                <span className="rbars__mark" style={{ left: `${pct(m)}%` }} />
               )}
             </div>
             <span className="visually-hidden">

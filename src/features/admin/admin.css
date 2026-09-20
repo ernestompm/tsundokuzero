@@ -103,7 +103,6 @@
    aquí solo quedan las particularidades de esta feature */
 .admin-search,
 .admin-input {
-  border-radius: var(--md-sys-shape-corner-full);
   padding: 10px 16px;
 }
 

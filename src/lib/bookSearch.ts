@@ -106,12 +106,39 @@ function fromOpenLibrary(d: OlDoc): ExternalBook | null {
   }
 }
 
+/**
+ * Marca si alguna de las fuentes externas se cayó durante la búsqueda.
+ *
+ * Antes cualquier fallo —Google sin cuota, la red caída, el CSP
+ * bloqueando un dominio— se tragaba en silencio y devolvía lista vacía,
+ * así que la pantalla decía «no encontramos X» y quien buscaba concluía
+ * que el libro no existe. No es lo mismo «no hay» que «no hemos podido
+ * mirar», y a quien está intentando añadir un libro le importa la
+ * diferencia.
+ */
+let falloExterno = false
+
+/** ¿Falló alguna fuente en la última búsqueda? */
+export function ultimaBusquedaFallo(): boolean {
+  return falloExterno
+}
+
 async function json<T>(url: string, signal?: AbortSignal): Promise<T | null> {
   try {
     const res = await fetch(url, { signal })
-    if (!res.ok) return null
+    if (!res.ok) {
+      // 429 = sin cuota (Google limita por IP y sin clave se agota pronto)
+      console.warn('[tz] fuente de libros no disponible:', res.status, url)
+      falloExterno = true
+      return null
+    }
     return (await res.json()) as T
-  } catch {
+  } catch (e) {
+    // Abortar una búsqueda al teclear la siguiente no es un fallo
+    if (!(e instanceof DOMException && e.name === 'AbortError')) {
+      console.warn('[tz] fuente de libros inalcanzable:', url, e)
+      falloExterno = true
+    }
     return null
   }
 }
@@ -127,6 +154,7 @@ export async function searchExternalBooks(
 ): Promise<ExternalBook[]> {
   const q = query.trim()
   if (q.length < 2) return []
+  falloExterno = false
   const isbn = asIsbn(q)
   const results: ExternalBook[] = []
 

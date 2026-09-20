@@ -549,7 +549,6 @@
    auditoría A-05: sin outline:none — el :focus-visible global da el foco */
 .feed-reply-box__input {
   flex: 1;
-  border-radius: var(--md-sys-shape-corner-full);
   padding: 10px 16px;
 }
 .feed-reply-box__send {

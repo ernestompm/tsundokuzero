@@ -12,6 +12,7 @@ import {
   defaultBuyUrl,
   enrichSynopsis,
   searchExternalBooks,
+  ultimaBusquedaFallo,
   type ExternalBook,
 } from '../lib/bookSearch'
 import { useModalBehavior } from './modal'
@@ -54,6 +55,8 @@ export default function AddBookSheet({ open, onClose, initialQuery = '', onAdded
   const [q, setQ] = useState(initialQuery)
   const [catalog, setCatalog] = useState<CatalogHit[] | null>(null)
   const [external, setExternal] = useState<ExternalBook[] | null>(null)
+  /** las fuentes externas se cayeron (sin cuota, sin red…) */
+  const [fuentesCaidas, setFuentesCaidas] = useState(false)
   const [searching, setSearching] = useState(false)
 
   // Paso 2: confirmar un libro nuevo (de fuera o a mano)
@@ -108,6 +111,7 @@ export default function AddBookSheet({ open, onClose, initialQuery = '', onAdded
             .limit(6)
         : Promise.resolve({ data: [] as { id: string; title: string; author: string; cover_url: string | null }[] })
       const [cat, ext] = await Promise.all([catalogReq, searchExternalBooks(term, ctrl.signal)])
+      setFuentesCaidas(ultimaBusquedaFallo())
       if (ctrl.signal.aborted) return
       const rows = cat.data ?? []
       let mineById = new Map<string, CatalogHit['mine']>()
@@ -343,7 +347,9 @@ export default function AddBookSheet({ open, onClose, initialQuery = '', onAdded
 
                 {nothing && (
                   <p className="body-medium on-surface-variant addbook__hint">
-                    No encontramos «{term}». Prueba con el ISBN o añádelo a mano.
+                    {fuentesCaidas
+                      ? 'No hemos podido consultar el catálogo externo ahora mismo. Añádelo a mano: funciona igual.'
+                      : `No encontramos «${term}». Prueba con el ISBN o añádelo a mano.`}
                   </p>
                 )}
 

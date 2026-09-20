@@ -137,7 +137,6 @@
   flex: 1;
   /* mismos valores que .tz-input (auditoría M-09) */
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
   padding: 10px 14px;
   background: var(--md-sys-color-surface-container-lowest);
   color: inherit;

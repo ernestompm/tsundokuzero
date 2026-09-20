@@ -80,14 +80,24 @@
 }
 /* Tu nota: una marca vertical sobre la barra del club */
 /* Dónde estás TÚ respecto a la media del club: eso sí es una marca que
-   hay que encontrar de un vistazo, así que la señala el Vermillion. */
+   hay que encontrar de un vistazo, así que la señala el Vermillion.
+   El `translateX(-50%)` la centra en su posición sin sacarla de la barra
+   en los extremos, que es lo que pasaba con el margen negativo fijo. */
 .rbars__mark {
   position: absolute;
   top: -5px;
   width: 3px;
   height: 20px;
-  margin-left: -1.5px;
+  transform: translateX(-50%);
   border-radius: 2px;
   background: var(--tz-signal);
   box-shadow: 0 0 0 2px var(--md-sys-color-surface);
+}
+/* En los bordes la marca se mete hacia dentro para no quedar a medias */
+.rbars__mark[style*="left: 0%"] { transform: translateX(0); }
+.rbars__mark[style*="left: 100%"] { transform: translateX(-100%); }
+
+/* Una barra que empieza en 1 no puede verse vacía: el mínimo se ve */
+.rbars__fill--club {
+  min-width: 4px;
 }

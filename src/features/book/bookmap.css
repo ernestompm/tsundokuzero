@@ -27,15 +27,24 @@
   border-radius: var(--md-sys-shape-corner-small);
   overflow: hidden;
 }
+/* TRES ESTADOS, TRES COLORES, Y CADA UNO DICE UNA COSA.
+   Antes había cuatro verdes y grises parecidos y no se entendía nada:
+   el territorio recorrido y las barras de conversación eran el mismo
+   verde, y tu posición —que es lo único que hay que encontrar de un
+   vistazo— era otro verde más.
+
+     niebla  · lo que te queda        → gris calmado, sin información
+     salvia  · lo que llevas leído    → material recorrido (en el SVG)
+     verde   · donde se ha hablado    → el contenido
+     naranja · dónde estás tú         → lo único que señala */
 .bookmap__fog {
-  fill: var(--md-sys-color-surface-container-highest);
+  fill: var(--md-sys-color-surface-container-high);
 }
 .bookmap__heat {
-  fill: var(--md-sys-color-primary);
+  fill: var(--md-sys-color-secondary);
 }
 .bookmap__edge {
-  fill: var(--md-sys-color-on-surface);
-  opacity: 0.55;
+  fill: var(--tz-signal);
 }
 
 .bookmap__readers {
@@ -64,7 +73,7 @@
   background: var(--md-sys-color-outline);
 }
 .bookmap__pin.me::after {
-  background: var(--md-sys-color-primary);
+  background: var(--tz-signal);
   width: 3px;
   margin-left: -1.5px;
 }
@@ -72,7 +81,7 @@
   z-index: 2;
 }
 .bookmap__pin.me .avatar {
-  outline: 2px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--tz-signal);
   outline-offset: 1px;
   border-radius: 50%;
 }
@@ -91,9 +100,16 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .bookmap__leyenda {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.bookmap__item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .bookmap__muestra {
   display: inline-block;
@@ -102,9 +118,13 @@
   border-radius: 2px;
 }
 .bookmap__muestra--leido {
-  background: var(--md-sys-color-primary);
-  opacity: 0.55;
+  background: var(--tz-editorial-sage);
 }
 .bookmap__muestra--niebla {
-  background: var(--md-sys-color-surface-container-highest);
+  background: var(--md-sys-color-surface-container-high);
+}
+/* La leyenda ahora nombra también las barras: sin esto, la única cosa
+   que de verdad hay que explicar se quedaba sin explicar. */
+.bookmap__muestra--hablado {
+  background: var(--md-sys-color-secondary);
 }

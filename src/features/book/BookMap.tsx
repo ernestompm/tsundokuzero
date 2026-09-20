@@ -80,9 +80,13 @@ export default function BookMap({
         aria-label={`Mapa del libro. Vas por el capítulo ${explorado} de ${totalChapters}.`}>
         <svg viewBox={`0 0 ${totalChapters} 10`} preserveAspectRatio="none" className="bookmap__svg">
           <defs>
+            {/* El territorio recorrido: salvia, un material callado. Antes
+                era el mismo verde que las barras de conversación y no había
+                forma de distinguir «por aquí he pasado» de «aquí se ha
+                hablado mucho»: los dos eran verde oscuro. */}
             <linearGradient id={gradId} x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor="var(--md-sys-color-primary)" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="var(--md-sys-color-primary)" stopOpacity="0.55" />
+              <stop offset="0%" stopColor="var(--tz-editorial-sage)" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="var(--tz-editorial-sage)" stopOpacity="0.85" />
             </linearGradient>
           </defs>
 
@@ -135,9 +139,20 @@ export default function BookMap({
 
       <div className="bookmap__pie">
         <span className="bookmap__leyenda">
-          <span className="bookmap__muestra bookmap__muestra--leido" aria-hidden="true" />
-          Lo que llevas · <span className="bookmap__muestra bookmap__muestra--niebla" aria-hidden="true" />
-          Lo que te queda
+          {/* Cada muestra va dentro de su etiqueta: al estrechar, la pareja
+              muestra+palabra baja junta en vez de partirse por la mitad */}
+          <span className="bookmap__item">
+            <span className="bookmap__muestra bookmap__muestra--leido" aria-hidden="true" />
+            Lo que llevas
+          </span>
+          <span className="bookmap__item">
+            <span className="bookmap__muestra bookmap__muestra--hablado" aria-hidden="true" />
+            Donde se ha hablado
+          </span>
+          <span className="bookmap__item">
+            <span className="bookmap__muestra bookmap__muestra--niebla" aria-hidden="true" />
+            Lo que te queda
+          </span>
         </span>
         <span className="body-small on-surface-variant">
           {pctExplorado >= 100
