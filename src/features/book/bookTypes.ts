@@ -34,6 +34,8 @@ export interface BookViewData {
   canRate: boolean
   /** estado de lectura: null si el libro no está en tu biblioteca */
   status: 'reading' | 'finished' | 'want' | null
+  /** cuándo lo terminaste tú, para el ex libris */
+  finishedAt: string | null
   /** reseñas de otros lectores (solo visibles si terminaste el libro) */
   reviews: { name: string; rating: number; review: string }[]
   /** nº de reseñas ocultas por no haber terminado (para el aviso) */

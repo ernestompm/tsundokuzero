@@ -1,0 +1,97 @@
+/* El ex libris: la estampa de un libro terminado con el club */
+
+.exlibris {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* Doble filete, como los grabados de las guardas. El de fuera es salvia
+   y el de dentro más fino: es lo que hace que parezca impreso y no una
+   tarjeta de interfaz. */
+.exlibris__marco {
+  position: relative;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 26px 22px;
+  text-align: center;
+  color: var(--md-sys-color-on-surface);
+  background: var(--tz-paper);
+  border: 2px solid var(--tz-editorial-sage);
+  border-radius: 4px;
+  box-shadow: var(--tz-shadow-card);
+}
+.exlibris__marco::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in srgb, var(--tz-editorial-sage) 55%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.exlibris__sello {
+  color: var(--tz-signal);
+  line-height: 0;
+}
+
+.exlibris__lema {
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-secondary);
+  /* La versalita va sangrada a la derecha: sin esto el espaciado del
+     último carácter descentra la palabra, que es el defecto clásico de
+     poner letter-spacing y no compensarlo. */
+  text-indent: 0.28em;
+}
+
+.exlibris__titulo {
+  margin: 2px 0 0;
+  font-size: 23px;
+  line-height: 1.18;
+  font-weight: 500;
+  font-style: italic;
+  font-variation-settings: 'opsz' 40, 'SOFT' 22, 'WONK' 1;
+  text-wrap: balance;
+}
+
+.exlibris__autor {
+  margin: 0;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.exlibris__filete {
+  display: block;
+  width: 46px;
+  height: 1px;
+  margin: 10px 0 4px;
+  background: var(--tz-editorial-sage);
+}
+
+.exlibris__pie {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant);
+  max-width: 30ch;
+}
+.exlibris__pie b {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 500;
+}
+
+.exlibris__fecha {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-secondary);
+}

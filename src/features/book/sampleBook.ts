@@ -48,12 +48,13 @@ export const SAMPLE_BOOK: BookViewData = {
   premiered: true,
   readers: [
     { id: 'e', name: 'Ernesto', avatar: null, chapter: 8, isMe: true },
-    { id: 'm', name: 'Marina Álvarez', avatar: null, chapter: 21, isMe: false },
-    { id: 'c', name: 'Carlos Ruiz', avatar: null, chapter: 21, isMe: false },
-    { id: 'l', name: 'Lucía Prat', avatar: null, chapter: 46, isMe: false },
+    { id: 'm', name: 'Marina Álvarez', avatar: null, chapter: 8, isMe: false },
+    { id: 'c', name: 'Carlos Ruiz', avatar: null, chapter: 73, isMe: false },
+    { id: 'l', name: 'Lucía Prat', avatar: null, chapter: 73, isMe: false },
     { id: 'j', name: 'Jorge Sanz', avatar: null, chapter: 3, isMe: false },
   ],
   canRate: true,
+  finishedAt: '2026-09-18T20:10:00.000Z',
   status: 'finished',
   reviews: [
     {

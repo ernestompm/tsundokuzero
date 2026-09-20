@@ -28,7 +28,7 @@ export default function BookPage() {
         supabase.from('books').select('*').eq('id', bookId).maybeSingle(),
         supabase
           .from('reading_progress')
-          .select('current_chapter, status')
+          .select('current_chapter, status, updated_at')
           .eq('user_id', session.user.id)
           .eq('book_id', bookId)
           .maybeSingle(),
@@ -175,6 +175,7 @@ export default function BookPage() {
       },
       canRate: progress?.status === 'finished',
       status: progress?.status ?? null,
+      finishedAt: progress?.status === 'finished' ? progress.updated_at : null,
       reviews: visibleReviews.map((r) => ({
         name: nameById.get(r.user_id) ?? 'Lector',
         rating: r.rating,

@@ -9,6 +9,8 @@ import Stars from '../../components/Stars'
 import BookMap from './BookMap'
 import RecommendSheet from '../../components/RecommendSheet'
 import MentionsWaiting from '../../components/MentionsWaiting'
+import ALaPar from '../../components/ALaPar'
+import ExLibris from '../../components/ExLibris'
 import {
   RatingBarsCompare,
   RatingBarsInput,
@@ -75,6 +77,16 @@ export default function BookView({
   // Borrador del slider: se confirma con «Guardar», nada de 40 toques.
   const [draft, setDraft] = useState(currentChapter)
   useEffect(() => setDraft(currentChapter), [currentChapter])
+
+  // Quien está EXACTAMENTE en tu capítulo. El mapa ya trae por dónde va
+  // cada uno, así que esto no cuesta ni una consulta.
+  const aLaPar = data.readers.filter(
+    (r) => !r.isMe && r.chapter === currentChapter && currentChapter > 0,
+  )
+  // Quien también llegó al final: los compañeros del ex libris
+  const terminaron = data.readers
+    .filter((r) => !r.isMe && totalChapters > 0 && r.chapter >= totalChapters)
+    .map((r) => r.name.split(/\s+/)[0])
 
   const draftLabel =
     draft === 0
@@ -178,8 +190,24 @@ export default function BookView({
         </div>
       </Card>
 
+      {/* Sorpresa: alguien va justo por donde tú. Pasa poco, y cuando
+          pasa es literalmente de lo que va esta app. */}
+      {data.status !== 'finished' && (
+        <ALaPar gente={aLaPar} chapter={currentChapter} />
+      )}
+
       {/* Alguien pensó en ti más adelante: la mejor razón para seguir */}
       <MentionsWaiting bookId={data.bookId} />
+
+      {/* Terminado: la estampa. Aparece sola, no hay que ir a buscarla. */}
+      {data.status === 'finished' && (
+        <ExLibris
+          title={data.title}
+          author={data.author}
+          finishedAt={data.finishedAt}
+          companeros={terminaron}
+        />
+      )}
 
       {/* Leyendo: terminar sin arrastrar el slider hasta el final */}
       {data.status === 'reading' && onMarkFinished && (

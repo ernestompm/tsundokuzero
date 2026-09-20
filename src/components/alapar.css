@@ -1,0 +1,45 @@
+/* «Vais a la par»: alguien del club está en tu mismo capítulo */
+
+.alapar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 9px 13px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--tz-editorial-yellow-soft);
+  color: var(--tz-on-editorial-yellow);
+}
+
+.alapar__caras {
+  display: inline-flex;
+  flex: none;
+}
+.alapar__caras .avatar {
+  margin-left: -7px;
+  box-shadow: 0 0 0 2px var(--tz-editorial-yellow-soft);
+  border-radius: 50%;
+}
+.alapar__caras .avatar:first-child {
+  margin-left: 0;
+}
+
+.alapar__txt {
+  min-width: 0;
+}
+.alapar__txt b {
+  font-weight: 600;
+}
+
+/* Entra una vez, sin llamar la atención más de la cuenta */
+@media (prefers-reduced-motion: no-preference) {
+  .alapar {
+    animation: alapar-entra 420ms var(--md-sys-motion-easing-emphasized) both;
+  }
+}
+@keyframes alapar-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
