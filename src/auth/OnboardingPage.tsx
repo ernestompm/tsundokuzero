@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/button/filled-button.js'
@@ -40,7 +40,10 @@ export default function OnboardingPage() {
   )
   // Invitación: prefijada desde el alta; editable (OAuth u otro dispositivo)
   const [invite, setInvite] = useState(
-    () => localStorage.getItem('tz-invite') ?? '',
+    () =>
+      new URLSearchParams(window.location.search).get('c') ??
+      localStorage.getItem('tz-invite') ??
+      '',
   )
   const [club, setClub] = useState<Club | null>(null)
   const [clubLoading, setClubLoading] = useState(true)
@@ -51,8 +54,22 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Onboarding ya completado (perfil + membresía) → a la app.
+  //
+  // OJO CON LA CONDICIÓN. Este guardia depende de `profile`, y
+  // `createProfile` refresca el perfil justo antes de pasar al paso 2.
+  // Como ahora `complete_onboarding` TAMBIÉN te mete en el club, el
+  // efecto volvía a dispararse, encontraba la membresía y te echaba a la
+  // app: el paso 2 —fijar tu punto de lectura— no se veía nunca. La
+  // pantalla decía «Paso 1 de 2» y solo había uno, y quien entraba
+  // llegaba al Inicio con progreso 0, o sea con todo tapado por el
+  // candado y sin saber por qué.
+  //
+  // El guardia es para quien LLEGA aquí ya registrado, no para quien se
+  // está registrando ahora mismo.
+  const altaEnCurso = useRef(false)
+
   useEffect(() => {
-    if (!session || !profile) return
+    if (!session || !profile || altaEnCurso.current) return
     let cancelled = false
     supabase
       .from('club_members')
@@ -61,7 +78,9 @@ export default function OnboardingPage() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled && data) navigate('/', { replace: true })
+        if (!cancelled && !altaEnCurso.current && data) {
+          navigate('/', { replace: true })
+        }
       })
     return () => {
       cancelled = true
@@ -133,6 +152,7 @@ export default function OnboardingPage() {
     }
 
     setBusy(true)
+    altaEnCurso.current = true
     try {
       const { error } = await supabase.rpc('complete_onboarding', {
         invite: invite.trim(),

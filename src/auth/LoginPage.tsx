@@ -120,7 +120,14 @@ export default function LoginPage() {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            // El código viaja en el enlace de vuelta: si confirmas el
+            // correo en otro dispositivo, el `localStorage` de aquí no
+            // existe allí y te quedarías sin él en mitad del alta.
+            emailRedirectTo: invite.trim()
+              ? `${window.location.origin}/?c=${encodeURIComponent(invite.trim())}`
+              : window.location.origin,
+          },
         })
         if (error) {
           setError(friendlyError(error, 'No se pudo crear la cuenta. Inténtalo de nuevo.'))
