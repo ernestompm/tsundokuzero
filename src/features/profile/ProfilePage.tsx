@@ -149,7 +149,12 @@ export default function ProfilePage() {
   )
   const [errorStats, setErrorStats] = useState<string | null>(null)
   // El perfil dejó de ser una página de ajustes: ahora tiene dos caras
-  const [tab, setTab] = useState<'perfil' | 'ajustes'>('perfil')
+  // Cuatro caras. Las insignias y los ex libris tienen pestaña propia:
+  // apiladas debajo del muro no las veía nadie, que es literalmente lo
+  // que pasó.
+  const [tab, setTab] = useState<'perfil' | 'insignias' | 'exlibris' | 'ajustes'>(
+    'perfil',
+  )
   const [estanteria, setEstanteria] = useState<
     { id: string; title: string; author: string; cover: string | null; status: string }[]
   >([])
@@ -727,27 +732,30 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Dos caras: quién eres, y cómo funciona la app para ti */}
       <div className="profile-tabs" role="tablist" aria-label="Secciones del perfil">
         <Chip active={tab === 'perfil'} onClick={() => setTab('perfil')}>
           Perfil
+        </Chip>
+        <Chip active={tab === 'insignias'} onClick={() => setTab('insignias')}>
+          Insignias
+        </Chip>
+        <Chip active={tab === 'exlibris'} onClick={() => setTab('exlibris')}>
+          Ex libris
         </Chip>
         <Chip active={tab === 'ajustes'} onClick={() => setTab('ajustes')}>
           Ajustes
         </Chip>
       </div>
 
-      {/* CADA BLOQUE VIVE POR SU CUENTA.
-          Antes los tres colgaban de `misStats`: si esa consulta fallaba o
-          venía vacía, desaparecían las insignias, las rachas Y los ex
-          libris de golpe y sin explicación. Los ex libris no tienen nada
-          que ver con las estadísticas del club: no pueden irse con ellas. */}
-      {tab === 'perfil' && (
+      {/* ---------------- Insignias ---------------- */}
+      {tab === 'insignias' && (
         <>
-          <h2 className="title-small profile-sec">Tus insignias</h2>
+          {/* Lo que está en juego esta noche va lo primero */}
+          <Rachas compacta />
+
           {misStats ? (
             <>
-              <p className="body-small on-surface-variant" style={{ marginBottom: 12 }}>
+              <p className="body-small on-surface-variant" style={{ margin: '14px 0 12px' }}>
                 En el club {antiguedadEnPalabras(misStats.joined_at)} ·{' '}
                 {misStats.libros_terminados}{' '}
                 {misStats.libros_terminados === 1
@@ -761,16 +769,21 @@ export default function ProfilePage() {
               />
             </>
           ) : (
-            <p className="body-medium on-surface-variant">
+            <p className="body-medium on-surface-variant" style={{ marginTop: 14 }}>
               {errorStats ??
                 'Tus insignias aparecerán en cuanto formes parte de un club.'}
             </p>
           )}
+        </>
+      )}
 
-          {/* Las rachas: es lo que está en juego esta noche */}
-          <Rachas compacta />
-
-          <h2 className="title-small profile-sec">Tus ex libris</h2>
+      {/* ---------------- Ex libris ---------------- */}
+      {tab === 'exlibris' && (
+        <>
+          <p className="body-medium on-surface-variant" style={{ margin: '0 0 14px' }}>
+            Un sello por cada libro que has terminado con el club. Toca uno
+            para verlo entero.
+          </p>
           <ColeccionExLibris />
         </>
       )}
