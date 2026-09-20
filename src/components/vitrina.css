@@ -1,0 +1,124 @@
+/* La vitrina de insignias: lo conseguido, lo que falta y lo raro */
+
+.vitrina {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vitrina__balda {
+  margin: 18px 0 8px;
+}
+.vitrina__balda:first-child {
+  margin-top: 0;
+}
+.vitrina__nota {
+  margin: -4px 0 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.vitrina__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.vit-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: var(--tz-shape-card);
+  background: var(--tz-paper);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
+}
+
+/* Sin conseguir: apagada y con candado. No se esconde — una vitrina con
+   huecos es lo que hace querer los huecos. */
+.vit-card__icono {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-outline);
+}
+.vit-card__icono .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.vit-card.conseguida .vit-card__icono {
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
+}
+.vit-card--oro.conseguida .vit-card__icono {
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+}
+.vit-card--tierra.conseguida .vit-card__icono {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+}
+
+.vit-card__txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.vit-card__nombre {
+  color: var(--md-sys-color-on-surface);
+}
+.vit-card:not(.conseguida) .vit-card__nombre {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.vit-card__detalle {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* La barra: lo único naranja de la tarjeta, porque es lo que empuja */
+.vit-barra {
+  display: block;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--tz-editorial-sage-soft);
+  overflow: hidden;
+}
+.vit-barra__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tz-signal);
+  min-width: 3px;
+  transition: width var(--md-sys-motion-duration-medium)
+    var(--md-sys-motion-easing-emphasized);
+}
+
+.vit-card__falta {
+  margin-top: 5px;
+  color: var(--tz-signal-strong);
+  font-variant-numeric: tabular-nums;
+}
+.vit-card__rareza {
+  margin-top: 5px;
+  color: var(--md-sys-color-secondary);
+}
+.vit-card__motivo {
+  margin-top: 4px;
+  font-family: var(--tz-typeface-serif);
+  font-style: italic;
+  font-variation-settings: 'opsz' 20, 'SOFT' 18;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Las de la casa llevan filo: no salen de un contador */
+.vit-card--mano {
+  border-left: 3px solid var(--tz-editorial-yellow);
+}
+.vit-card--mano.conseguida {
+  border-left-color: var(--tz-signal);
+}

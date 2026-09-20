@@ -69,6 +69,11 @@ export default function NotificationsPage() {
           detail = n.chapter_number
             ? `respondió desde el capítulo ${n.chapter_number} y jura que no hay spoiler. Tú decides si lo abres`
             : 'respondió y jura que no hay spoiler. Tú decides si lo abres'
+        } else if (n.type === 'badge') {
+          to = '/me'
+          detail = n.note
+            ? `te ha dado la insignia «${n.note}»`
+            : 'te ha dado una insignia'
         } else if (n.type === 'all_ready') {
           to = '/club/capitania'
           detail = 'Ya tenéis todos el libro. Podéis empezar cuando quieras'
@@ -216,6 +221,8 @@ export default function NotificationsPage() {
             const icon =
               n.type === 'reply' || n.type === 'reply_sworn'
                 ? 'chat_bubble'
+                : n.type === 'badge'
+                  ? 'star'
                 : n.type === 'all_ready'
                   ? 'check_circle'
                 : n.type === 'follow'

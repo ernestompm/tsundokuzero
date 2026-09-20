@@ -10,6 +10,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
 import BookForm from '../../components/BookForm'
 import PageHeader from '../../components/PageHeader'
+import InsigniasTab from './InsigniasTab'
 import { friendlyError } from '../../lib/errors'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { timeAgo } from '../../lib/time'
@@ -22,7 +23,15 @@ import {
 import type { Book, DevNote, DiscussionKind, Report } from '../../lib/database.types'
 import './admin.css'
 
-type Tab = 'summary' | 'users' | 'content' | 'reports' | 'notes' | 'books' | 'legal'
+type Tab =
+  | 'summary'
+  | 'users'
+  | 'content'
+  | 'reports'
+  | 'notes'
+  | 'insignias'
+  | 'books'
+  | 'legal'
 
 export default function AdminPage() {
   const { isSuperAdmin, loading } = useAuth()
@@ -42,6 +51,7 @@ export default function AdminPage() {
             ['content', 'Moderación'],
             ['reports', 'Denuncias'],
             ['notes', 'Probadores'],
+            ['insignias', 'Insignias'],
             ['books', 'Libros'],
             ['legal', 'Legal'],
           ] as [Tab, string][]
@@ -61,6 +71,7 @@ export default function AdminPage() {
       {tab === 'content' && <ContentTab />}
       {tab === 'reports' && <ReportsTab />}
       {tab === 'notes' && <NotesTab />}
+      {tab === 'insignias' && <InsigniasTab />}
       {tab === 'books' && <BooksTab />}
       {tab === 'legal' && <LegalTab />}
     </section>

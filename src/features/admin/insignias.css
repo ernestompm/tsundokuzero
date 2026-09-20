@@ -1,0 +1,98 @@
+/* Crear y repartir insignias a mano (migr. 046) */
+
+.insig-iconos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+.insig-icono {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--tz-rule);
+  border-radius: 50%;
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+.insig-icono .material-symbols-rounded { font-size: 19px; }
+.insig-icono.activo {
+  background: var(--tz-signal-soft);
+  border-color: var(--tz-signal);
+  color: var(--tz-signal-strong);
+}
+
+.insig-tonos {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.insig-tono {
+  padding: 6px 14px;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid var(--tz-rule);
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.insig-tono.activo { font-weight: 600; }
+.insig-tono--oro.activo {
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+  border-color: var(--tz-editorial-yellow);
+}
+.insig-tono--salvia.activo {
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
+  border-color: var(--tz-editorial-sage);
+}
+.insig-tono--tierra.activo {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+  border-color: var(--tz-signal);
+}
+
+/* Cómo va a quedar: se ve antes de crearla, no después */
+.insig-muestra {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--tz-shape-card);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid color-mix(in srgb, var(--tz-rule) 70%, transparent);
+}
+.insig-muestra__icono {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
+}
+.insig-muestra__icono .material-symbols-rounded { font-size: 22px; }
+.insig-muestra--oro .insig-muestra__icono {
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+}
+.insig-muestra--tierra .insig-muestra__icono {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+}
+.insig-muestra__txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.insig-quien {
+  color: var(--md-sys-color-secondary);
+  margin-top: 3px;
+}

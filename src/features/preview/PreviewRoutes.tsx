@@ -12,6 +12,7 @@ import { SAMPLE_THREAD } from '../book/sampleThread'
 import AuthorPreview from '../author/AuthorPreview'
 import AddBookSheet from '../../components/AddBookSheet'
 import { BadgeBoard } from '../../components/Badges'
+import Vitrina from '../../components/Vitrina'
 import { badgesDe, siguienteBadge, type MemberStats } from '../../lib/badges'
 import PollComposer from '../club/PollComposer'
 
@@ -103,6 +104,7 @@ export default function PreviewRoutes() {
         />
         <Route path="author" element={<AuthorPreview />} />
         <Route path="insignias" element={<InsigniasPreview />} />
+        <Route path="vitrina" element={<VitrinaPreview />} />
 
         <Route
           path="opinions"
@@ -150,6 +152,48 @@ export default function PreviewRoutes() {
         />
       </Route>
     </Routes>
+  )
+}
+
+/** La vitrina con barras, para ver el diseño sin datos reales. */
+function VitrinaPreview() {
+  const stats: MemberStats = {
+    club_id: 'c',
+    user_id: 'u',
+    joined_at: new Date(Date.now() - 400 * 86400000).toISOString(),
+    role: 'member',
+    orden_llegada: 2,
+    libros_terminados: 7,
+    veces_primero: 3,
+    libros_propuestos: 2,
+    ideas: 31,
+    resenas: 6,
+    respuestas: 54,
+    reacciones: 61,
+    votaciones: 5,
+    libros_en_estanteria: 12,
+    perfil_completo: true,
+    en_la_app_desde: new Date(Date.now() - 400 * 86400000).toISOString(),
+    capitulos_leidos: 184,
+  }
+  return (
+    <section style={{ padding: '8px 0 40px' }}>
+      <h1 className="headline-small serif" style={{ margin: '0 0 6px' }}>
+        Tus insignias
+      </h1>
+      <Vitrina
+        stats={stats}
+        rachas={{
+          dias_leyendo: 5,
+          dias_hablando: 2,
+          leido_hoy: true,
+          hablado_hoy: false,
+          mejor_leyendo: 11,
+          dias_totales: 48,
+        }}
+        cuantosPorBadge={new Map([['lector-5', 2], ['liebre-3', 1]])}
+      />
+    </section>
   )
 }
 

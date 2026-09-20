@@ -7,14 +7,13 @@ import '@material/web/button/filled-tonal-button.js'
 import '@material/web/switch/switch.js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/AuthContext'
-import { BadgeBoard } from '../../components/Badges'
+import Vitrina from '../../components/Vitrina'
 import Rachas from '../../components/Rachas'
 import ColeccionExLibris from '../../components/ColeccionExLibris'
 import { BookCover, Chip } from '../../components/ui'
 import {
   antiguedadEnPalabras,
   badgesDe,
-  siguienteBadge,
   type MemberStats,
   type Rachas as RachasData,
 } from '../../lib/badges'
@@ -144,6 +143,10 @@ export default function ProfilePage() {
   const [misStats, setMisStats] = useState<MemberStats | null>(null)
   // Las rachas alimentan las insignias de racha y «lo siguiente»
   const [rachas, setRachas] = useState<RachasData | null>(null)
+  /** cuánta gente del club tiene cada insignia: la rareza es media motivación */
+  const [cuantosPorBadge, setCuantosPorBadge] = useState<Map<string, number>>(
+    new Map(),
+  )
   // El perfil dejó de ser una página de ajustes: ahora tiene dos caras
   const [tab, setTab] = useState<'perfil' | 'ajustes'>('perfil')
   const [estanteria, setEstanteria] = useState<
@@ -221,6 +224,21 @@ export default function ProfilePage() {
       const fila = Array.isArray(data) ? data[0] : data
       if (fila) setRachas(fila as RachasData)
     })
+
+    // Cuánta gente del club tiene cada insignia. «La tenéis 2 del club»
+    // dice más que cualquier descripción: lo que es raro se quiere.
+    void supabase
+      .from('club_member_stats')
+      .select('*')
+      .then(({ data }) => {
+        const cuenta = new Map<string, number>()
+        for (const fila of (data ?? []) as MemberStats[]) {
+          for (const b of badgesDe(fila)) {
+            cuenta.set(b.id, (cuenta.get(b.id) ?? 0) + 1)
+          }
+        }
+        setCuantosPorBadge(cuenta)
+      })
   }, [session])
 
   useEffect(() => {
@@ -715,9 +733,10 @@ export default function ProfilePage() {
             {misStats.libros_terminados}{' '}
             {misStats.libros_terminados === 1 ? 'libro terminado' : 'libros terminados'}
           </p>
-          <BadgeBoard
-            badges={badgesDe(misStats, rachas)}
-            siguiente={siguienteBadge(misStats, rachas)}
+          <Vitrina
+            stats={misStats}
+            rachas={rachas}
+            cuantosPorBadge={cuantosPorBadge}
           />
 
           {/* Las rachas, junto a las insignias: es lo que está en juego */}

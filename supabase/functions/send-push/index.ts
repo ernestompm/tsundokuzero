@@ -97,6 +97,12 @@ function describe(
           : `${who} te respondió y jura que no hay spoiler 🤝`,
         url: n.discussion_id ? `/thread/${n.discussion_id}` : '/notifications',
       }
+    case 'badge':
+      return {
+        title: 'Tsundoku Zero',
+        body: n.note ? `Te han dado la insignia «${n.note}» 🏅` : 'Te han dado una insignia 🏅',
+        url: '/me',
+      }
     case 'all_ready':
       return {
         title: 'Tsundoku Zero',

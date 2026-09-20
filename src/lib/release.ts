@@ -10,7 +10,7 @@
  */
 
 /** Cambia esto en cada versión con novedades que merezca contar. */
-export const RELEASE_KEY = '0.15.0'
+export const RELEASE_KEY = '0.16.0'
 
 export const RELEASE_TITULO = 'Que te apetezca volver mañana'
 
@@ -33,9 +33,21 @@ export const NOVEDADES: Novedad[] = [
   },
   {
     icon: 'star',
+    titulo: 'La vitrina',
+    texto:
+      'Las insignias ya no son una lista de lo que tienes. Ahora ves también las que NO tienes, con su barra y cuánto te falta: «184 de 200 capítulos». Y cuántos del club las tienen, que es lo que hace que una insignia valga — hay alguna que solo tiene una persona.',
+  },
+  {
+    icon: 'trending_up',
     titulo: 'Logros que se celebran',
     texto:
-      'Las insignias se ganaban en silencio y había que ir a buscarlas al perfil. Ahora salta un aviso con su medalla y confeti. Y hay insignias de racha: tres días, una semana, un mes sin fallar.',
+      'Se ganaban en silencio y había que ir a buscarlas. Ahora salta un aviso con su medalla y confeti. Y hay insignias de racha: tres días, una semana, un mes sin fallar.',
+  },
+  {
+    icon: 'flag',
+    titulo: 'Insignias de la casa',
+    texto:
+      'Hay cosas que ningún contador va a ver: quien se leyó el libro en dos días sin destripar nada, quien trajo la lectura del año. Esas las reparte Ernesto a mano, con el motivo escrito. Salen en tu perfil, y se ve quién más las tiene.',
   },
   {
     icon: 'bookmark',

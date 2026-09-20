@@ -132,6 +132,8 @@ export type NotificationType =
   | 'reply_sworn'
   /** todo el club tiene ya el libro de la próxima lectura (migr. 038) */
   | 'all_ready'
+  /** el administrador te ha dado una insignia a mano (migr. 046) */
+  | 'badge'
 
 /** Dispositivo suscrito a Web Push (migr. 023) */
 export type PushSubscriptionRow = {
@@ -659,6 +661,46 @@ export type Database = {
         }[]
       }
       racha_de: { Args: { p_user: string; p_tipo: string }; Returns: number }
+      /* ---------- migr. 046: insignias a mano ---------- */
+      admin_crear_insignia: {
+        Args: { p_nombre: string; p_detalle: string; p_icon?: string; p_tono?: string }
+        Returns: string
+      }
+      admin_borrar_insignia: { Args: { p_id: string }; Returns: undefined }
+      admin_dar_insignia: {
+        Args: { p_insignia: string; p_user: string; p_motivo?: string | null }
+        Returns: undefined
+      }
+      admin_quitar_insignia: {
+        Args: { p_insignia: string; p_user: string }
+        Returns: undefined
+      }
+      insignias_a_mano: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          nombre: string
+          detalle: string
+          icon: string
+          tono: 'oro' | 'salvia' | 'tierra'
+          cuantos: number
+          la_tengo: boolean
+          mi_motivo: string | null
+          quien: string[]
+        }[]
+      }
+      insignias_de: {
+        Args: { p_user: string }
+        Returns: {
+          id: string
+          nombre: string
+          detalle: string
+          icon: string
+          tono: 'oro' | 'salvia' | 'tierra'
+          motivo: string | null
+          created_at: string
+        }[]
+      }
       mis_exlibris: {
         Args: Record<string, never>
         Returns: {

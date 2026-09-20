@@ -50,6 +50,29 @@ export default function BadgeCelebration() {
       if (error || !data || cancelado) return
 
       const tengo = badgesDe(data as unknown as MemberStats)
+
+      // Las que te ha dado Ernesto a mano (migr. 046) se celebran igual,
+      // y con más razón: detrás hay alguien que se fijó.
+      const { data: mano } = await supabase.rpc('insignias_a_mano')
+      for (const m of (mano ?? []) as {
+        id: string
+        nombre: string
+        detalle: string
+        icon: string
+        tono: Badge['tono']
+        la_tengo: boolean
+        mi_motivo: string | null
+      }[]) {
+        if (!m.la_tengo) continue
+        tengo.push({
+          id: `mano:${m.id}`,
+          icon: m.icon,
+          nombre: m.nombre,
+          detalle: m.mi_motivo ? `«${m.mi_motivo}»` : m.detalle,
+          tono: m.tono,
+        })
+      }
+
       if (tengo.length === 0) return
 
       const vistas = new Set(
@@ -104,7 +127,9 @@ export default function BadgeCelebration() {
           <span className="material-symbols-rounded">{b.icon}</span>
         </span>
 
-        <p className="tz-kicker celebra__kicker">Insignia nueva</p>
+        <p className="tz-kicker celebra__kicker">
+          {b.id.startsWith('mano:') ? 'Te han dado una insignia' : 'Insignia nueva'}
+        </p>
         <h2 id="celebra-title" className="headline-small serif celebra__nombre">
           {b.nombre}
         </h2>
