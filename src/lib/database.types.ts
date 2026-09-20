@@ -701,6 +701,17 @@ export type Database = {
           created_at: string
         }[]
       }
+      exlibris_de: {
+        Args: { p_user: string }
+        Returns: {
+          book_id: string
+          title: string
+          author: string
+          cover_url: string | null
+          terminado_el: string
+          companeros: string[]
+        }[]
+      }
       mis_exlibris: {
         Args: Record<string, never>
         Returns: {

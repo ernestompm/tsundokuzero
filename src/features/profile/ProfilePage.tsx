@@ -147,6 +147,7 @@ export default function ProfilePage() {
   const [cuantosPorBadge, setCuantosPorBadge] = useState<Map<string, number>>(
     new Map(),
   )
+  const [errorStats, setErrorStats] = useState<string | null>(null)
   // El perfil dejó de ser una página de ajustes: ahora tiene dos caras
   const [tab, setTab] = useState<'perfil' | 'ajustes'>('perfil')
   const [estanteria, setEstanteria] = useState<
@@ -219,7 +220,18 @@ export default function ProfilePage() {
       .eq('user_id', session.user.id)
       .limit(1)
       .maybeSingle()
-      .then(({ data }) => setMisStats((data as MemberStats | null) ?? null))
+      .then(({ data, error }) => {
+        // Se tragaba el error y el bloque entero desaparecía sin decir
+        // nada: ni insignias, ni ex libris, ni motivo. Un fallo silencioso
+        // es peor que un fallo.
+        if (error) {
+          setErrorStats(
+            friendlyError(error, 'No se pudieron cargar tus estadísticas del club.'),
+          )
+          return
+        }
+        setMisStats((data as MemberStats | null) ?? null)
+      })
     void supabase.rpc('mis_rachas').then(({ data }) => {
       const fila = Array.isArray(data) ? data[0] : data
       if (fila) setRachas(fila as RachasData)
@@ -725,21 +737,37 @@ export default function ProfilePage() {
         </Chip>
       </div>
 
-      {tab === 'perfil' && misStats && (
+      {/* CADA BLOQUE VIVE POR SU CUENTA.
+          Antes los tres colgaban de `misStats`: si esa consulta fallaba o
+          venía vacía, desaparecían las insignias, las rachas Y los ex
+          libris de golpe y sin explicación. Los ex libris no tienen nada
+          que ver con las estadísticas del club: no pueden irse con ellas. */}
+      {tab === 'perfil' && (
         <>
           <h2 className="title-small profile-sec">Tus insignias</h2>
-          <p className="body-small on-surface-variant" style={{ marginBottom: 12 }}>
-            En el club {antiguedadEnPalabras(misStats.joined_at)} ·{' '}
-            {misStats.libros_terminados}{' '}
-            {misStats.libros_terminados === 1 ? 'libro terminado' : 'libros terminados'}
-          </p>
-          <Vitrina
-            stats={misStats}
-            rachas={rachas}
-            cuantosPorBadge={cuantosPorBadge}
-          />
+          {misStats ? (
+            <>
+              <p className="body-small on-surface-variant" style={{ marginBottom: 12 }}>
+                En el club {antiguedadEnPalabras(misStats.joined_at)} ·{' '}
+                {misStats.libros_terminados}{' '}
+                {misStats.libros_terminados === 1
+                  ? 'libro terminado'
+                  : 'libros terminados'}
+              </p>
+              <Vitrina
+                stats={misStats}
+                rachas={rachas}
+                cuantosPorBadge={cuantosPorBadge}
+              />
+            </>
+          ) : (
+            <p className="body-medium on-surface-variant">
+              {errorStats ??
+                'Tus insignias aparecerán en cuanto formes parte de un club.'}
+            </p>
+          )}
 
-          {/* Las rachas, junto a las insignias: es lo que está en juego */}
+          {/* Las rachas: es lo que está en juego esta noche */}
           <Rachas compacta />
 
           <h2 className="title-small profile-sec">Tus ex libris</h2>

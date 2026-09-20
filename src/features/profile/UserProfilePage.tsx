@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { Avatar, BookCover } from '../../components/ui'
 import Stars from '../../components/Stars'
 import { BadgeRow } from '../../components/Badges'
+import ColeccionExLibris from '../../components/ColeccionExLibris'
 import { antiguedadEnPalabras, badgesDe, type MemberStats } from '../../lib/badges'
 import { frases, hayAfinidad, type Afinidad } from '../../lib/affinity'
 import RecommendSheet from '../../components/RecommendSheet'
@@ -57,6 +58,10 @@ export default function UserProfilePage() {
   // debería hablar de libros, no solo de mensajes.
   const [libros, setLibros] = useState<LibroSuyo[]>([])
   const [stats, setStats] = useState<MemberStats | null>(null)
+  /** las que le ha dado el administrador a mano (migr. 046) */
+  const [aMano, setAMano] = useState<
+    { id: string; nombre: string; detalle: string; icon: string; tono: string }[]
+  >([])
   // Afinidad lectora y recomendaciones (migr. 034)
   const [afinidad, setAfinidad] = useState<Afinidad | null>(null)
   const [recomendando, setRecomendando] = useState<{ id: string; title: string } | null>(null)
@@ -187,6 +192,18 @@ export default function UserProfilePage() {
       ])
       if (cancelado) return
       setStats((st as MemberStats | null) ?? null)
+
+      // Las de la casa: no salen de ningún contador, así que hay que
+      // preguntarlas aparte (migr. 046)
+      void supabase.rpc('insignias_de', { p_user: uid }).then(({ data }) => {
+        if (!cancelado) {
+          setAMano(
+            (data as
+              | { id: string; nombre: string; detalle: string; icon: string; tono: string }[]
+              | null) ?? [],
+          )
+        }
+      })
       setAfinidad((af as Afinidad | null) ?? null)
 
       const filas = prog ?? []
@@ -372,6 +389,32 @@ export default function UserProfilePage() {
             En el club {antiguedadEnPalabras(stats.joined_at)}
           </span>
         </div>
+      )}
+
+      {/* Las que le ha dado Ernesto a mano: no salen de ningún contador,
+          y por eso son las que apetece mirar en el perfil de otro. */}
+      {!amBlocking && aMano.length > 0 && (
+        <div className="userprofile__mano">
+          {aMano.map((b) => (
+            <span key={b.id} className={`mano-chip mano-chip--${b.tono}`} title={b.detalle}>
+              <span className="material-symbols-rounded" aria-hidden="true">
+                {b.icon}
+              </span>
+              {b.nombre}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Su colección. Media gracia de una colección es enseñarla; la otra
+          media es ver la del vecino y querer la que te falta. */}
+      {!amBlocking && person && (
+        <>
+          <h2 className="title-small profile-sec">
+            Los ex libris de {person.display_name.split(/\s+/)[0]}
+          </h2>
+          <ColeccionExLibris userId={person.id} ajeno />
+        </>
       )}
 
       {!amBlocking && hayAfinidad(afinidad) && (

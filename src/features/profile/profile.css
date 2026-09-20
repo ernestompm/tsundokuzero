@@ -346,3 +346,31 @@
 .profile-resumen__pendiente {
   color: var(--md-sys-color-secondary);
 }
+
+/* Insignias dadas a mano, en el perfil público (migr. 046) */
+.userprofile__mano {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 2px;
+}
+.mano-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border-radius: var(--md-sys-shape-corner-full);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--tz-editorial-sage-soft);
+  color: var(--tz-on-editorial-sage);
+}
+.mano-chip .material-symbols-rounded { font-size: 16px; }
+.mano-chip--oro {
+  background: var(--tz-editorial-yellow);
+  color: var(--tz-on-editorial-yellow);
+}
+.mano-chip--tierra {
+  background: var(--tz-signal-soft);
+  color: var(--tz-signal-strong);
+}
